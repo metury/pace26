@@ -36,6 +36,13 @@
 *.exe
 *.out
 *.app
+pace
+
+# Cmake
+CMakeakeFiles/
+CMakeCache.txt
+Makefile
+*.cmake
 
 # debug information files
 *.dwo
