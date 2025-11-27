@@ -5,4 +5,4 @@ project(
   VERSION 1.0
   LANGUAGES CXX)
 
-add_executable(pace main.cpp)
+add_executable(pace tree.cpp main.cpp)

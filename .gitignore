@@ -39,7 +39,7 @@
 pace
 
 # Cmake
-CMakeakeFiles/
+CMakeFiles/
 CMakeCache.txt
 Makefile
 *.cmake
