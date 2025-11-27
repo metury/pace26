@@ -49,12 +49,19 @@ std::unique_ptr<Node> Node::removeRight() {
 }
 
 void Node::consolidate() {
-  if(left_ == nullptr) {
-    left_ = std::move(right_->left_);
-    right_ = std::move(right_->right_);
-  } else if(right_ == nullptr) {
-    left_ = std::move(left_->left_);
-    right_ = std::move(left_->right_);
+  if(type_ == INNER) {
+    if(left_ == nullptr) {
+      left_ = std::move(right_->left_);
+      right_ = std::move(right_->right_);
+      consolidate();
+    } else if(right_ == nullptr) {
+      left_ = std::move(left_->left_);
+      right_ = std::move(left_->right_);
+    consolidate();
+    } else {
+      left_->consolidate();
+      right_->consolidate();
+    }
   }
 }
 
