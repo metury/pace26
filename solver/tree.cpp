@@ -40,6 +40,24 @@ NodeType Node::changeType() {
   return type_;
 }
 
+std::unique_ptr<Node> Node::removeLeft() {
+  return std::move(left_);
+}
+
+std::unique_ptr<Node> Node::removeRight() {
+  return std::move(right_);
+}
+
+void Node::consolidate() {
+  if(left_ == nullptr) {
+    left_ = std::move(right_->left_);
+    right_ = std::move(right_->right_);
+  } else if(right_ == nullptr) {
+    left_ = std::move(left_->left_);
+    right_ = std::move(left_->right_);
+  }
+}
+
 std::ostream& operator<<(std::ostream& os, const Node& n) {
   if (n.getType() == LEAF) {
     os << n.getValue();

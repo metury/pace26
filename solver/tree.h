@@ -22,6 +22,9 @@ class Node {
     NodeType getType() const;
     Node* getLeft() const;
     Node* getRight() const;
+    std::unique_ptr<Node> removeLeft();
+    std::unique_ptr<Node> removeRight();
+    void consolidate();
   private:
     NodeType type_;
     std::unique_ptr<Node> left_;
