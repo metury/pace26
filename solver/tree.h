@@ -13,6 +13,7 @@ enum NodeType {
 class Node {
   public:
     Node();
+    Node(Node* parent);
     Node* addLeft();
     Node* addRight();
     void setValue(int value);
@@ -25,6 +26,7 @@ class Node {
     NodeType type_;
     std::unique_ptr<Node> left_;
     std::unique_ptr<Node> right_;
+    Node* parent_;
     int value_;
 };
 

@@ -1,15 +1,17 @@
 #include "tree.h"
 #include <iostream>
 
-Node::Node() : type_(LEAF), value_(0) {}
+Node::Node() : type_(LEAF), value_(0), parent_(nullptr) {}
+
+Node::Node(Node* parent) : type_(LEAF), value_(0), parent_(parent) {}
 
 Node* Node::addLeft() {
-  left_ = std::make_unique<Node>();
+  left_ = std::make_unique<Node>(this);
   return left_.get();
 }
 
 Node* Node::addRight() {
-  right_ = std::make_unique<Node>();
+  right_ = std::make_unique<Node>(this);
   return right_.get();
 }
 
