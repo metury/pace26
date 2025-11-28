@@ -13,7 +13,9 @@ enum NodeType {
 /// Node class.
 class Node {
   public:
+    /// Constructor.
     Node();
+    /// Constructor with setting parent.
     Node(Node* parent);
     /// Copy constructor.
     Node(const Node& other);
@@ -35,6 +37,7 @@ class Node {
     Node* getRight() const;
     std::unique_ptr<Node> removeLeft();
     std::unique_ptr<Node> removeRight();
+    /// Force iterative contraction of all 2 degree inner vertices.
     void consolidate();
   private:
     NodeType type_;
