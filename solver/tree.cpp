@@ -1,5 +1,7 @@
 #include "tree.h"
 #include <iostream>
+#include <fstream>
+#include <sstream>
 
 Node::Node() : type_(LEAF), value_(0), parent_(nullptr) {}
 
@@ -98,4 +100,20 @@ std::istream& operator>>(std::istream& is, Node& n) {
       n.setValue(value);
     }
     return is;
+}
+
+void readFile(const std::string& filePath, std::vector<Node>& trees) {
+  std::ifstream ifs(filePath);
+  std::string line;
+  while (getline (ifs, line)) {
+    if(line.size() > 0 && line[0] == '#') {
+      //std::cout << "COMMENT" << line << std::endl;
+    } else {
+      Node tree;
+      std::istringstream iss(line);
+      iss >> tree;
+      trees.push_back(std::move(tree));
+    }
+  }
+  ifs.close();
 }

@@ -2,6 +2,7 @@
 #define tree_h_
 
 #include <memory>
+#include <vector>
 
 /// Type of nodes.
 enum NodeType {
@@ -36,5 +37,7 @@ class Node {
 std::ostream& operator<<(std::ostream& os, const Node& n);
 
 std::istream& operator>>(std::istream& is, Node& n);
+
+void readFile(const std::string& filePath, std::vector<Node>& trees);
 
 #endif

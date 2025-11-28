@@ -27,6 +27,13 @@ int main(int argc, char** argv) {
     std::cin >> second;
 
     std::cout << second << std::endl;
+
+    std::vector<Node> trees;
+    readFile("input", trees);
+    std::cout << "Read file \"input\" containing " << trees.size() << " trees:" << std::endl;
+    for(auto&& tree : trees){
+      std::cout << tree << std::endl;
+    }
     return 0;
   } catch(...) {
     std::cerr << "Something went wrong." << std::endl;
