@@ -15,6 +15,16 @@ class Node {
   public:
     Node();
     Node(Node* parent);
+    /// Copy constructor.
+    Node(const Node& other);
+    /// Copy assignement.
+    Node& operator=(const Node& other);
+    /// Move constructor.
+    Node(Node&& other) = default;
+    /// Move assignement.
+    Node& operator=(Node&& other) = default;
+    /// Delete.
+    ~Node() = default;
     Node* addLeft();
     Node* addRight();
     void setValue(int value);

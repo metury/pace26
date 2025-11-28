@@ -26,17 +26,17 @@ int main(int argc, char** argv) {
     std::vector<std::string> arguments(argv + 1, argv + argc);
 
     for(auto&& file : arguments){
-      std::cout << "Processing file \"" << file << "\"." << std::endl;
+      std::cout << "# Processing file \"" << file << "\"." << std::endl;
       std::vector<Node> trees;
       readFile(file, trees);
-      std::cout << "Read file \"" << file << "\" containing " << trees.size() << " trees:" << std::endl;
+      std::cout << "# Read file \"" << file << "\" containing " << trees.size() << " trees:" << std::endl;
       for(auto&& tree : trees){
-        std::cout << tree << std::endl;
+        std::cout << "# " << tree << ";" << std::endl;
       }
     }
 
     return 0;
   } catch(...) {
-    std::cerr << "Something went wrong." << std::endl;
+    std::cerr << "# Something went wrong." << std::endl;
   }
 }

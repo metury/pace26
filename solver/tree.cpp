@@ -7,6 +7,25 @@ Node::Node() : type_(LEAF), value_(0), parent_(nullptr) {}
 
 Node::Node(Node* parent) : type_(LEAF), value_(0), parent_(parent) {}
 
+Node::Node(const Node& other) : type_(other.getType()), value_(other.getValue()) {
+  if(type_ == INNER) {
+    left_ = std::make_unique<Node>(*other.getLeft());
+    right_ = std::make_unique<Node>(*other.getRight());
+    left_.get()->parent_ = this;
+    right_.get()->parent_ = this;
+  }
+}
+
+Node& Node::operator=(const Node& other) {
+  type_ = other.getType();
+  value_ = other.getValue();
+  left_ = std::make_unique<Node>(*other.getLeft());
+  right_ = std::make_unique<Node>(*other.getRight());
+  left_.get()->parent_ = this;
+  right_.get()->parent_ = this;
+  return *this;
+}
+
 Node* Node::addLeft() {
   left_ = std::make_unique<Node>(this);
   return left_.get();
@@ -38,7 +57,7 @@ Node* Node::getRight() const {
 }
 
 NodeType Node::changeType() {
-  type_ = type_ == LEAF ? type_ = INNER : type_ = LEAF;
+  type_ = type_ == LEAF ? INNER : LEAF;
   return type_;
 }
 
