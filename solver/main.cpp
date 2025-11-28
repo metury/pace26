@@ -22,18 +22,19 @@ int main(int argc, char** argv) {
 
     std::cout << "Removed left " << *(left.get()) << " and obtained " << tree << std::endl;
 
-    // Read tree from sting.
-    Node second;
-    std::cin >> second;
+    // Get file names in arguments.
+    std::vector<std::string> arguments(argv + 1, argv + argc);
 
-    std::cout << second << std::endl;
-
-    std::vector<Node> trees;
-    readFile("input", trees);
-    std::cout << "Read file \"input\" containing " << trees.size() << " trees:" << std::endl;
-    for(auto&& tree : trees){
-      std::cout << tree << std::endl;
+    for(auto&& file : arguments){
+      std::cout << "Processing file \"" << file << "\"." << std::endl;
+      std::vector<Node> trees;
+      readFile(file, trees);
+      std::cout << "Read file \"" << file << "\" containing " << trees.size() << " trees:" << std::endl;
+      for(auto&& tree : trees){
+        std::cout << tree << std::endl;
+      }
     }
+
     return 0;
   } catch(...) {
     std::cerr << "Something went wrong." << std::endl;
