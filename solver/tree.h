@@ -41,7 +41,9 @@ class Node {
     /// Force iterative contraction of all 2 degree inner vertices.
     void consolidate();
     void write(std::ostream& os) const;
+    void assignNumbers(int i, int n);
   private:
+    int assignNumbers(int counter);
     NodeType type_;
     std::unique_ptr<Node> left_;
     std::unique_ptr<Node> right_;
@@ -59,6 +61,7 @@ class Input {
     std::vector<Node>& getTrees();
     int getLeafCount() const;
     int getTreeCount() const;
+    void assignNumbers();
   private:
     std::vector<Node> trees_;
     int n_;

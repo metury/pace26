@@ -103,6 +103,26 @@ void Node::write(std::ostream& os) const {
   os << *this << ";" << std::endl;
 }
 
+void Node::assignNumbers(int i, int n) {
+  auto root = getRoot();
+  if(root != this) {
+    root->assignNumbers(i, n);
+  }
+  else {
+    assignNumbers(i * (n+1));
+  }
+}
+
+int Node::assignNumbers(int counter) {
+  if(type_ == INNER) {
+    value_ = counter;
+    auto next = left_->assignNumbers(counter+1);
+    next = right_->assignNumbers(next);
+    return next;
+  }
+  return counter;
+}
+
 std::ostream& operator<<(std::ostream& os, const Node& n) {
   if (n.getType() == LEAF) {
     os << n.getValue();
@@ -173,4 +193,10 @@ int Input::getLeafCount() const {
 
 int Input::getTreeCount() const {
   return t_;
+}
+
+void Input::assignNumbers() {
+  for(int i = 0; i < t_; i++) {
+    trees_[i].assignNumbers(i + 1, n_);
+  }
 }
