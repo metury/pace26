@@ -40,6 +40,7 @@ class Node {
     std::unique_ptr<Node> removeRight();
     /// Force iterative contraction of all 2 degree inner vertices.
     void consolidate();
+    void write(std::ostream& os) const;
   private:
     NodeType type_;
     std::unique_ptr<Node> left_;
@@ -49,9 +50,18 @@ class Node {
 };
 
 std::ostream& operator<<(std::ostream& os, const Node& n);
-
 std::istream& operator>>(std::istream& is, Node& n);
 
-void readFile(const std::string& filePath, std::vector<Node>& trees);
-
+class Input {
+  public:
+    Input();
+    Input(const std::string& filePath);
+    std::vector<Node>& getTrees();
+    int getLeafCount() const;
+    int getTreeCount() const;
+  private:
+    std::vector<Node> trees_;
+    int n_;
+    int t_;
+};
 #endif

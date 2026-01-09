@@ -27,11 +27,10 @@ int main(int argc, char** argv) {
 
     for(auto&& file : arguments){
       std::cout << "# Processing file \"" << file << "\"." << std::endl;
-      std::vector<Node> trees;
-      readFile(file, trees);
-      std::cout << "# Read file \"" << file << "\" containing " << trees.size() << " trees:" << std::endl;
-      for(auto&& tree : trees){
-        std::cout << "# " << tree << ";" << std::endl;
+      auto input = Input(file);
+      std::cout << "# Read file \"" << file << "\" containing " << input.getTreeCount() << " trees with " << input.getLeafCount() << " leafs each:" << std::endl;
+      for(auto&& tree : input.getTrees()){
+        tree.write(std::cout);
       }
     }
 

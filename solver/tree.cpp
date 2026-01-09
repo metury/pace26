@@ -99,6 +99,10 @@ void Node::consolidate() {
   }
 }
 
+void Node::write(std::ostream& os) const {
+  os << *this << ";" << std::endl;
+}
+
 std::ostream& operator<<(std::ostream& os, const Node& n) {
   if (n.getType() == LEAF) {
     os << n.getValue();
@@ -134,15 +138,17 @@ std::istream& operator>>(std::istream& is, Node& n) {
     return is;
 }
 
+Input::Input() : t_(0), n_(0), trees_() {}
 
-void readFile(const std::string& filePath, std::vector<Node>& trees) {
+Input::Input(const std::string& filePath) {
   std::ifstream ifs(filePath);
   std::string line;
   while (getline (ifs, line)) {
     if(line.size() > 0 && line[0] == '#') {
-      //std::cout << "COMMENT" << line << std::endl;
       if(line.size() > 1 && line[1] == 'p') {
-        //#p {t} {n}
+        auto tokens = split(line);
+        t_ = std::stoi(tokens[1]);
+        n_ = std::stoi(tokens[2]);
       } else if(line.size() > 1 && line[1] == 't') {
         //#t precomputed parameters
         //std::vector<std::string> parts = split(line, ' ');
@@ -151,8 +157,20 @@ void readFile(const std::string& filePath, std::vector<Node>& trees) {
       Node tree;
       std::istringstream iss(line);
       iss >> tree;
-      trees.push_back(std::move(tree));
+      trees_.push_back(std::move(tree));
     }
   }
   ifs.close();
+}
+
+std::vector<Node>& Input::getTrees() {
+  return trees_;
+}
+
+int Input::getLeafCount() const {
+  return n_;
+}
+
+int Input::getTreeCount() const {
+  return t_;
 }
