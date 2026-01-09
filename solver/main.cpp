@@ -31,8 +31,10 @@ int main(int argc, char** argv) {
       std::cout << "# Read file \"" << file << "\" containing " << input.getTreeCount() << " trees with " << input.getLeafCount() << " leafs each:" << std::endl;
       input.assignNumbers();
       for(auto&& tree : input.getTrees()){
+        std::cout << "# ";
         tree.write(std::cout);
       }
+      input.getTreeDecomposition().write(std::cout);
     }
 
     return 0;

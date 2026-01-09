@@ -169,9 +169,11 @@ Input::Input(const std::string& filePath) {
         auto tokens = split(line);
         t_ = std::stoi(tokens[1]);
         n_ = std::stoi(tokens[2]);
-      } else if(line.size() > 1 && line[1] == 't') {
-        //#t precomputed parameters
-        //std::vector<std::string> parts = split(line, ' ');
+      } else if(line.size() > 1 && line[1] == 'x') {
+        auto tokens = split(line);
+        if(tokens[1] == "treedecomp") {
+          setTreeDecomposition(tokens[2]);
+        }
       }
     } else {
       Node tree;
@@ -196,7 +198,58 @@ int Input::getTreeCount() const {
 }
 
 void Input::assignNumbers() {
-  for(int i = 0; i < t_; i++) {
+  for(int i = 0; i < t_; ++i) {
     trees_[i].assignNumbers(i + 1, n_);
+  }
+}
+
+void Input::setTreeDecomposition(const std::string& str) {
+  decomp_ = TreeDecomposition(str);
+}
+
+TreeDecomposition& Input::getTreeDecomposition() {
+  return decomp_;
+}
+
+TreeDecomposition::TreeDecomposition(const std::string& str) {
+  auto parts = split(str.substr(1, str.size() - 2), ',');
+  treewidth_ = std::stoi(parts[0]);
+  std::vector<int> bag;
+  bool edges = false;
+  for(int i = 1; i < parts.size(); ++i) {
+    if(edges) {
+      auto const pos = parts[i].find_last_of('[');
+      const auto first = parts[i].substr(pos + 1);
+      edges_.push_back(std::make_tuple(std::stoi(first), std::stoi(parts[++i])));
+    } else {
+      if(parts[i][0] == '[') {
+        if(bag.size() > 0) {
+          bags_.push_back(bag);
+          bag.erase(bag.begin(), bag.end());
+        }
+      }
+      auto const pos = parts[i].find_last_of('[');
+      const auto first = parts[i].substr(pos + 1);
+      bag.push_back(std::stoi(first));
+      auto len = parts[i].length();
+      if(parts[i].size() > 2 && parts[i][len - 2] == ']') {
+        edges = true;
+        bags_.push_back(bag);
+      }
+    }
+  }
+}
+
+void TreeDecomposition::write(std::ostream& os) {
+  os << "TreeWidth: " << treewidth_ << std::endl;
+  os << "Bags:" << std::endl;
+  for (auto&& bag : bags_) {
+    os << "\t";
+    for(auto&& val : bag) os << val << ";";
+    os << std::endl;
+  }
+  os << "Edges:" << std::endl;
+  for(auto&& edge : edges_) {
+    std::cout << "\t[" << std::get<0>(edge) << "," << std::get<1>(edge) << "]" << std::endl;
   }
 }

@@ -54,6 +54,17 @@ class Node {
 std::ostream& operator<<(std::ostream& os, const Node& n);
 std::istream& operator>>(std::istream& is, Node& n);
 
+class TreeDecomposition {
+  public:
+    TreeDecomposition() = default;
+    TreeDecomposition(const std::string& str);
+    void write(std::ostream& os);
+  private:
+    int treewidth_;
+    std::vector<std::vector<int>> bags_;
+    std::vector<std::tuple<int,int>> edges_;
+};
+
 class Input {
   public:
     Input();
@@ -62,9 +73,12 @@ class Input {
     int getLeafCount() const;
     int getTreeCount() const;
     void assignNumbers();
+    void setTreeDecomposition(const std::string& str);
+  TreeDecomposition& getTreeDecomposition();
   private:
     std::vector<Node> trees_;
     int n_;
     int t_;
+    TreeDecomposition decomp_;
 };
 #endif
