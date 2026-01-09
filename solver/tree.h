@@ -35,6 +35,7 @@ class Node {
     NodeType getType() const;
     Node* getLeft() const;
     Node* getRight() const;
+    Node* getRoot();
     std::unique_ptr<Node> removeLeft();
     std::unique_ptr<Node> removeRight();
     /// Force iterative contraction of all 2 degree inner vertices.

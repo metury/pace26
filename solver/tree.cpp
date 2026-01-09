@@ -57,17 +57,29 @@ Node* Node::getRight() const {
   return right_.get();
 }
 
+Node* Node::getRoot() {
+  auto root = this;
+  while(root->parent_ != nullptr) {
+    root = root->parent_;
+  }
+  return root;
+}
+
 NodeType Node::changeType() {
   type_ = type_ == LEAF ? INNER : LEAF;
   return type_;
 }
 
 std::unique_ptr<Node> Node::removeLeft() {
-  return std::move(left_);
+  auto tmp = std::move(left_);
+  getRoot()->consolidate();
+  return std::move(tmp);
 }
 
 std::unique_ptr<Node> Node::removeRight() {
-  return std::move(right_);
+  auto tmp = std::move(right_);
+  getRoot()->consolidate();
+  return std::move(tmp);
 }
 
 void Node::consolidate() {
@@ -79,7 +91,7 @@ void Node::consolidate() {
     } else if(right_ == nullptr) {
       left_ = std::move(left_->left_);
       right_ = std::move(left_->right_);
-    consolidate();
+      consolidate();
     } else {
       left_->consolidate();
       right_->consolidate();

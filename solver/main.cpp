@@ -1,5 +1,6 @@
 #include <iostream>
 #include "tree.h"
+#include "utils.h"
 
 int main(int argc, char** argv) {
   try {
@@ -18,7 +19,6 @@ int main(int argc, char** argv) {
     
     // Remove left tree and consolidate.
     std::unique_ptr<Node> left = tree.removeLeft();
-    tree.consolidate();
 
     std::cout << "Removed left " << *(left.get()) << " and obtained " << tree << std::endl;
 
