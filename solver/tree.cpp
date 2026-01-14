@@ -127,7 +127,6 @@ std::istream &operator>>(std::istream &is, Node &n) {
     return is;
   char next_char = is.peek();
   if (next_char == '(') {
-    n.change_type();
     char delimiter;
     is >> delimiter;
     is >> *(n.add_left());
