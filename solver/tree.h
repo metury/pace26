@@ -27,23 +27,23 @@ class Node {
     Node& operator=(Node&& other) = default;
     /// Delete.
     ~Node() = default;
-    Node* addLeft();
-    Node* addRight();
-    void setValue(int value);
-    int getValue() const;
-    NodeType changeType();
-    NodeType getType() const;
-    Node* getLeft() const;
-    Node* getRight() const;
-    Node* getRoot();
-    std::unique_ptr<Node> removeLeft();
-    std::unique_ptr<Node> removeRight();
+    Node* add_left();
+    Node* add_right();
+    void set_value(int value);
+    int get_value() const;
+    NodeType change_type();
+    NodeType get_type() const;
+    Node* get_left() const;
+    Node* get_right() const;
+    Node* get_root();
+    std::unique_ptr<Node> remove_left();
+    std::unique_ptr<Node> remove_right();
     /// Force iterative contraction of all 2 degree inner vertices.
     void consolidate();
     void write(std::ostream& os) const;
-    void assignNumbers(int i, int n);
+    void assign_numbers(int i, int n);
   private:
-    int assignNumbers(int counter);
+    int assign_numbers_(int counter);
     NodeType type_;
     std::unique_ptr<Node> left_;
     std::unique_ptr<Node> right_;
@@ -69,12 +69,12 @@ class Input {
   public:
     Input();
     Input(const std::string& filePath);
-    std::vector<Node>& getTrees();
-    int getLeafCount() const;
-    int getTreeCount() const;
-    void assignNumbers();
-    void setTreeDecomposition(const std::string& str);
-  TreeDecomposition& getTreeDecomposition();
+    std::vector<Node>& get_trees();
+    int get_leaf_count() const;
+    int get_tree_count() const;
+    void assign_numbers();
+    void set_tree_decomposition(const std::string& str);
+  TreeDecomposition& get_tree_decomposition();
   private:
     std::vector<Node> trees_;
     int n_;

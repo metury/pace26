@@ -6,19 +6,18 @@ int main(int argc, char** argv) {
   try {
     //Create simple tree.
     Node tree;
-    tree.changeType();
-    Node* l = tree.addLeft();
-    l->setValue(5);
-    Node* r = tree.addRight();
-    r->changeType();
-    Node* rr = r->addRight();
-    Node* rl = r->addLeft();
-    rr->setValue(6);
-    rl->setValue(4444);
+    Node* l = tree.add_left();
+    l->set_value(5);
+    Node* r = tree.add_right();
+    r->change_type();
+    Node* rr = r->add_right();
+    Node* rl = r->add_left();
+    rr->set_value(6);
+    rl->set_value(4444);
     std::cout << tree << std::endl;
     
     // Remove left tree and consolidate.
-    std::unique_ptr<Node> left = tree.removeLeft();
+    std::unique_ptr<Node> left = tree.remove_left();
 
     std::cout << "Removed left " << *(left.get()) << " and obtained " << tree << std::endl;
 
@@ -28,13 +27,13 @@ int main(int argc, char** argv) {
     for(auto&& file : arguments){
       std::cout << "# Processing file \"" << file << "\"." << std::endl;
       auto input = Input(file);
-      std::cout << "# Read file \"" << file << "\" containing " << input.getTreeCount() << " trees with " << input.getLeafCount() << " leafs each:" << std::endl;
-      input.assignNumbers();
-      for(auto&& tree : input.getTrees()){
+      std::cout << "# Read file \"" << file << "\" containing " << input.get_tree_count() << " trees with " << input.get_leaf_count() << " leafs each:" << std::endl;
+      input.assign_numbers();
+      for(auto&& tree : input.get_trees()){
         std::cout << "# ";
         tree.write(std::cout);
       }
-      input.getTreeDecomposition().write(std::cout);
+      input.get_tree_decomposition().write(std::cout);
     }
 
     return 0;

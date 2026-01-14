@@ -8,56 +8,58 @@ Node::Node() : type_(LEAF), value_(0), parent_(nullptr) {}
 
 Node::Node(Node* parent) : type_(LEAF), value_(0), parent_(parent) {}
 
-Node::Node(const Node& other) : type_(other.getType()), value_(other.getValue()) {
+Node::Node(const Node& other) : type_(other.get_type()), value_(other.get_value()) {
   if(type_ == INNER) {
-    left_ = std::make_unique<Node>(*other.getLeft());
-    right_ = std::make_unique<Node>(*other.getRight());
+    left_ = std::make_unique<Node>(*other.get_left());
+    right_ = std::make_unique<Node>(*other.get_right());
     left_.get()->parent_ = this;
     right_.get()->parent_ = this;
   }
 }
 
 Node& Node::operator=(const Node& other) {
-  type_ = other.getType();
-  value_ = other.getValue();
-  left_ = std::make_unique<Node>(*other.getLeft());
-  right_ = std::make_unique<Node>(*other.getRight());
+  type_ = other.get_type();
+  value_ = other.get_value();
+  left_ = std::make_unique<Node>(*other.get_left());
+  right_ = std::make_unique<Node>(*other.get_right());
   left_.get()->parent_ = this;
   right_.get()->parent_ = this;
   return *this;
 }
 
-Node* Node::addLeft() {
+Node* Node::add_left() {
+  type_ = INNER;
   left_ = std::make_unique<Node>(this);
   return left_.get();
 }
 
-Node* Node::addRight() {
+Node* Node::add_right() {
+  type_ = INNER;
   right_ = std::make_unique<Node>(this);
   return right_.get();
 }
 
-void Node::setValue(int value) {
+void Node::set_value(int value) {
   value_ = value;
 }
 
-int Node::getValue() const {
+int Node::get_value() const {
   return value_;
 }
 
-NodeType Node::getType() const {
+NodeType Node::get_type() const {
   return type_;
 }
 
-Node* Node::getLeft() const {
+Node* Node::get_left() const {
   return left_.get();
 }
 
-Node* Node::getRight() const {
+Node* Node::get_right() const {
   return right_.get();
 }
 
-Node* Node::getRoot() {
+Node* Node::get_root() {
   auto root = this;
   while(root->parent_ != nullptr) {
     root = root->parent_;
@@ -65,20 +67,20 @@ Node* Node::getRoot() {
   return root;
 }
 
-NodeType Node::changeType() {
+NodeType Node::change_type() {
   type_ = type_ == LEAF ? INNER : LEAF;
   return type_;
 }
 
-std::unique_ptr<Node> Node::removeLeft() {
+std::unique_ptr<Node> Node::remove_left() {
   auto tmp = std::move(left_);
-  getRoot()->consolidate();
+  get_root()->consolidate();
   return std::move(tmp);
 }
 
-std::unique_ptr<Node> Node::removeRight() {
+std::unique_ptr<Node> Node::remove_right() {
   auto tmp = std::move(right_);
-  getRoot()->consolidate();
+  get_root()->consolidate();
   return std::move(tmp);
 }
 
@@ -103,31 +105,31 @@ void Node::write(std::ostream& os) const {
   os << *this << ";" << std::endl;
 }
 
-void Node::assignNumbers(int i, int n) {
-  auto root = getRoot();
+void Node::assign_numbers(int i, int n) {
+  auto root = get_root();
   if(root != this) {
-    root->assignNumbers(i, n);
+    root->assign_numbers(i, n);
   }
   else {
-    assignNumbers(i * (n+1));
+    assign_numbers_(i * (n+1));
   }
 }
 
-int Node::assignNumbers(int counter) {
+int Node::assign_numbers_(int counter) {
   if(type_ == INNER) {
     value_ = counter;
-    auto next = left_->assignNumbers(counter+1);
-    next = right_->assignNumbers(next);
+    auto next = left_->assign_numbers_(counter+1);
+    next = right_->assign_numbers_(next);
     return next;
   }
   return counter;
 }
 
 std::ostream& operator<<(std::ostream& os, const Node& n) {
-  if (n.getType() == LEAF) {
-    os << n.getValue();
+  if (n.get_type() == LEAF) {
+    os << n.get_value();
   } else {
-    os << "(" << *(n.getLeft()) << "," << *(n.getRight()) << ")";
+    os << "(" << *(n.get_left()) << "," << *(n.get_right()) << ")";
   }
   return os;
 }
@@ -136,16 +138,16 @@ std::istream& operator>>(std::istream& is, Node& n) {
     if (is.eof()) return is;
     char next_char = is.peek();
     if (next_char == '(') {
-        n.changeType();
+        n.change_type();
         char delimiter;
         is >> delimiter; 
-        is >> *(n.addLeft());
+        is >> *(n.add_left());
         is >> delimiter;
         if (delimiter != ',') {
             is.setstate(std::ios::failbit);
             return is;
         }
-        is >> *(n.addRight());
+        is >> *(n.add_right());
         is >> delimiter;
         if (delimiter != ')') {
             is.setstate(std::ios::failbit);
@@ -153,7 +155,7 @@ std::istream& operator>>(std::istream& is, Node& n) {
     } else {
       int value;
       is >> value;
-      n.setValue(value);
+      n.set_value(value);
     }
     return is;
 }
@@ -172,7 +174,7 @@ Input::Input(const std::string& filePath) {
       } else if(line.size() > 1 && line[1] == 'x') {
         auto tokens = split(line);
         if(tokens[1] == "treedecomp") {
-          setTreeDecomposition(tokens[2]);
+          set_tree_decomposition(tokens[2]);
         }
       }
     } else {
@@ -185,29 +187,29 @@ Input::Input(const std::string& filePath) {
   ifs.close();
 }
 
-std::vector<Node>& Input::getTrees() {
+std::vector<Node>& Input::get_trees() {
   return trees_;
 }
 
-int Input::getLeafCount() const {
+int Input::get_leaf_count() const {
   return n_;
 }
 
-int Input::getTreeCount() const {
+int Input::get_tree_count() const {
   return t_;
 }
 
-void Input::assignNumbers() {
+void Input::assign_numbers() {
   for(int i = 0; i < t_; ++i) {
-    trees_[i].assignNumbers(i + 1, n_);
+    trees_[i].assign_numbers(i + 1, n_);
   }
 }
 
-void Input::setTreeDecomposition(const std::string& str) {
+void Input::set_tree_decomposition(const std::string& str) {
   decomp_ = TreeDecomposition(str);
 }
 
-TreeDecomposition& Input::getTreeDecomposition() {
+TreeDecomposition& Input::get_tree_decomposition() {
   return decomp_;
 }
 
