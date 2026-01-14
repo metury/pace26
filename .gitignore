@@ -46,3 +46,7 @@ Makefile
 
 # debug information files
 *.dwo
+
+# Doxygen files
+html/
+latex/
