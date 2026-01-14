@@ -150,8 +150,8 @@ std::istream &operator>>(std::istream &is, Node &n) {
 
 Input::Input() : t_(0), n_(0), trees_() {}
 
-Input::Input(const std::string &filePath) {
-  std::ifstream ifs(filePath);
+Input::Input(const std::string &file_path) {
+  std::ifstream ifs(file_path);
   std::string line;
   while (getline(ifs, line)) {
     if (line.size() > 0 && line[0] == '#') {

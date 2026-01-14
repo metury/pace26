@@ -5,8 +5,15 @@
 #include <string>
 #include <vector>
 
+/// Split strings by space.
+/// @param str Input string.
+/// @return Vector of all substrings.
 std::vector<std::string> split(const std::string &str);
 
+/// Split strings by delimiter.
+/// @param str Input string.
+/// @param delimiter Given delimiter.
+/// @return Vector of all substrings.
 std::vector<std::string> split(const std::string &str, char delimiter);
 
 #endif
