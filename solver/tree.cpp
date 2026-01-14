@@ -75,8 +75,20 @@ std::unique_ptr<Node> Node::remove_right() {
   return std::move(tmp);
 }
 
+//! Remove vertices with no descendats.
 void Node::consolidate() {
   if (type_ == INNER) {
+    //! Test this consolidation.
+    if (left_ == nullptr && right_ == nullptr) {
+      if (parent_ != nullptr) {
+        if (parent_->get_left() == this) {
+          parent_->remove_left();
+        } else {
+          parent_->remove_right();
+        }
+        parent_->consolidate();
+      }
+    }
     if (left_ == nullptr) {
       left_ = std::move(right_->left_);
       right_ = std::move(right_->right_);
