@@ -50,3 +50,6 @@ Makefile
 # Doxygen files
 html/
 latex/
+
+# Input files
+input/
