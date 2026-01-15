@@ -38,19 +38,11 @@
 *.app
 pace
 
-# Cmake
 build/
-CMakeFiles/
-CMakeCache.txt
-Makefile
-*.cmake
+docs/
 
 # debug information files
 *.dwo
-
-# Doxygen files
-html/
-latex/
 
 # Input files
 input/
