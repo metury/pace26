@@ -75,7 +75,8 @@ public:
   /// @param n How many leafs the tree has.
   void assign_numbers(int i, int n);
   /// Pseudo sort the tree based on its leafs, left is smaller than right
-  /// descendant.
+  /// descendant. Lexicographically: first, sum of leaf labels and second,
+  /// minimum label.
   void sort();
 
 private:
