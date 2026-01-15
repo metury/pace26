@@ -74,12 +74,18 @@ public:
   /// @param i Which tree is this.
   /// @param n How many leafs the tree has.
   void assign_numbers(int i, int n);
+  /// Pseudo sort the tree based on its leafs, left is smaller than right
+  /// descendant.
+  void sort();
 
 private:
   /// Assign numbers to INNER nodes.
   /// @param counter What is the counter for this node.
   /// @return Next free number from the tree below.
   int assign_numbers_(int counter);
+  /// Sort the tree by swapping descendants.
+  /// @return Both minimal value and the sum.
+  std::tuple<int, int> sort_by_swaps_();
   /// Type of this node.
   NodeType type_;
   /// Left descendant.

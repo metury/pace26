@@ -115,6 +115,25 @@ void Node::assign_numbers(int i, int n) {
   }
 }
 
+void Node::sort() { get_root()->sort_by_swaps_(); }
+
+std::tuple<int, int> Node::sort_by_swaps_() {
+  if (type_ == LEAF) {
+    return {value_, value_};
+  } else {
+    auto left = left_->sort_by_swaps_();
+    auto right = right_->sort_by_swaps_();
+    if (std::get<1>(right) < std::get<1>(left) ||
+        (std::get<1>(right) == std::get<1>(left) &&
+         std::get<0>(right) < std::get<0>(left))) {
+      std::swap(left_, right_);
+    }
+    return {std::get<0>(left) < std::get<0>(right) ? std::get<0>(left)
+                                                   : std::get<0>(right),
+            std::get<1>(left) + std::get<1>(right)};
+  }
+}
+
 int Node::assign_numbers_(int counter) {
   if (type_ == INNER) {
     value_ = counter;
