@@ -32,7 +32,6 @@ int main(int argc, char **argv) {
                 << input.get_leaf_count() << " leafs each:" << std::endl;
       input.assign_numbers();
       for (auto &&tree : input.get_trees()) {
-        tree.sort();
         std::cout << "# ";
         tree.write(std::cout);
       }

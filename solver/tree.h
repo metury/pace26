@@ -2,6 +2,7 @@
 #define tree_h_
 
 #include <memory>
+#include <sstream>
 #include <vector>
 
 /// Type of nodes, either LEAF or INNER.
@@ -110,6 +111,18 @@ std::ostream &operator<<(std::ostream &os, const Node &n);
 /// @param n Where to store the node.
 /// @return Changed input stream.
 std::istream &operator>>(std::istream &is, Node &n);
+
+inline bool operator==(Node &lhs, Node &rhs) {
+  // Simplest way to compare if two trees are exactly the same.
+  // But it probably underperforms.
+  std::ostringstream los;
+  std::ostringstream ros;
+  lhs.sort();
+  rhs.sort();
+  lhs.write(los);
+  rhs.write(ros);
+  return los.str() == ros.str();
+}
 
 /// Tree decomposition of the display graph.
 class TreeDecomposition {
