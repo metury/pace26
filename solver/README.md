@@ -7,7 +7,9 @@ So far only few things were done... More will follow.
 To compile use cmake and then make. Afterwards you may run the program. Inputs are assumed to be in files presented as arguments.
 
 ```bash
-cmake .
+mkdir build
+cd build
+cmake ..
 make
 ./pace input1 input2 ...
 ```
@@ -34,6 +36,8 @@ Therefore we could use doxygen to generate documentation.
 
 ```bash
 doxygen
+
+cd docs
 
 # Open web page documentation.
 xdg-open html/index.html
