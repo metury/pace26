@@ -224,6 +224,18 @@ void Input::set_tree_decomposition(const std::string &str) {
 
 TreeDecomposition &Input::get_tree_decomposition() { return decomp_; }
 
+bool Input::are_identical() {
+  trees_[0].sort();
+  for (int i = 1; i < trees_.size(); ++i) {
+    trees_[i].sort();
+    if (trees_[i - 1] != trees_[i]) {
+      std::cout << trees_[i - 1] << trees_[i] << std::endl;
+      return false;
+    }
+  }
+  return true;
+}
+
 TreeDecomposition::TreeDecomposition(const std::string &str) {
   auto parts = split(str.substr(1, str.size() - 2), ',');
   treewidth_ = std::stoi(parts[0]);

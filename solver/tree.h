@@ -124,6 +124,8 @@ inline bool operator==(Node &lhs, Node &rhs) {
   return los.str() == ros.str();
 }
 
+inline bool operator!=(Node &lhs, Node &rhs) { return !(lhs == rhs); }
+
 /// Tree decomposition of the display graph.
 class TreeDecomposition {
 public:
@@ -170,6 +172,9 @@ public:
   /// Get reference to the tree decomposition.
   /// @return Tree decomposition.
   TreeDecomposition &get_tree_decomposition();
+  /// Check if the trees are exactly same.
+  /// @retunr True if all are exactly same, false otherwise.
+  bool are_identical();
 
 private:
   /// Array of all trees.
