@@ -12,6 +12,9 @@ enum NodeType {
   INTERNAL,
 };
 
+/// Special label for root as an extra leaf.
+const int ROOT_LABEL = -1;
+
 /// Node class for trees.
 class Node {
 public:
@@ -20,6 +23,13 @@ public:
   /// Constructor with setting parent.
   /// @param parent Pointer to its parent.
   Node(Node *parent);
+  /// Constructor with known value.
+  /// @param value Its initial value.
+  Node(int value);
+  /// Constructor with setting parent and value.
+  /// @param parent Pointer to its parent.
+  /// @param value Its initial value.
+  Node(Node *parent, int value);
   /// (Deep) Copy constructor.
   /// @param other Second node from which we copy.
   Node(const Node &other);
@@ -40,18 +50,17 @@ public:
   /// Add right descendant and set type to LEAF.
   /// @return Pointer to the new descendant.
   Node *add_right();
-  /// Set value of current node.
-  /// @param value Its new value.
-  void set_value(int value);
-  /// Get the value stored in this node.
-  /// @return Its stored value.
-  int get_value() const;
+  /// Add new leaf "rho" as a root.
+  Node add_root_leaf();
+  /// Assign numbers to all nodes including INTERNAL nodes by a predefined way.
+  /// @param i Which tree is this.
+  /// @param n How many leafs the tree has.
+  void assign_numbers(int i, int n);
   /// Change the type of this node.
   /// @return New and changed type.
   NodeType change_type();
-  /// Get current node type.
-  /// @return Current node type.
-  NodeType get_type() const;
+  /// Force iterative contraction of all 2 degree inner vertices.
+  void consolidate();
   /// Get pointer to the left descendant.
   /// @return Pointer (monitor) to its left descendant.
   Node *get_left() const;
@@ -61,27 +70,33 @@ public:
   /// Traverse the tree and return the root.
   /// @return Root of this tree.
   Node *get_root();
+  inline const Node *get_root() const { return get_root(); };
+  /// Get current node type.
+  /// @return Current node type.
+  NodeType get_type() const;
+  /// Get the value stored in this node.
+  /// @return Its stored value.
+  int get_value() const;
   /// Remove the left descendant and also consolidate the tree.
   /// @return Its left descendant which was moved.
   std::unique_ptr<Node> remove_left();
   /// Remove the right descendant and also consolidate the tree.
   /// @return Its right descendant which was moved.
   std::unique_ptr<Node> remove_right();
-  /// Force iterative contraction of all 2 degree inner vertices.
-  void consolidate();
+  void set_left(Node n);
+  void set_right(Node n);
+  /// Set value of current node.
+  /// @param value Its new value.
+  void set_value(int value);
+  /// Pseudo sort the tree based on its leafs, left is smaller than right
+  /// descendant. Lexicographically: first, sum of leaf labels and second,
+  /// minimum label.
+  void sort();
   /// Output the tree to some ostream in a Newick notation.
   /// @param os Which output stream to use.
   void write(std::ostream &os) const;
   /// Output the tree to standard outpu.
   inline void write() const { write(std::cout); };
-  /// Assign numbers to all nodes including INTERNAL nodes by a predefined way.
-  /// @param i Which tree is this.
-  /// @param n How many leafs the tree has.
-  void assign_numbers(int i, int n);
-  /// Pseudo sort the tree based on its leafs, left is smaller than right
-  /// descendant. Lexicographically: first, sum of leaf labels and second,
-  /// minimum label.
-  void sort();
 
 private:
   /// Assign numbers to INTERNAL nodes.
@@ -91,14 +106,14 @@ private:
   /// Sort the tree by swapping descendants.
   /// @return Both minimal value and the sum.
   std::tuple<int, int> sort_by_swaps_();
-  /// Type of this node.
-  NodeType type_;
   /// Left descendant.
   std::unique_ptr<Node> left_;
   /// Right descendant.
   std::unique_ptr<Node> right_;
   /// Monitor pointer to parent if exists.
   Node *parent_;
+  /// Type of this node.
+  NodeType type_;
   /// Value stored in this node.
   int value_;
 };
@@ -150,12 +165,12 @@ public:
   void write(std::ostream &os);
 
 private:
-  /// Treewidth of the tree decomposition.
-  int treewidth_;
   /// Set of bags. IDs are for node ids in the trees.
   std::vector<std::vector<int>> bags_;
   /// Set of edges between bags. IDs are for bags in their ordering.
   std::vector<std::tuple<int, int>> edges_;
+  /// Treewidth of the tree decomposition.
+  int treewidth_;
 };
 
 /// All the input provided. Including trees and tree decomposition.
@@ -166,35 +181,37 @@ public:
   /// Constructor for parsing input from a file.
   /// @param file_path Path to the file.
   Input(const std::string &file_path);
-  /// Get reference to all trees.
-  /// @return Reference to all trees.
-  std::vector<Node> &get_trees();
+  /// Add all extra leaves.
+  void add_root_leafs();
+  /// Check if the trees are exactly same.
+  /// @return True if all are exactly same, false otherwise.
+  bool are_identical();
+  /// Assign numbers to all trees.
+  void assign_numbers();
   /// Get the leaf count, which is same for all trees.
   /// @return Leaf count.
   int get_leaf_count() const;
   /// Get the tree count.
   /// @return Tree count.
   int get_tree_count() const;
-  /// Assign numbers to all trees.
-  void assign_numbers();
-  /// Set the tree decomposition by parsing its string representation.
-  /// @param str Its string representation.
-  void set_tree_decomposition(const std::string &str);
   /// Get reference to the tree decomposition.
   /// @return Tree decomposition.
   TreeDecomposition &get_tree_decomposition();
-  /// Check if the trees are exactly same.
-  /// @return True if all are exactly same, false otherwise.
-  bool are_identical();
+  /// Get reference to all trees.
+  /// @return Reference to all trees.
+  std::vector<Node> &get_trees();
+  /// Set the tree decomposition by parsing its string representation.
+  /// @param str Its string representation.
+  void set_tree_decomposition(const std::string &str);
 
 private:
-  /// Array of all trees.
-  std::vector<Node> trees_;
+  /// The tree decomposition.
+  TreeDecomposition decomp_;
   /// Number of leafs in each tree.
   int n_;
   /// Number of trees.
   int t_;
-  /// The tree decomposition.
-  TreeDecomposition decomp_;
+  /// Array of all trees.
+  std::vector<Node> trees_;
 };
 #endif

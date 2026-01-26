@@ -2,11 +2,21 @@
 #include "utils.h"
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <sstream>
+
+// ==========
+// == Node ==
+// ==========
 
 Node::Node() : type_(LEAF), value_(0), parent_(nullptr) {}
 
 Node::Node(Node *parent) : type_(LEAF), value_(0), parent_(parent) {}
+
+Node::Node(int value) : type_(LEAF), value_(value), parent_(nullptr) {}
+
+Node::Node(Node *parent, int value)
+    : type_(LEAF), value_(value), parent_(parent) {}
 
 Node::Node(const Node &other)
     : type_(other.get_type()), value_(other.get_value()) {
@@ -38,6 +48,18 @@ Node *Node::add_right() {
   type_ = INTERNAL;
   right_ = std::make_unique<Node>(this);
   return right_.get();
+}
+
+void Node::set_left(Node n) {
+  left_ = std::make_unique<Node>(n);
+  type_ = INTERNAL;
+  n.parent_ = this;
+}
+
+void Node::set_right(Node n) {
+  right_ = std::make_unique<Node>(n);
+  type_ = INTERNAL;
+  n.parent_ = this;
 }
 
 void Node::set_value(int value) { value_ = value; }
@@ -102,6 +124,14 @@ void Node::consolidate() {
       right_->consolidate();
     }
   }
+}
+
+Node Node::add_root_leaf() {
+  auto root = get_root();
+  auto new_root = Node();
+  new_root.set_left(std::move(*root));
+  new_root.set_right(Node(&new_root, ROOT_LABEL));
+  return new_root;
 }
 
 void Node::write(std::ostream &os) const { os << *this << ";" << std::endl; }
@@ -179,6 +209,10 @@ std::istream &operator>>(std::istream &is, Node &n) {
   return is;
 }
 
+// ===========
+// == Input ==
+// ===========
+
 Input::Input() : t_(0), n_(0), trees_() {}
 
 Input::Input(const std::string &file_path) {
@@ -235,6 +269,16 @@ bool Input::are_identical() {
   }
   return true;
 }
+
+void Input::add_root_leafs() {
+  for (auto i = 0; i < trees_.size(); ++i) {
+    trees_[i] = trees_[i].add_root_leaf();
+  }
+}
+
+// =======================
+// == TreeDecomposition ==
+// =======================
 
 TreeDecomposition::TreeDecomposition(const std::string &str) {
   auto parts = split(str.substr(1, str.size() - 2), ',');
