@@ -6,10 +6,10 @@
 #include <sstream>
 #include <vector>
 
-/// Type of nodes, either LEAF or INNER.
+/// Type of nodes, either LEAF or INTERNAL.
 enum NodeType {
   LEAF,
-  INNER,
+  INTERNAL,
 };
 
 /// Node class for trees.
@@ -74,7 +74,7 @@ public:
   void write(std::ostream &os) const;
   /// Output the tree to standard outpu.
   inline void write() const { write(std::cout); };
-  /// Assign numbers to all nodes including INNER nodes by a predefined way.
+  /// Assign numbers to all nodes including INTERNAL nodes by a predefined way.
   /// @param i Which tree is this.
   /// @param n How many leafs the tree has.
   void assign_numbers(int i, int n);
@@ -84,7 +84,7 @@ public:
   void sort();
 
 private:
-  /// Assign numbers to INNER nodes.
+  /// Assign numbers to INTERNAL nodes.
   /// @param counter What is the counter for this node.
   /// @return Next free number from the tree below.
   int assign_numbers_(int counter);

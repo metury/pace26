@@ -10,7 +10,7 @@ Node::Node(Node *parent) : type_(LEAF), value_(0), parent_(parent) {}
 
 Node::Node(const Node &other)
     : type_(other.get_type()), value_(other.get_value()) {
-  if (type_ == INNER) {
+  if (type_ == INTERNAL) {
     left_ = std::make_unique<Node>(*other.get_left());
     right_ = std::make_unique<Node>(*other.get_right());
     left_.get()->parent_ = this;
@@ -29,13 +29,13 @@ Node &Node::operator=(const Node &other) {
 }
 
 Node *Node::add_left() {
-  type_ = INNER;
+  type_ = INTERNAL;
   left_ = std::make_unique<Node>(this);
   return left_.get();
 }
 
 Node *Node::add_right() {
-  type_ = INNER;
+  type_ = INTERNAL;
   right_ = std::make_unique<Node>(this);
   return right_.get();
 }
@@ -59,7 +59,7 @@ Node *Node::get_root() {
 }
 
 NodeType Node::change_type() {
-  type_ = type_ == LEAF ? INNER : LEAF;
+  type_ = type_ == LEAF ? INTERNAL : LEAF;
   return type_;
 }
 
@@ -77,7 +77,7 @@ std::unique_ptr<Node> Node::remove_right() {
 
 //! Remove vertices with no descendats.
 void Node::consolidate() {
-  if (type_ == INNER) {
+  if (type_ == INTERNAL) {
     //! Test this consolidation.
     if (left_ == nullptr && right_ == nullptr) {
       if (parent_ != nullptr) {
@@ -135,7 +135,7 @@ std::tuple<int, int> Node::sort_by_swaps_() {
 }
 
 int Node::assign_numbers_(int counter) {
-  if (type_ == INNER) {
+  if (type_ == INTERNAL) {
     value_ = counter;
     auto next = left_->assign_numbers_(counter + 1);
     next = right_->assign_numbers_(next);
