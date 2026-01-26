@@ -1,6 +1,7 @@
 #ifndef tree_h_
 #define tree_h_
 
+#include <iostream>
 #include <memory>
 #include <sstream>
 #include <vector>
@@ -71,6 +72,8 @@ public:
   /// Output the tree to some ostream in a Newick notation.
   /// @param os Which output stream to use.
   void write(std::ostream &os) const;
+  /// Output the tree to standard outpu.
+  inline void write() const { write(std::cout); };
   /// Assign numbers to all nodes including INNER nodes by a predefined way.
   /// @param i Which tree is this.
   /// @param n How many leafs the tree has.
@@ -112,6 +115,10 @@ std::ostream &operator<<(std::ostream &os, const Node &n);
 /// @return Changed input stream.
 std::istream &operator>>(std::istream &is, Node &n);
 
+/// Compare two trees if they are exactly same.
+/// @param lhs Tree on the left hand side.
+/// @param rhs Tree on the right hand side.
+/// @return True if the trees exactly match.
 inline bool operator==(Node &lhs, Node &rhs) {
   // Simplest way to compare if two trees are exactly the same.
   // But it probably underperforms.
@@ -124,6 +131,10 @@ inline bool operator==(Node &lhs, Node &rhs) {
   return los.str() == ros.str();
 }
 
+/// Compare two trees if they are not exactly same.
+/// @param lhs Tree on the left hand side.
+/// @param rhs Tree on the right hand side.
+/// @return False if the trees exactly match.
 inline bool operator!=(Node &lhs, Node &rhs) { return !(lhs == rhs); }
 
 /// Tree decomposition of the display graph.
@@ -173,7 +184,7 @@ public:
   /// @return Tree decomposition.
   TreeDecomposition &get_tree_decomposition();
   /// Check if the trees are exactly same.
-  /// @retunr True if all are exactly same, false otherwise.
+  /// @return True if all are exactly same, false otherwise.
   bool are_identical();
 
 private:

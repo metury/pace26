@@ -35,7 +35,7 @@ void process_input_file(const std::string &file) {
   }
   for (auto &&tree : input.get_trees()) {
     std::cout << "# ";
-    tree.write(std::cout);
+    tree.write();
   }
   input.get_tree_decomposition().write(std::cout);
 }
