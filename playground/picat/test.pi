@@ -9,7 +9,7 @@ main() =>
 	selection(VarSels),
   choice(ValChoices),
   Strategies = [[VarSel, ValChoice] : VarSel in VarSels, ValChoice in ValChoices],
-  Timeout = 100,
+  Timeout = 1000,
 
   foreach(N in Ns)
     foreach(Strategy in Strategies)

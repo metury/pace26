@@ -26,8 +26,11 @@ maf(NumLeaves, Cost, Active, Vs, Edges) =>
 
   % Add root to child edges. And conect them.
   foreach(Child in 1..MaxNodes)
-      Es := [{0, Child, RootEdges[Child]} | Es]
+      Es := [{0, Child, RootEdges[Child]} | Es],
   end,
+
+  V #= 1,
+  count(V, RootEdges, #=<, NumLeaves),
   
   % Add all other edges.
   foreach(Parent in (NumLeaves + 1)..MaxNodes)
@@ -46,12 +49,14 @@ maf(NumLeaves, Cost, Active, Vs, Edges) =>
   % Ensure that the tree is binary.
   foreach(Leaf in 1..NumLeaves)
       Outgoing = [B : {P, C, B} in Es, C == Leaf],
-      sum(Outgoing) #= 1
+      count(V,Outgoing,1)
   end,
 
   foreach(Internal in (NumLeaves + 1)..MaxNodes)
     Outgoing = [B : {P, C, B} in Es, P == Internal],
-    sum(Outgoing) #= 2 #\/ sum(Outgoing) #= 0
+    Ingoing = [B : {P, C, B} in Es, C == Internal],
+    count(V, Outgoing, #=<, 2),
+    count(V, Ingoing, #=<, 1)
   end,
 
   Edges = Es,
@@ -60,7 +65,7 @@ maf(NumLeaves, Cost, Active, Vs, Edges) =>
 
 fancy_print(Cost, Edges) =>
   printf("Number of Trees: %d\n", Cost),
-  foreach({P, C, B} in Eedges)
+  foreach({P, C, B} in Edges)
       if (B == 1) then
           printf("Edge: %d -- %d\n", P, C)
       end
@@ -69,6 +74,11 @@ fancy_print(Cost, Edges) =>
 
 main =>
   maf(4, Cost, Active, Vs, Es),
-  solve([$min(Cost)], [Active, [B : {_,_,B} in Es]]),  
+  solve([$min(Cost)] ++ [constr, down], [Active, [B : {_,_,B} in Es]]),  
   fancy_print(Cost, Es).
-  
+
+main([Nstr]) =>
+  N := parse_term(Nstr),
+  maf(N, Cost, Active, Vs, Es),
+  solve([$min(Cost)] ++ [constr, down], [Active, [B : {_, _, B} in Es]]),
+  fancy_print(Cost, Es).
