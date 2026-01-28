@@ -1,4 +1,4 @@
-import cp.
+import sat.
 
 % We have virtual root and all its trees from forest as its children.
 % We use the global constraint tree(Vs, Es).
@@ -26,7 +26,7 @@ maf(NumLeaves, Cost, Active, Vs, Edges) =>
 
   % Add root to child edges. And conect them.
   foreach(Child in 1..MaxNodes)
-      Es := [{0, Child, RootEdges[Child]} | Es],
+      Es := [{0, Child, RootEdges[Child]} | Es]
   end,
 
   V #= 1,
@@ -56,6 +56,7 @@ maf(NumLeaves, Cost, Active, Vs, Edges) =>
     Outgoing = [B : {P, C, B} in Es, P == Internal],
     Ingoing = [B : {P, C, B} in Es, C == Internal],
     count(V, Outgoing, #=<, 2),
+    count(V, Outgoing, #!=, 1),
     count(V, Ingoing, #=<, 1)
   end,
 
@@ -72,7 +73,7 @@ fancy_print(Cost, Edges) =>
   end.
 
 
-main =>
+main() =>
   maf(4, Cost, Active, Vs, Es),
   solve([$min(Cost)] ++ [constr, down], [Active, [B : {_,_,B} in Es]]),  
   fancy_print(Cost, Es).
