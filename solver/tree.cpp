@@ -9,15 +9,6 @@
 // == Node ==
 // ==========
 
-Node::Node() : type_(LEAF), value_(0), parent_(nullptr) {}
-
-Node::Node(Node *parent) : type_(LEAF), value_(0), parent_(parent) {}
-
-Node::Node(int value) : type_(LEAF), value_(value), parent_(nullptr) {}
-
-Node::Node(Node *parent, int value)
-    : type_(LEAF), value_(value), parent_(parent) {}
-
 Node::Node(const Node &other)
     : type_(other.get_type()), value_(other.get_value()) {
   if (type_ == INTERNAL) {
@@ -38,6 +29,13 @@ Node &Node::operator=(const Node &other) {
   return *this;
 }
 
+void Node::add_descendant(int value, Node *n) {
+  descendants_.insert_or_assign(value, n);
+  if (parent_ != nullptr) {
+    parent_->add_descendant(value, n);
+  }
+}
+
 Node *Node::add_left() {
   type_ = INTERNAL;
   left_ = std::make_unique<Node>(this);
@@ -50,34 +48,18 @@ Node *Node::add_right() {
   return right_.get();
 }
 
-void Node::set_left(Node n) {
-  left_ = std::make_unique<Node>(n);
-  type_ = INTERNAL;
-  n.parent_ = this;
+Node Node::add_root_leaf() {
+  auto root = get_root();
+  auto new_root = Node();
+  new_root.set_left(std::move(*root));
+  new_root.set_right(Node(&new_root, ROOT_LABEL));
+  new_root.updated_descendants();
+  return new_root;
 }
 
-void Node::set_right(Node n) {
-  right_ = std::make_unique<Node>(n);
-  type_ = INTERNAL;
-  n.parent_ = this;
-}
-
-void Node::set_value(int value) { value_ = value; }
-
-int Node::get_value() const { return value_; }
-
-NodeType Node::get_type() const { return type_; }
-
-Node *Node::get_left() const { return left_.get(); }
-
-Node *Node::get_right() const { return right_.get(); }
-
-Node *Node::get_root() {
-  auto root = this;
-  while (root->parent_ != nullptr) {
-    root = root->parent_;
-  }
-  return root;
+void Node::assign_numbers(int i, int n) {
+  auto root = get_root();
+  root->assign_numbers_(i * (n + 1));
 }
 
 NodeType Node::change_type() {
@@ -85,6 +67,30 @@ NodeType Node::change_type() {
   return type_;
 }
 
+void Node::consolidate() {
+  get_root()->consolidate_();
+  updated_descendants();
+}
+
+Node *Node::lca(int first, int second) {
+  auto root = get_root();
+  auto x = root->get_descendants().at(first);
+  auto y = root->get_descendants().at(second);
+  return lca(*x, *y);
+}
+
+template <typename... Args>
+  requires(std::integral<Args> && ...)
+Node *Node::lca(Args... values) {
+  return fold_lca_(values...);
+}
+
+Node *Node::get_root() {
+  auto root = this;
+  while (root->parent_ != nullptr)
+    root = root->parent_;
+  return root;
+}
 std::unique_ptr<Node> Node::remove_left() {
   auto tmp = std::move(left_);
   get_root()->consolidate();
@@ -97,8 +103,74 @@ std::unique_ptr<Node> Node::remove_right() {
   return std::move(tmp);
 }
 
-//! Remove vertices with no descendats.
-void Node::consolidate() {
+void Node::set_left(Node n) {
+  left_ = std::make_unique<Node>(n);
+  type_ = INTERNAL;
+  if (n.get_type() == LEAF && n.get_value() != 0) {
+    add_descendant(n.get_value(), &n);
+  }
+  n.parent_ = this;
+}
+
+void Node::set_right(Node n) {
+  right_ = std::make_unique<Node>(n);
+  type_ = INTERNAL;
+  if (n.get_type() == LEAF && n.get_value() != 0) {
+    add_descendant(n.get_value(), &n);
+  }
+  n.parent_ = this;
+}
+
+void Node::set_value(int value) {
+  value_ = value;
+  if (type_ == LEAF && parent_ != nullptr) {
+    parent_->add_descendant(value, this);
+  }
+}
+
+void Node::sort() {
+  get_root()->sort_by_swaps_();
+  updated_descendants();
+}
+
+void Node::write(std::ostream &os) const { os << *this << ";" << std::endl; }
+
+// ===================
+// == Node - static ==
+// ===================
+
+Node *Node::lca(Node &first, Node &second) {
+  auto x = &first;
+  auto y = &second;
+  while (!x->get_descendants().contains(second.get_value()) &&
+         !y->get_descendants().contains(first.get_value())) {
+    if (x->get_parent() == nullptr || y->get_parent() == nullptr)
+      return nullptr;
+    x = x->get_parent();
+    y = y->get_parent();
+  }
+  if (x->get_descendants().contains(second.get_value())) {
+    return x;
+  } else {
+    return y;
+  }
+}
+
+// ====================
+// == Node - private ==
+// ====================
+
+int Node::assign_numbers_(int counter) {
+  if (type_ == INTERNAL) {
+    value_ = counter;
+    auto next = left_->assign_numbers_(counter + 1);
+    next = right_->assign_numbers_(next);
+    return next;
+  }
+  return counter;
+}
+
+void Node::consolidate_() {
   if (type_ == INTERNAL) {
     //! Test this consolidation.
     if (left_ == nullptr && right_ == nullptr) {
@@ -108,44 +180,29 @@ void Node::consolidate() {
         } else {
           parent_->remove_right();
         }
-        parent_->consolidate();
+        parent_->consolidate_();
       }
     }
     if (left_ == nullptr) {
       left_ = std::move(right_->left_);
       right_ = std::move(right_->right_);
-      consolidate();
+      consolidate_();
     } else if (right_ == nullptr) {
       left_ = std::move(left_->left_);
       right_ = std::move(left_->right_);
-      consolidate();
+      consolidate_();
     } else {
-      left_->consolidate();
-      right_->consolidate();
+      left_->consolidate_();
+      right_->consolidate_();
     }
   }
 }
 
-Node Node::add_root_leaf() {
-  auto root = get_root();
-  auto new_root = Node();
-  new_root.set_left(std::move(*root));
-  new_root.set_right(Node(&new_root, ROOT_LABEL));
-  return new_root;
+template <std::integral First, std::integral... Rest>
+Node *Node::fold_lca_(Node *accumulated, First next, Rest... rest) {
+  auto res = lca(accumulated, next);
+  return fold_lca_(res, rest...);
 }
-
-void Node::write(std::ostream &os) const { os << *this << ";" << std::endl; }
-
-void Node::assign_numbers(int i, int n) {
-  auto root = get_root();
-  if (root != this) {
-    root->assign_numbers(i, n);
-  } else {
-    assign_numbers_(i * (n + 1));
-  }
-}
-
-void Node::sort() { get_root()->sort_by_swaps_(); }
 
 std::tuple<int, int> Node::sort_by_swaps_() {
   if (type_ == LEAF) {
@@ -164,15 +221,29 @@ std::tuple<int, int> Node::sort_by_swaps_() {
   }
 }
 
-int Node::assign_numbers_(int counter) {
-  if (type_ == INTERNAL) {
-    value_ = counter;
-    auto next = left_->assign_numbers_(counter + 1);
-    next = right_->assign_numbers_(next);
-    return next;
+void Node::updated_descendants_() {
+  if (type_ == LEAF) {
+    descendants_.clear();
+    return;
   }
-  return counter;
+  left_->updated_descendants_();
+  right_->updated_descendants_();
+  descendants_.clear();
+  if (left_->get_type() == LEAF) {
+    descendants_.insert_or_assign(left_->get_value(), get_left());
+  }
+  if (right_->get_type() == LEAF) {
+    descendants_.insert_or_assign(right_->get_value(), get_right());
+  }
+  descendants_.insert(left_->get_descendants().begin(),
+                      left_->get_descendants().end());
+  descendants_.insert(right_->get_descendants().begin(),
+                      right_->get_descendants().end());
 }
+
+// ======================
+// == Node - operators ==
+// ======================
 
 std::ostream &operator<<(std::ostream &os, const Node &n) {
   if (n.get_type() == LEAF) {
@@ -209,11 +280,21 @@ std::istream &operator>>(std::istream &is, Node &n) {
   return is;
 }
 
+bool operator==(Node &lhs, Node &rhs) {
+  // Simplest way to compare if two trees are exactly the same.
+  // But it probably underperforms.
+  std::ostringstream los;
+  std::ostringstream ros;
+  lhs.sort();
+  rhs.sort();
+  lhs.write(los);
+  rhs.write(ros);
+  return los.str() == ros.str();
+}
+
 // ===========
 // == Input ==
 // ===========
-
-Input::Input() : t_(0), n_(0), trees_() {}
 
 Input::Input(const std::string &file_path) {
   std::ifstream ifs(file_path);
@@ -240,12 +321,6 @@ Input::Input(const std::string &file_path) {
   ifs.close();
 }
 
-std::vector<Node> &Input::get_trees() { return trees_; }
-
-int Input::get_leaf_count() const { return n_; }
-
-int Input::get_tree_count() const { return t_; }
-
 void Input::assign_numbers() {
   for (int i = 0; i < t_; ++i) {
     trees_[i].assign_numbers(i + 1, n_);
@@ -255,8 +330,6 @@ void Input::assign_numbers() {
 void Input::set_tree_decomposition(const std::string &str) {
   decomp_ = TreeDecomposition(str);
 }
-
-TreeDecomposition &Input::get_tree_decomposition() { return decomp_; }
 
 bool Input::are_identical() {
   trees_[0].sort();

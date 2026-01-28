@@ -17,6 +17,14 @@ void process_input_file(const std::string &file) {
   for (auto &&tree : input.get_trees()) {
     std::cout << "# Tree " << i++ << ": ";
     tree.write();
+    std::cout << "# Descendants: ";
+    for (auto &&[key, value] : tree.get_descendants()) {
+      std::cout << key << ", ";
+    }
+    std::cout << std::endl;
+    auto lca = tree.lca(1, 2);
+    if (lca != nullptr)
+      std::cout << "# LCA of 1 and 2: " << lca->get_value() << std::endl;
   }
   i = 1;
   input.add_root_leafs();

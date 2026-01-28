@@ -1,9 +1,10 @@
 #ifndef tree_h_
 #define tree_h_
 
+#include <concepts>
 #include <iostream>
 #include <memory>
-#include <sstream>
+#include <unordered_map>
 #include <vector>
 
 /// Type of nodes, either LEAF or INTERNAL.
@@ -13,23 +14,24 @@ enum NodeType {
 };
 
 /// Special label for root as an extra leaf.
-const int ROOT_LABEL = -1;
+const int ROOT_LABEL = -1; // It can be changed!
 
 /// Node class for trees.
 class Node {
 public:
   /// Constructor. Set 0 value, LEAF and no null pointers.
-  Node();
+  inline Node() : type_(LEAF), value_(0), parent_(nullptr) {}
   /// Constructor with setting parent.
   /// @param parent Pointer to its parent.
-  Node(Node *parent);
+  inline Node(Node *parent) : type_(LEAF), value_(0), parent_(parent) {}
   /// Constructor with known value.
   /// @param value Its initial value.
-  Node(int value);
+  inline Node(int value) : type_(LEAF), value_(value), parent_(nullptr) {}
   /// Constructor with setting parent and value.
   /// @param parent Pointer to its parent.
   /// @param value Its initial value.
-  Node(Node *parent, int value);
+  inline Node(Node *parent, int value)
+      : type_(LEAF), value_(value), parent_(parent) {}
   /// (Deep) Copy constructor.
   /// @param other Second node from which we copy.
   Node(const Node &other);
@@ -42,8 +44,12 @@ public:
   /// Move assignement.
   /// @param other Second node from which we move.
   Node &operator=(Node &&other) = default;
-  /// Delete.
+  /// Destructor.
   ~Node() = default;
+  /// Add values and pointers to the descendants, propagate upwards.
+  /// @param value What is the value of the descendant.
+  /// @param n Pointer to that descendant.
+  void add_descendant(int value, Node *n);
   /// Add left descendant and set type to LEAF.
   /// @return Pointer to the new descendant.
   Node *add_left();
@@ -61,29 +67,58 @@ public:
   NodeType change_type();
   /// Force iterative contraction of all 2 degree inner vertices.
   void consolidate();
+  /// Find lowest common ancestor for two nodes.
+  /// @param first First node.
+  /// @param second Second node.
+  /// @return Pointer to their LCA.
+  static Node *lca(Node &first, Node &second);
+  /// Find lowest common ancestor for two leafs.
+  /// @param first Value of the first leaf.
+  /// @param second Value of the second leaf.
+  /// @return Pointer to their LCA.
+  Node *lca(int first, int second);
+  /// Find lowest common ancestor for multiple leafs by their values.
+  /// @param values Sequence of leaf values.
+  template <typename... Args>
+    requires(std::integral<Args> && ...)
+  Node *lca(Args... values);
+  /// Get the map of descendants and its pointers.
+  /// @return Reference to the map.
+  inline const std::unordered_map<int, Node *> &get_descendants() const {
+    return descendants_;
+  }
   /// Get pointer to the left descendant.
   /// @return Pointer (monitor) to its left descendant.
-  Node *get_left() const;
+  inline Node *get_left() const { return left_.get(); }
+  /// Get pointer to the parent.
+  /// @return Pointer to the parent.
+  inline Node *get_parent() const { return parent_; }
   /// Get pointer to the right descendant.
   /// @return Pointer (monitor) to its right descendant.
-  Node *get_right() const;
+  inline Node *get_right() const { return right_.get(); }
   /// Traverse the tree and return the root.
   /// @return Root of this tree.
   Node *get_root();
+  /// Traverse the tree and return constant root pointer.
+  /// @preturn Constant root of this tree.
   inline const Node *get_root() const { return get_root(); };
   /// Get current node type.
   /// @return Current node type.
-  NodeType get_type() const;
+  inline NodeType get_type() const { return type_; }
   /// Get the value stored in this node.
   /// @return Its stored value.
-  int get_value() const;
+  inline int get_value() const { return value_; }
   /// Remove the left descendant and also consolidate the tree.
   /// @return Its left descendant which was moved.
   std::unique_ptr<Node> remove_left();
   /// Remove the right descendant and also consolidate the tree.
   /// @return Its right descendant which was moved.
   std::unique_ptr<Node> remove_right();
+  /// Set left child to given node.
+  /// @param n Given new left child.
   void set_left(Node n);
+  /// Set right child to given node.
+  /// @param n Given new right child.
   void set_right(Node n);
   /// Set value of current node.
   /// @param value Its new value.
@@ -92,6 +127,8 @@ public:
   /// descendant. Lexicographically: first, sum of leaf labels and second,
   /// minimum label.
   void sort();
+  /// Update all descendants in the tree.
+  inline void updated_descendants() { get_root()->updated_descendants_(); }
   /// Output the tree to some ostream in a Newick notation.
   /// @param os Which output stream to use.
   void write(std::ostream &os) const;
@@ -99,13 +136,26 @@ public:
   inline void write() const { write(std::cout); };
 
 private:
+  /// Recursive finding of LCA by folding the list.
+  /// @param lca Currently found LCA.
+  /// @param next Next value of the leaf.
+  /// @param rest Rest of the leaf values.
+  /// @return Their LCA.
+  template <std::integral First, std::integral... Rest>
+  Node *fold_lca_(Node *lca, First next, Rest... rest);
   /// Assign numbers to INTERNAL nodes.
   /// @param counter What is the counter for this node.
   /// @return Next free number from the tree below.
   int assign_numbers_(int counter);
+  /// Recursive call of consolidation.
+  void consolidate_();
   /// Sort the tree by swapping descendants.
   /// @return Both minimal value and the sum.
   std::tuple<int, int> sort_by_swaps_();
+  /// Recursive call for updating descendants.
+  void updated_descendants_();
+  /// Map of descendant. Also can be used as a set of descendants.
+  std::unordered_map<int, Node *> descendants_;
   /// Left descendant.
   std::unique_ptr<Node> left_;
   /// Right descendant.
@@ -134,23 +184,27 @@ std::istream &operator>>(std::istream &is, Node &n);
 /// @param lhs Tree on the left hand side.
 /// @param rhs Tree on the right hand side.
 /// @return True if the trees exactly match.
-inline bool operator==(Node &lhs, Node &rhs) {
-  // Simplest way to compare if two trees are exactly the same.
-  // But it probably underperforms.
-  std::ostringstream los;
-  std::ostringstream ros;
-  lhs.sort();
-  rhs.sort();
-  lhs.write(los);
-  rhs.write(ros);
-  return los.str() == ros.str();
-}
+bool operator==(Node &lhs, Node &rhs);
 
 /// Compare two trees if they are not exactly same.
 /// @param lhs Tree on the left hand side.
 /// @param rhs Tree on the right hand side.
 /// @return False if the trees exactly match.
 inline bool operator!=(Node &lhs, Node &rhs) { return !(lhs == rhs); }
+
+/// Compare two nodes if the left hand side is above right hand side.
+/// @param lhs Left hand side of the comparison.
+/// @param rhs Right hand side of the comparison.
+/// @return If rhs is below lhs.
+inline bool operator<(Node &lhs, Node &rhs) {
+  return lhs.get_descendants().contains(rhs.get_value());
+}
+
+/// Compare two nodes if the left hand side is below right hand side.
+/// @param lhs Left hand side of the comparison.
+/// @param rhs Right hand side of the comparison.
+/// @return If rhs is above lhs.
+inline bool operator>(Node &lhs, Node &rhs) { return rhs < lhs; }
 
 /// Tree decomposition of the display graph.
 class TreeDecomposition {
@@ -177,7 +231,7 @@ private:
 class Input {
 public:
   /// Default constructor.
-  Input();
+  inline Input() : t_(0), n_(0) {}
   /// Constructor for parsing input from a file.
   /// @param file_path Path to the file.
   Input(const std::string &file_path);
@@ -190,16 +244,16 @@ public:
   void assign_numbers();
   /// Get the leaf count, which is same for all trees.
   /// @return Leaf count.
-  int get_leaf_count() const;
+  inline int get_leaf_count() const { return n_; }
   /// Get the tree count.
   /// @return Tree count.
-  int get_tree_count() const;
+  inline int get_tree_count() const { return t_; }
   /// Get reference to the tree decomposition.
   /// @return Tree decomposition.
-  TreeDecomposition &get_tree_decomposition();
+  inline TreeDecomposition &get_tree_decomposition() { return decomp_; }
   /// Get reference to all trees.
   /// @return Reference to all trees.
-  std::vector<Node> &get_trees();
+  inline std::vector<Node> &get_trees() { return trees_; }
   /// Set the tree decomposition by parsing its string representation.
   /// @param str Its string representation.
   void set_tree_decomposition(const std::string &str);
