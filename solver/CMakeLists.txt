@@ -6,3 +6,5 @@ project(
   LANGUAGES CXX)
 
 add_executable(pace utils.cpp tree.cpp main.cpp)
+
+target_compile_features(pace PUBLIC cxx_std_20)
