@@ -75,11 +75,11 @@ fancy_print(Cost, Edges) =>
 
 main() =>
   maf(4, Cost, Active, Vs, Es),
-  solve([$min(Cost)] ++ [constr, down], [Active, [B : {_,_,B} in Es]]),  
+  solve([$min(Cost)], [Active, [B : {_,_,B} in Es]]),  
   fancy_print(Cost, Es).
 
 main([Nstr]) =>
   N := parse_term(Nstr),
   maf(N, Cost, Active, Vs, Es),
-  solve([$min(Cost)] ++ [constr, down], [Active, [B : {_, _, B} in Es]]),
+  solve([$min(Cost)], [Active, [B : {_, _, B} in Es]]),
   fancy_print(Cost, Es).
