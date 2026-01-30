@@ -34,7 +34,8 @@ void process_input_file(const std::string &file) {
     std::cout << tree;
     lca.compute(&tree);
     lca.write();
-    std::cout << "LCA for 1 and 2: " << lca.query(1, 2) << std::endl;
+    std::cout << "LCA for 1 and 2: " << std::get<0>(lca.query(1, 2))
+              << std::endl;
   }
 
   i = 1;

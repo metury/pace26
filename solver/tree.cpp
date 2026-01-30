@@ -5,6 +5,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <utility>
 
 // ==========
 // == Node ==
@@ -361,16 +362,17 @@ void LCA::compute(Node *node) {
     return;
   for (auto &&[first, f_n] : node->get_left()->get_descendants()) {
     for (auto &&[second, s_n] : node->get_right()->get_descendants()) {
-      pairs_.insert_or_assign(LCA::get_name_(first, second), node->get_value());
+      pairs_.insert_or_assign(LCA::get_name_(first, second),
+                              std::make_pair(node->get_value(), node));
       for (auto &&[third, t_n] : node->get_right()->get_descendants()) {
         if (third > second)
           triples_.insert_or_assign(LCA::get_name_(first, second, third),
-                                    node->get_value());
+                                    std::make_pair(node->get_value(), node));
       }
       for (auto &&[third, t_n] : node->get_left()->get_descendants()) {
         if (third > first)
           triples_.insert_or_assign(LCA::get_name_(first, second, third),
-                                    node->get_value());
+                                    std::make_pair(node->get_value(), node));
       }
     }
   }
@@ -378,20 +380,18 @@ void LCA::compute(Node *node) {
   compute(node->get_right());
 }
 
-int LCA::query(int first, int second) const {
+std::pair<int, Node *> LCA::query(int first, int second) const {
   return pairs_.at(LCA::get_name_(first, second));
 }
 
-int LCA::query(int first, int second, int third) const {
+std::pair<int, Node *> LCA::query(int first, int second, int third) const {
   return pairs_.at(LCA::get_name_(first, second, third));
 }
 
 std::string LCA::get_name_(int first, int second) const {
   std::ostringstream os;
   if (first > second) {
-    first = first ^ second;
-    second = first ^ second;
-    first = first ^ second;
+    std::swap(first, second);
   }
   os << first << "#" << second;
   return os.str();
@@ -400,18 +400,12 @@ std::string LCA::get_name_(int first, int second) const {
 std::string LCA::get_name_(int first, int second, int third) const {
   std::ostringstream os;
   if (second < first && second < third) {
-    first = first ^ second;
-    second = first ^ second;
-    first = first ^ second;
+    std::swap(first, second);
   } else if (third < first && third < second) {
-    first = first ^ third;
-    third = first ^ third;
-    first = first ^ third;
+    std::swap(first, third);
   }
   if (second > third) {
-    second = second ^ third;
-    third = second ^ third;
-    second = second ^ third;
+    std::swap(second, third);
   }
   os << first << "#" << second << "#" << third;
   return os.str();

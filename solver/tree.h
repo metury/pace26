@@ -194,22 +194,22 @@ public:
   /// Return LCA for two leafs.
   /// @param first First leaf.
   /// @param second Second leaf.
-  /// @return Value of their LCA.
-  int query(int first, int second) const;
+  /// @return Value and node pointer to their LCA.
+  std::pair<int, Node *> query(int first, int second) const;
   /// Return LCA for three leafs.
   /// @param first First leaf.
   /// @param second Second leaf.
   /// @param third Third leaf.
-  /// @return Value of their LCA.
-  int query(int first, int second, int third) const;
+  /// @return Value and node pointer to their LCA.
+  std::pair<int, Node *> query(int first, int second, int third) const;
 
   /// Write all the LCA pairs.
   inline void write() const {
     for (auto &&[val, node] : pairs_) {
-      std::cout << val << ": " << node << std::endl;
+      std::cout << val << ": " << std::get<0>(node) << std::endl;
     }
     for (auto &&[val, node] : triples_) {
-      std::cout << val << ": " << node << std::endl;
+      std::cout << val << ": " << std::get<0>(node) << std::endl;
     }
   }
 
@@ -226,10 +226,10 @@ private:
   /// @return Hash string key.
   std::string get_name_(int first, int second, int third) const;
   /// ALl LCAs for leaf pairs.
-  std::unordered_map<std::string, int> pairs_;
+  std::unordered_map<std::string, std::pair<int, Node *>> pairs_;
   /// All LCAs for leaf triples.
   ///! NOT YET implemented.
-  std::unordered_map<std::string, int> triples_;
+  std::unordered_map<std::string, std::pair<int, Node *>> triples_;
 };
 
 /// Tree decomposition of the display graph.
