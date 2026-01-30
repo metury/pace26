@@ -1,7 +1,6 @@
 #ifndef tree_h_
 #define tree_h_
 
-#include <concepts>
 #include <iostream>
 #include <memory>
 #include <unordered_map>
@@ -67,21 +66,6 @@ public:
   NodeType change_type();
   /// Force iterative contraction of all 2 degree inner vertices.
   void consolidate();
-  /// Find lowest common ancestor for two nodes.
-  /// @param first First node.
-  /// @param second Second node.
-  /// @return Pointer to their LCA.
-  static Node *lca(Node &first, Node &second);
-  /// Find lowest common ancestor for two leafs.
-  /// @param first Value of the first leaf.
-  /// @param second Value of the second leaf.
-  /// @return Pointer to their LCA.
-  Node *lca(int first, int second);
-  /// Find lowest common ancestor for multiple leafs by their values.
-  /// @param values Sequence of leaf values.
-  template <typename... Args>
-    requires(std::integral<Args> && ...)
-  Node *lca(Args... values);
   /// Get the map of descendants and its pointers.
   /// @return Reference to the map.
   inline const std::unordered_map<int, Node *> &get_descendants() const {
@@ -136,13 +120,6 @@ public:
   inline void write() const { write(std::cout); };
 
 private:
-  /// Recursive finding of LCA by folding the list.
-  /// @param lca Currently found LCA.
-  /// @param next Next value of the leaf.
-  /// @param rest Rest of the leaf values.
-  /// @return Their LCA.
-  template <std::integral First, std::integral... Rest>
-  Node *fold_lca_(Node *lca, First next, Rest... rest);
   /// Assign numbers to INTERNAL nodes.
   /// @param counter What is the counter for this node.
   /// @return Next free number from the tree below.
@@ -205,6 +182,41 @@ inline bool operator<(Node &lhs, Node &rhs) {
 /// @param rhs Right hand side of the comparison.
 /// @return If rhs is above lhs.
 inline bool operator>(Node &lhs, Node &rhs) { return rhs < lhs; }
+
+/// Precomputing and quering LCA for leafs.
+class LCA {
+public:
+  /// Default constructor.
+  LCA() = default;
+  /// Precomputing all pairs for leafs.
+  /// @param node For which node we precompute recursively.
+  void compute(Node *node);
+
+  /// Return LCA for two leafs.
+  /// @param first First leaf.
+  /// @param second Second leaf.
+  /// @return Value of their LCA.
+  int query(int first, int second) const;
+
+  /// Write all the LCA pairs.
+  inline void write() const {
+    for (auto &&[val, node] : pairs_) {
+      std::cout << val << ": " << node << std::endl;
+    }
+  }
+
+private:
+  /// Create a string key to the map as "first#second".
+  /// @param first First value. Will be the lower.
+  /// @param second Second value.
+  /// @return Hash string key.
+  std::string get_name_(int first, int second) const;
+  /// ALl LCAs for leaf pairs.
+  std::unordered_map<std::string, int> pairs_;
+  /// All LCAs for leaf triples.
+  ///! NOT YET implemented.
+  std::unordered_map<std::string, int> triples_;
+};
 
 /// Tree decomposition of the display graph.
 class TreeDecomposition {

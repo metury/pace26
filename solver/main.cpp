@@ -21,20 +21,25 @@ void process_input_file(const std::string &file) {
     std::cout << "# Tree " << i++ << ": ";
     tree.write();
     // Write the descendants of the root.
-    std::cout << "# Descendants of the root: ";
+    std::cout << "# Descendants of the root[" << tree.get_root()->get_value()
+              << "]: ";
     for (auto &&[key, value] : tree.get_descendants()) {
       std::cout << key << ", ";
     }
-    std::cout << std::endl;
-    // Compute the lca.
-    auto lca = tree.lca(1, 2);
-    std::cout << "# LCA of 1 and 2: " << lca->get_value() << std::endl;
+
+    tree.updated_descendants();
+
+    auto lca = LCA();
+    std::cout << tree;
+    lca.compute(&tree);
+    lca.write();
+    std::cout << "LCA for 1 and 2: " << lca.query(1, 2) << std::endl;
   }
 
   i = 1;
   input.add_root_leafs();
   for (auto &&tree : input.get_trees()) {
-    std::cout << "# Tree with added root " << i << ": ";
+    std::cout << "# Tree with added root " << i++ << ": ";
     tree.write();
   }
 

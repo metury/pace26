@@ -4,6 +4,7 @@
 #include <iostream>
 #include <memory>
 #include <sstream>
+#include <string>
 
 // ==========
 // == Node ==
@@ -58,8 +59,7 @@ Node Node::add_root_leaf() {
 }
 
 void Node::assign_numbers(int i, int n) {
-  auto root = get_root();
-  root->assign_numbers_(i * (n + 1));
+  get_root()->assign_numbers_(i * (n + 1));
 }
 
 NodeType Node::change_type() {
@@ -70,19 +70,6 @@ NodeType Node::change_type() {
 void Node::consolidate() {
   get_root()->consolidate_();
   updated_descendants();
-}
-
-Node *Node::lca(int first, int second) {
-  auto root = get_root();
-  auto x = root->get_descendants().at(first);
-  auto y = root->get_descendants().at(second);
-  return lca(*x, *y);
-}
-
-template <typename... Args>
-  requires(std::integral<Args> && ...)
-Node *Node::lca(Args... values) {
-  return fold_lca_(values...);
 }
 
 Node *Node::get_root() {
@@ -135,27 +122,6 @@ void Node::sort() {
 
 void Node::write(std::ostream &os) const { os << *this << ";" << std::endl; }
 
-// ===================
-// == Node - static ==
-// ===================
-
-Node *Node::lca(Node &first, Node &second) {
-  auto x = &first;
-  auto y = &second;
-  while (!x->get_descendants().contains(second.get_value()) &&
-         !y->get_descendants().contains(first.get_value())) {
-    if (x->get_parent() == nullptr || y->get_parent() == nullptr)
-      return nullptr;
-    x = x->get_parent();
-    y = y->get_parent();
-  }
-  if (x->get_descendants().contains(second.get_value())) {
-    return x;
-  } else {
-    return y;
-  }
-}
-
 // ====================
 // == Node - private ==
 // ====================
@@ -198,12 +164,6 @@ void Node::consolidate_() {
   }
 }
 
-template <std::integral First, std::integral... Rest>
-Node *Node::fold_lca_(Node *accumulated, First next, Rest... rest) {
-  auto res = lca(accumulated, next);
-  return fold_lca_(res, rest...);
-}
-
 std::tuple<int, int> Node::sort_by_swaps_() {
   if (type_ == LEAF) {
     return {value_, value_};
@@ -224,17 +184,12 @@ std::tuple<int, int> Node::sort_by_swaps_() {
 void Node::updated_descendants_() {
   if (type_ == LEAF) {
     descendants_.clear();
+    descendants_.insert_or_assign(value_, this);
     return;
   }
   left_->updated_descendants_();
   right_->updated_descendants_();
   descendants_.clear();
-  if (left_->get_type() == LEAF) {
-    descendants_.insert_or_assign(left_->get_value(), get_left());
-  }
-  if (right_->get_type() == LEAF) {
-    descendants_.insert_or_assign(right_->get_value(), get_right());
-  }
   descendants_.insert(left_->get_descendants().begin(),
                       left_->get_descendants().end());
   descendants_.insert(right_->get_descendants().begin(),
@@ -397,4 +352,33 @@ void TreeDecomposition::write(std::ostream &os) {
     std::cout << "\t[" << std::get<0>(edge) << "," << std::get<1>(edge) << "]"
               << std::endl;
   }
+}
+
+// == LCA ==
+
+void LCA::compute(Node *node) {
+  if (node->get_type() == LEAF)
+    return;
+  for (auto &&[value, f_n] : node->get_left()->get_descendants()) {
+    for (auto &&[val, s_n] : node->get_right()->get_descendants()) {
+      pairs_.insert_or_assign(LCA::get_name_(value, val), node->get_value());
+    }
+  }
+  compute(node->get_left());
+  compute(node->get_right());
+}
+
+int LCA::query(int first, int second) const {
+  return pairs_.at(LCA::get_name_(first, second));
+}
+
+std::string LCA::get_name_(int first, int second) const {
+  std::ostringstream os;
+  if (first > second) {
+    first = first ^ second;
+    second = first ^ second;
+    first = first ^ second;
+  }
+  os << first << "#" << second;
+  return os.str();
 }
