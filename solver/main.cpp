@@ -26,6 +26,7 @@ void process_input_file(const std::string &file) {
     for (auto &&[key, value] : tree.get_descendants()) {
       std::cout << key << ", ";
     }
+    std::cout << std::endl;
 
     tree.updated_descendants();
 

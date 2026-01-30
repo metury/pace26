@@ -191,16 +191,24 @@ public:
   /// Precomputing all pairs for leafs.
   /// @param node For which node we precompute recursively.
   void compute(Node *node);
-
   /// Return LCA for two leafs.
   /// @param first First leaf.
   /// @param second Second leaf.
   /// @return Value of their LCA.
   int query(int first, int second) const;
+  /// Return LCA for three leafs.
+  /// @param first First leaf.
+  /// @param second Second leaf.
+  /// @param third Third leaf.
+  /// @return Value of their LCA.
+  int query(int first, int second, int third) const;
 
   /// Write all the LCA pairs.
   inline void write() const {
     for (auto &&[val, node] : pairs_) {
+      std::cout << val << ": " << node << std::endl;
+    }
+    for (auto &&[val, node] : triples_) {
       std::cout << val << ": " << node << std::endl;
     }
   }
@@ -211,6 +219,12 @@ private:
   /// @param second Second value.
   /// @return Hash string key.
   std::string get_name_(int first, int second) const;
+  /// Create a string key to the map as "first#second#third".
+  /// @param first First value. Will be the lowest.
+  /// @param second Second value.
+  /// @param third Third value. Will be the highest.
+  /// @return Hash string key.
+  std::string get_name_(int first, int second, int third) const;
   /// ALl LCAs for leaf pairs.
   std::unordered_map<std::string, int> pairs_;
   /// All LCAs for leaf triples.

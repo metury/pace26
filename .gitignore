@@ -46,3 +46,5 @@ docs/
 
 # Input files
 input/
+
+.cache/

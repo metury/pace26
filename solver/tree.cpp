@@ -359,9 +359,19 @@ void TreeDecomposition::write(std::ostream &os) {
 void LCA::compute(Node *node) {
   if (node->get_type() == LEAF)
     return;
-  for (auto &&[value, f_n] : node->get_left()->get_descendants()) {
-    for (auto &&[val, s_n] : node->get_right()->get_descendants()) {
-      pairs_.insert_or_assign(LCA::get_name_(value, val), node->get_value());
+  for (auto &&[first, f_n] : node->get_left()->get_descendants()) {
+    for (auto &&[second, s_n] : node->get_right()->get_descendants()) {
+      pairs_.insert_or_assign(LCA::get_name_(first, second), node->get_value());
+      for (auto &&[third, t_n] : node->get_right()->get_descendants()) {
+        if (third > second)
+          triples_.insert_or_assign(LCA::get_name_(first, second, third),
+                                    node->get_value());
+      }
+      for (auto &&[third, t_n] : node->get_left()->get_descendants()) {
+        if (third > first)
+          triples_.insert_or_assign(LCA::get_name_(first, second, third),
+                                    node->get_value());
+      }
     }
   }
   compute(node->get_left());
@@ -372,6 +382,10 @@ int LCA::query(int first, int second) const {
   return pairs_.at(LCA::get_name_(first, second));
 }
 
+int LCA::query(int first, int second, int third) const {
+  return pairs_.at(LCA::get_name_(first, second, third));
+}
+
 std::string LCA::get_name_(int first, int second) const {
   std::ostringstream os;
   if (first > second) {
@@ -380,5 +394,25 @@ std::string LCA::get_name_(int first, int second) const {
     first = first ^ second;
   }
   os << first << "#" << second;
+  return os.str();
+}
+
+std::string LCA::get_name_(int first, int second, int third) const {
+  std::ostringstream os;
+  if (second < first && second < third) {
+    first = first ^ second;
+    second = first ^ second;
+    first = first ^ second;
+  } else if (third < first && third < second) {
+    first = first ^ third;
+    third = first ^ third;
+    first = first ^ third;
+  }
+  if (second > third) {
+    second = second ^ third;
+    third = second ^ third;
+    second = second ^ third;
+  }
+  os << first << "#" << second << "#" << third;
   return os.str();
 }
