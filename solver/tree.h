@@ -204,14 +204,7 @@ public:
   std::pair<int, Node *> query(int first, int second, int third) const;
 
   /// Write all the LCA pairs.
-  inline void write() const {
-    for (auto &&[val, node] : pairs_) {
-      std::cout << val << ": " << std::get<0>(node) << std::endl;
-    }
-    for (auto &&[val, node] : triples_) {
-      std::cout << val << ": " << std::get<0>(node) << std::endl;
-    }
-  }
+  void write() const;
 
 private:
   /// Create a string key to the map as "first#second".

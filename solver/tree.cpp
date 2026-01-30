@@ -355,7 +355,9 @@ void TreeDecomposition::write(std::ostream &os) {
   }
 }
 
+// =========
 // == LCA ==
+// =========
 
 void LCA::compute(Node *node) {
   if (node->get_type() == LEAF)
@@ -387,6 +389,19 @@ std::pair<int, Node *> LCA::query(int first, int second) const {
 std::pair<int, Node *> LCA::query(int first, int second, int third) const {
   return pairs_.at(LCA::get_name_(first, second, third));
 }
+
+void LCA::write() const {
+  for (auto &&[val, node] : pairs_) {
+    std::cout << val << ": " << std::get<0>(node) << std::endl;
+  }
+  for (auto &&[val, node] : triples_) {
+    std::cout << val << ": " << std::get<0>(node) << std::endl;
+  }
+}
+
+// ===================
+// == LCA - private ==
+// ===================
 
 std::string LCA::get_name_(int first, int second) const {
   std::ostringstream os;
