@@ -13,7 +13,7 @@ main() =>
 
   foreach(N in Ns)
     foreach(Strategy in Strategies)
-      maf(N, Cost, Active, Vs, Es),
+      maximum_agreement_forest(N, 1, Cost, Active, Vs, Es),
       Edges = [B : {_, _, B} in Es],
       time_out(solve([$min(Cost)] ++ Strategy, [Active, Edges]), Timeout, Status),
       if Status != success then
