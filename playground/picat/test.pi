@@ -1,21 +1,21 @@
-import sat.
+import cp.
 
 selection(VarSels) => VarSels = [backward,constr,degree,ff,ffc,ffd,forward,inout,label,leftmost,max,min,rand,rand_var,rand_val,reverse_split,split,updown].
 choice(ValChoices) => ValChoices = [down,reverse_split,split,up,updown].
 
-main() =>
+main(Files) =>
   cl(trees),
-	Ns = 30..10..100,
 	selection(VarSels),
   choice(ValChoices),
   Strategies = [[VarSel, ValChoice] : VarSel in VarSels, ValChoice in ValChoices],
-  Timeout = 1000,
+  Timeout = 500,
 
-  foreach(N in Ns)
+  foreach(File in Files)
+    cl(File),
+    input(N, T),
     foreach(Strategy in Strategies)
-      maximum_agreement_forest(N, 1, Cost, Active, Vs, Es),
-      Edges = [B : {_, _, B} in Es],
-      time_out(solve([$min(Cost)] ++ Strategy, [Active, Edges]), Timeout, Status),
+      maximum_agreement_forest(N, T, Cost, Constraints, Childrens, RootEdges),
+      time_out(solve([$min(Cost)] ++ Strategy, Constraints), Timeout, Status),
       if Status != success then
         Strategies := delete(Strategies, Strategy)
       end
