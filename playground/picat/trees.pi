@@ -8,7 +8,7 @@ import sat.
 % lca(Tree, Node1, Node2, NodeLCA). Such that for Node1 and Node2 the NodeLCA is their common LCA in tree Tree.
 
 % Computing the maximum agreement forest.
-maximum_agreement_forest(NumberOfLeaves, NumberOfTrees, Cost, Constraints, Childrens, RootEdges) =>
+maximum_agreement_forest(NumberOfLeaves, NumberOfTrees, Cost, Constraints, Childrens, RootEdges, Roots, Es) =>
   
   %%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%% PRECOMPUTATION %%%%%
@@ -18,7 +18,7 @@ maximum_agreement_forest(NumberOfLeaves, NumberOfTrees, Cost, Constraints, Child
   % In table we have values {Tree, Label1, Label2, Value}, where it means that for Label1 and Label2 their lca in tree Tree is Value.
   % Also {Tree, 0, 0, 0} are fallback values if they are not present.
   NumberOfPossibleLabels = (NumberOfTrees + 1) * (NumberOfLeaves - 1) + 2,
-  LcaTable = [{T, I, J, Val} : T in 1..NumberOfTrees, I in 1..NumberOfPossibleLabels, J in 1..NumberOfPossibleLabels, I != J, lca(T,I,J,Val)] ++ [{T, 0, 0, 0} : T in 1..NumberOfTrees],
+  LcaTable = [{T, I, J, Val, 1} : T in 1..NumberOfTrees, I in 1..NumberOfPossibleLabels, J in 1..NumberOfPossibleLabels, I != J, lca(T,I,J,Val)] ++ [{T, 0, 0, 0, 1} : T in 1..NumberOfTrees],
 
   % Maximum number of possible nodes in the outputed tree.
   MaximumNumberOfNodes = 2 * NumberOfLeaves - 1,
@@ -59,6 +59,9 @@ maximum_agreement_forest(NumberOfLeaves, NumberOfTrees, Cost, Constraints, Child
       LcaValues[I, J] #= J,
     end,
   end,
+
+  Roots = new_array(MaximumNumberOfNodes),
+  Roots :: 0..MaximumNumberOfNodes,
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%% SET UP THE TREE %%%%%
@@ -102,15 +105,15 @@ maximum_agreement_forest(NumberOfLeaves, NumberOfTrees, Cost, Constraints, Child
   % Here each leaf has exactly one ingoing edge.
   foreach(Leaf in 1..NumberOfLeaves)
       Intgoing = [B : {P, C, B} in Edges, C == Leaf],
-      count(V, Intgoing, 1)
+      count(1, Intgoing, 1)
   end,
   % There is either 2 or 0 outgoing edges and at most one ingoing edge.
   foreach(Internal in (NumberOfLeaves + 1)..MaximumNumberOfNodes)
     Outgoing = [B : {P, C, B} in Edges, P == Internal],
     Ingoing = [B : {P, C, B} in Edges, C == Internal],
-    count(V, Outgoing, #=<, 2),
-    count(V, Outgoing, #!=, 1),
-    count(V, Ingoing, #=<, 1),
+    count(1, Outgoing, #=<, 2),
+    count(1, Outgoing, #!=, 1),
+    count(1, Ingoing, #=<, 1)
   end,
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -125,12 +128,39 @@ maximum_agreement_forest(NumberOfLeaves, NumberOfTrees, Cost, Constraints, Child
     matrix_element(LcaValues, Tree, C2, LCA2),
     matrix_element(LcaValues, Tree, Node, LCA),
     % Lca values must match.
-    table_in({Tree,LCA1, LCA2, LCA}, LcaTable),
+    table_in({Tree,LCA1, LCA2, LCA, 1}, LcaTable),
     % It must be strictly below.
-    table_in([{Tree, LCA1, LCA, LCA}, {Tree, LCA2, LCA, LCA}], LcaTable)
+    table_in([{Tree, LCA1, LCA, LCA, 1}, {Tree, LCA2, LCA, LCA, 1}], LcaTable)
   end,
 
-  Constraints = [ActiveVertices, [B : {_, _, B} in Edges], LcaValues, Childrens, RootEdges].
+  foreach(Node in 1..MaximumNumberOfNodes)
+    RootEdges[Node] #= 1 #<=> Roots[Node] #= Node
+  end,
+
+  foreach(Parent in NumberOfLeaves + 1..MaximumNumberOfNodes)
+      matrix_element(Childrens, 1, Parent-NumberOfLeaves, C1),
+      matrix_element(Childrens, 2, Parent-NumberOfLeaves, C2),
+      element(C1, Roots, R1),
+      element(C2, Roots, R2),
+      ActiveVertices[Parent] #=> (R1 #= Roots[Parent] #/\ R2 #= Roots[Parent])
+  end,
+
+  foreach(Tree in 1..NumberOfTrees, RootNode1 in NumberOfLeaves..MaximumNumberOfNodes, RootNode2 in RootNode1+1..MaximumNumberOfNodes)
+    element(RootNode1, RootEdges, R1),
+    element(RootNode2, RootEdges, R2),
+    matrix_element(LcaValues, Tree, RootNode1, LCA1),
+    matrix_element(LcaValues, Tree, RootNode2, LCA2),
+    foreach(Leaf in 1..NumberOfLeaves)
+      element(Leaf, Roots, Root),
+      IsIn :: 0..1,
+      IsIn #= 1 #<=> ((R1 #= 1 #/\ R2 #= 1) #/\ Root #= RootNode1),
+      table_notin({Tree, Leaf, LCA2, LCA2, IsIn}, LcaTable)
+    end
+  end,
+  
+  Es = Edges,
+
+  Constraints = [ActiveVertices, [B : {_, _, B} in Edges], LcaValues, Childrens, RootEdges, Roots].
 
 newick_format_print(Cost, Childrens, RootEdges) =>
   printf("# Number of Trees: %d\n", Cost),
@@ -140,6 +170,8 @@ newick_format_print(Cost, Childrens, RootEdges) =>
 main([File]) =>
   cl(File),
   input(N, T),
-  maximum_agreement_forest(N, T, Cost, Constraints, Childrens, RootEdges),
+  maximum_agreement_forest(N, T, Cost, Constraints, Childrens, RootEdges, Roots, Es),
   solve([$min(Cost)], Constraints),
+  println(Roots),
+  println([{P,C} : {P, C, B} in Es, B == 1]),
   newick_format_print(Cost, Childrens, RootEdges).
