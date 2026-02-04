@@ -133,10 +133,11 @@ maximum_agreement_forest(NumberOfLeaves, NumberOfTrees, Cost, Constraints, Child
     table_in([{Tree, LCA1, LCA, LCA, 1}, {Tree, LCA2, LCA, LCA, 1}], LcaTable)
   end,
 
+  % Computing Roots.
   foreach(Node in 1..MaximumNumberOfNodes)
     RootEdges[Node] #= 1 #<=> Roots[Node] #= Node
   end,
-
+  % Computing roots.
   foreach(Parent in NumberOfLeaves + 1..MaximumNumberOfNodes)
       matrix_element(Childrens, 1, Parent-NumberOfLeaves, C1),
       matrix_element(Childrens, 2, Parent-NumberOfLeaves, C2),
@@ -145,7 +146,7 @@ maximum_agreement_forest(NumberOfLeaves, NumberOfTrees, Cost, Constraints, Child
       ActiveVertices[Parent] #=> (R1 #= Roots[Parent] #/\ R2 #= Roots[Parent])
   end,
 
-  foreach(Tree in 1..NumberOfTrees, RootNode1 in NumberOfLeaves..MaximumNumberOfNodes, RootNode2 in RootNode1+1..MaximumNumberOfNodes)
+  foreach(Tree in 1..NumberOfTrees, RootNode1 in NumberOfLeaves+1..MaximumNumberOfNodes, RootNode2 in RootNode1+1..MaximumNumberOfNodes)
     element(RootNode1, RootEdges, R1),
     element(RootNode2, RootEdges, R2),
     matrix_element(LcaValues, Tree, RootNode1, LCA1),
@@ -162,16 +163,33 @@ maximum_agreement_forest(NumberOfLeaves, NumberOfTrees, Cost, Constraints, Child
 
   Constraints = [ActiveVertices, [B : {_, _, B} in Edges], LcaValues, Childrens, RootEdges, Roots].
 
+recursive_print(N, Childrens, I) =>
+  if(I <= N)
+    printf("%d", I),
+  else
+    print("("),
+    recursive_print(N, Childrens, Childrens[1,I - N]),
+    print(","),
+    recursive_print(N, Childrens, Childrens[2,I - N]),
+    print(")")
+  end.
+
+
 newick_format_print(Cost, Childrens, RootEdges) =>
-  printf("# Number of Trees: %d\n", Cost),
-  print("# "), println(Childrens),
-  print("# "), println(RootEdges).
+  input(N,T),
+  printf("# Result (number of trees): %d\n", Cost),
+  foreach(I in 1..len(RootEdges), RootEdges[I] == 1)
+    if(I <= N)
+      printf("%d;\n", I)
+    else
+      recursive_print(N, Childrens, I),
+      println(";")
+    end
+  end.
 
 main([File]) =>
   cl(File),
   input(N, T),
   maximum_agreement_forest(N, T, Cost, Constraints, Childrens, RootEdges, Roots, Es),
   solve([$min(Cost)], Constraints),
-  println(Roots),
-  println([{P,C} : {P, C, B} in Es, B == 1]),
   newick_format_print(Cost, Childrens, RootEdges).
