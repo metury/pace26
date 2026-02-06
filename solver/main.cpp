@@ -14,38 +14,21 @@ void process_input_file(const std::string &file) {
 
   // Assign numbers to internal nodes.
   input.assign_numbers();
+  input.compute_all_lca();
 
   int i = 1;
-  for (auto &&tree : input.get_trees()) {
+  for (auto &&[tree, lca] : input) {
     // Output the tree.
     std::cout << "# Tree " << i++ << ": ";
     tree.write();
-    // Write the descendants of the root.
-    std::cout << "# Descendants of the root[" << tree.get_root()->get_value()
-              << "]: ";
-    for (auto &&[key, value] : tree.get_descendants()) {
-      std::cout << key << ", ";
-    }
-    std::cout << std::endl;
-
-    tree.updated_descendants();
-
-    auto lca = LCA();
-    std::cout << tree;
-    lca.compute(&tree);
     lca.write();
-    std::cout << "LCA for 1 and 2: " << std::get<0>(lca.query(1, 2))
-              << std::endl;
   }
 
-  i = 1;
-  input.add_root_leafs();
-  for (auto &&tree : input.get_trees()) {
-    std::cout << "# Tree with added root " << i++ << ": ";
-    tree.write();
-  }
+  auto triplets = input.compute_triplets();
 
-  input.get_tree_decomposition().write(std::cout);
+  for (auto &&[a, b, c] : triplets) {
+    std::cout << a << "," << b << "|" << c << std::endl;
+  }
 }
 
 int main(int argc, char **argv) {
