@@ -60,7 +60,7 @@ Node Node::add_root_leaf() {
 }
 
 void Node::assign_numbers(int i, int n) {
-  get_root()->assign_numbers_(i * (n + 1));
+  get_root()->assign_numbers_(i * (n - 1) + 2);
 }
 
 NodeType Node::change_type() {
