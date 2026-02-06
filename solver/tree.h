@@ -71,6 +71,8 @@ public:
   inline const std::unordered_map<int, Node *> &get_descendants() const {
     return descendants_;
   }
+  /// Get all edges between two nodes, where one is above the other.
+  std::vector<std::pair<int, int>> get_edges(Node &above) const;
   /// Get pointer to the left descendant.
   /// @return Pointer (monitor) to its left descendant.
   inline Node *get_left() const { return left_.get(); }
@@ -261,6 +263,8 @@ public:
   bool are_identical();
   /// Assign numbers to all trees.
   void assign_numbers();
+  /// Compute all LCA values for all trees.
+  void compute_all_lca();
   /// Get the leaf count, which is same for all trees.
   /// @return Leaf count.
   inline int get_leaf_count() const { return n_; }
@@ -277,6 +281,34 @@ public:
   /// @param str Its string representation.
   void set_tree_decomposition(const std::string &str);
 
+  /// Forward iterator through the input. Returns both tree and lca.
+  struct Iterator {
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = std::tuple<Node &, LCA &>;
+    using difference_type = std::ptrdiff_t;
+
+    size_t index;
+    Input &parent;
+
+    // Overload dereference to return a tuple of references
+    value_type operator*() const {
+      return {parent.trees_[index], parent.lcas_[index]};
+    }
+
+    Iterator &operator++() {
+      ++index;
+      return *this;
+    }
+    bool operator!=(const Iterator &other) const {
+      return index != other.index;
+    }
+  };
+
+  Iterator begin() { return {0, *this}; }
+  Iterator end() { return {lcas_.size(), *this}; }
+
+  std::vector<std::tuple<int, int, int>> compute_triplets();
+
 private:
   /// The tree decomposition.
   TreeDecomposition decomp_;
@@ -286,5 +318,7 @@ private:
   int t_;
   /// Array of all trees.
   std::vector<Node> trees_;
+  /// Array of all precomputed lca.
+  std::vector<LCA> lcas_;
 };
 #endif

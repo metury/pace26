@@ -5,6 +5,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <utility>
 
 // ==========
@@ -32,9 +33,9 @@ Node &Node::operator=(const Node &other) {
 }
 
 void Node::add_descendant(int value, Node *n) {
-  descendants_.insert_or_assign(value, n);
+  // descendants_.insert_or_assign(value, n);
   if (parent_ != nullptr) {
-    parent_->add_descendant(value, n);
+    // parent_->add_descendant(value, n);
   }
 }
 
@@ -55,7 +56,7 @@ Node Node::add_root_leaf() {
   auto new_root = Node();
   new_root.set_left(std::move(*root));
   new_root.set_right(Node(&new_root, ROOT_LABEL));
-  new_root.updated_descendants();
+  // new_root.updated_descendants();
   return new_root;
 }
 
@@ -70,7 +71,7 @@ NodeType Node::change_type() {
 
 void Node::consolidate() {
   get_root()->consolidate_();
-  updated_descendants();
+  // updated_descendants();
 }
 
 Node *Node::get_root() {
@@ -79,6 +80,17 @@ Node *Node::get_root() {
     root = root->parent_;
   return root;
 }
+
+std::vector<std::pair<int, int>> Node::get_edges(Node &above) const {
+  std::vector<std::pair<int, int>> edges;
+  auto current = *this;
+  while (current.get_value() != above.get_value()) {
+    edges.push_back({current.get_value(), current.get_parent()->get_value()});
+    current = current.get_parent();
+  }
+  return edges;
+}
+
 std::unique_ptr<Node> Node::remove_left() {
   auto tmp = std::move(left_);
   get_root()->consolidate();
@@ -95,7 +107,7 @@ void Node::set_left(Node n) {
   left_ = std::make_unique<Node>(n);
   type_ = INTERNAL;
   if (n.get_type() == LEAF && n.get_value() != 0) {
-    add_descendant(n.get_value(), &n);
+    // add_descendant(n.get_value(), &n);
   }
   n.parent_ = this;
 }
@@ -104,7 +116,7 @@ void Node::set_right(Node n) {
   right_ = std::make_unique<Node>(n);
   type_ = INTERNAL;
   if (n.get_type() == LEAF && n.get_value() != 0) {
-    add_descendant(n.get_value(), &n);
+    // add_descendant(n.get_value(), &n);
   }
   n.parent_ = this;
 }
@@ -112,13 +124,13 @@ void Node::set_right(Node n) {
 void Node::set_value(int value) {
   value_ = value;
   if (type_ == LEAF && parent_ != nullptr) {
-    parent_->add_descendant(value, this);
+    // parent_->add_descendant(value, this);
   }
 }
 
 void Node::sort() {
   get_root()->sort_by_swaps_();
-  updated_descendants();
+  // updated_descendants();
 }
 
 void Node::write(std::ostream &os) const { os << *this << ";" << std::endl; }
@@ -305,6 +317,46 @@ void Input::add_root_leafs() {
   }
 }
 
+void Input::compute_all_lca() {
+  for (auto &&tree : trees_) {
+    auto lca = LCA();
+    tree.updated_descendants();
+    lca.compute(&tree);
+    lcas_.push_back(lca);
+  }
+}
+
+// This needs to be redone! Compute all wrong triples.
+std::vector<std::tuple<int, int, int>> Input::compute_triplets() {
+  std::vector<std::tuple<int, int, int>> triplets;
+  for (auto &&[tree1, lca1] : *this) {
+    for (auto &&[tree2, lca2] : *this) {
+      if (tree1.get_value() >= tree2.get_value())
+        continue;
+      for (auto a = 1; a <= get_leaf_count(); ++a) {
+        for (auto b = a + 1; b <= get_leaf_count(); ++b) {
+          auto [lca1_a_b, node1_a_b] = lca1.query(a, b);
+          auto [lca2_a_b, node2_a_b] = lca2.query(a, b);
+          for (auto c = 1; c <= get_leaf_count(); ++c) {
+            if (c == b || c == a)
+              continue;
+            auto [lca1_ab_c, node1_ab_c] = lca1.query(a, b, c);
+            auto [lca2_ab_c, node2_ab_c] = lca2.query(a, b, c);
+            // Either one is below and the other match or the other way around.
+            auto below1 = lca1_a_b != lca1_ab_c;
+            auto below2 = lca2_a_b != lca2_ab_c;
+            if ((below1 && !below2) || (!below1 && below1)) {
+              // We found triplet.
+              triplets.push_back(std::make_tuple(a, b, c));
+            }
+          }
+        }
+      }
+    }
+  }
+  return triplets;
+}
+
 // =======================
 // == TreeDecomposition ==
 // =======================
@@ -387,7 +439,7 @@ std::pair<int, Node *> LCA::query(int first, int second) const {
 }
 
 std::pair<int, Node *> LCA::query(int first, int second, int third) const {
-  return pairs_.at(LCA::get_name_(first, second, third));
+  return triples_.at(LCA::get_name_(first, second, third));
 }
 
 void LCA::write() const {
