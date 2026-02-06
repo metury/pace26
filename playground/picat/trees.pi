@@ -47,6 +47,7 @@ maximum_agreement_forest(NumberOfLeaves, NumberOfTrees, Cost, Constraints, Child
   RootEdges :: 0..1,
   % There is at most number of leaves many forests.
   count(1, RootEdges, #=<, NumberOfLeaves),
+  %If we know (approx result) we can speed-up the computation: count(1, RootEdges, 6),
   Cost #= sum(RootEdges.vars()),
 
   % Values of lca for each node with respect to the trees.
