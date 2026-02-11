@@ -1,3 +1,4 @@
+#include "ilp.h"
 #include "tree.h"
 #include <iostream>
 
@@ -11,24 +12,7 @@ void process_input_file(const std::string &file) {
   std::cout << "# File \"" << file << "\" contains " << input.get_tree_count()
             << " trees with " << input.get_leaf_count() << " leafs each."
             << std::endl;
-
-  // Assign numbers to internal nodes.
-  input.assign_numbers();
-  input.compute_all_lca();
-
-  int i = 1;
-  for (auto &&[tree, lca] : input) {
-    // Output the tree.
-    std::cout << "# Tree " << i++ << ": ";
-    tree.write();
-    lca.write();
-  }
-
-  auto triplets = input.compute_triplets();
-
-  for (auto &&[a, b, c] : triplets) {
-    std::cout << a << "," << b << "|" << c << std::endl;
-  }
+  ilp(input);
 }
 
 int main(int argc, char **argv) {

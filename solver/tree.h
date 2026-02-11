@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <memory>
+#include <set>
 #include <unordered_map>
 #include <vector>
 
@@ -11,9 +12,6 @@ enum NodeType {
   LEAF,
   INTERNAL,
 };
-
-/// Special label for root as an extra leaf.
-const int ROOT_LABEL = -1; // It can be changed!
 
 /// Node class for trees.
 class Node {
@@ -45,25 +43,16 @@ public:
   Node &operator=(Node &&other) = default;
   /// Destructor.
   ~Node() = default;
-  /// Add values and pointers to the descendants, propagate upwards.
-  /// @param value What is the value of the descendant.
-  /// @param n Pointer to that descendant.
-  void add_descendant(int value, Node *n);
   /// Add left descendant and set type to LEAF.
   /// @return Pointer to the new descendant.
   Node *add_left();
   /// Add right descendant and set type to LEAF.
   /// @return Pointer to the new descendant.
   Node *add_right();
-  /// Add new leaf "rho" as a root.
-  Node add_root_leaf();
   /// Assign numbers to all nodes including INTERNAL nodes by a predefined way.
   /// @param i Which tree is this.
   /// @param n How many leafs the tree has.
   void assign_numbers(int i, int n);
-  /// Change the type of this node.
-  /// @return New and changed type.
-  NodeType change_type();
   /// Force iterative contraction of all 2 degree inner vertices.
   void consolidate();
   /// Get the map of descendants and its pointers.
@@ -72,7 +61,7 @@ public:
     return descendants_;
   }
   /// Get all edges between two nodes, where one is above the other.
-  std::vector<std::pair<int, int>> get_edges(Node &above) const;
+  void get_edges(Node &above, std::set<int> &edges) const;
   /// Get pointer to the left descendant.
   /// @return Pointer (monitor) to its left descendant.
   inline Node *get_left() const { return left_.get(); }
@@ -106,6 +95,7 @@ public:
   /// Set right child to given node.
   /// @param n Given new right child.
   void set_right(Node n);
+  void set_parent(Node *parent);
   /// Set value of current node.
   /// @param value Its new value.
   void set_value(int value);
@@ -256,8 +246,6 @@ public:
   /// Constructor for parsing input from a file.
   /// @param file_path Path to the file.
   Input(const std::string &file_path);
-  /// Add all extra leaves.
-  void add_root_leafs();
   /// Check if the trees are exactly same.
   /// @return True if all are exactly same, false otherwise.
   bool are_identical();
@@ -276,7 +264,7 @@ public:
   inline TreeDecomposition &get_tree_decomposition() { return decomp_; }
   /// Get reference to all trees.
   /// @return Reference to all trees.
-  inline std::vector<Node> &get_trees() { return trees_; }
+  inline std::vector<std::unique_ptr<Node>> &get_trees() { return trees_; }
   /// Set the tree decomposition by parsing its string representation.
   /// @param str Its string representation.
   void set_tree_decomposition(const std::string &str);
@@ -284,7 +272,7 @@ public:
   /// Forward iterator through the input. Returns both tree and lca.
   struct Iterator {
     using iterator_category = std::forward_iterator_tag;
-    using value_type = std::tuple<Node &, LCA &>;
+    using value_type = std::tuple<Node *, LCA &>;
     using difference_type = std::ptrdiff_t;
 
     size_t index;
@@ -292,7 +280,7 @@ public:
 
     // Overload dereference to return a tuple of references
     value_type operator*() const {
-      return {parent.trees_[index], parent.lcas_[index]};
+      return {parent.trees_[index].get(), parent.lcas_[index]};
     }
 
     Iterator &operator++() {
@@ -317,7 +305,7 @@ private:
   /// Number of trees.
   int t_;
   /// Array of all trees.
-  std::vector<Node> trees_;
+  std::vector<std::unique_ptr<Node>> trees_;
   /// Array of all precomputed lca.
   std::vector<LCA> lcas_;
 };
