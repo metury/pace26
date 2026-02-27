@@ -285,34 +285,83 @@ void Input::compute_all_lca() {
 }
 
 // This needs to be redone! Compute all wrong triples.
-std::vector<std::tuple<int, int, int>> Input::compute_triplets() {
-  std::vector<std::tuple<int, int, int>> triplets;
+std::vector<std::tuple<int, int, int>> Input::compute_trios() {
+  std::vector<std::tuple<int, int, int>> trios;
   auto tree1 = trees_[0].get();
   auto lca1 = lcas_[0];
-  for (auto &&[tree2, lca2] : *this) {
-    if (tree1->get_value() == tree2->get_value())
-      continue;
-    for (auto a = 1; a <= get_leaf_count(); ++a) {
-      for (auto b = a + 1; b <= get_leaf_count(); ++b) {
-        auto [lca1_a_b, node1_a_b] = lca1.query(a, b);
-        auto [lca2_a_b, node2_a_b] = lca2.query(a, b);
-        for (auto c = 1; c <= get_leaf_count(); ++c) {
-          if (c == b || c == a)
-            continue;
-          auto [lca1_ab_c, node1_ab_c] = lca1.query(a, b, c);
-          auto [lca2_ab_c, node2_ab_c] = lca2.query(a, b, c);
-          // Either one is below and the other match or the other way around.
-          auto c_below_ab_1 = lca1_a_b == lca1_ab_c;
-          auto c_below_ab_2 = lca2_a_b == lca2_ab_c;
-          if ((!c_below_ab_1 && c_below_ab_2)) {
-            // We found triplet.
-            triplets.push_back(std::make_tuple(a, b, c));
+  for (auto a = 1; a <= get_leaf_count(); ++a) {
+    for (auto b = 1; b <= get_leaf_count(); ++b) {
+      if (a == b)
+        continue;
+      auto [lca1_a_b, node1_a_b] = lca1.query(a, b);
+      for (auto c = 1; c <= get_leaf_count(); ++c) {
+        if (c == b || c == a)
+          continue;
+        auto [lca1_ab_c, node1_ab_c] = lca1.query(a, b, c);
+        // Either one is below and the other match or the other way around.
+        auto c_below_ab_1 = lca1_a_b == lca1_ab_c;
+        if (!c_below_ab_1) {
+          for (auto &&[tree2, lca2] : *this) {
+            if (tree1->get_value() == tree2->get_value())
+              continue;
+            auto [lca2_a_b, node2_a_b] = lca2.query(a, b);
+            auto [lca2_ab_c, node2_ab_c] = lca2.query(a, b, c);
+            auto c_below_ab_2 = lca2_a_b == lca2_ab_c;
+            if (c_below_ab_2) {
+              // We found triplet.
+              trios.push_back(std::make_tuple(a, b, c));
+              break;
+            }
           }
         }
       }
     }
   }
-  return triplets;
+  return trios;
+}
+
+std::vector<std::tuple<int, int, int, int>> Input::compute_quartets() {
+  std::vector<std::tuple<int, int, int, int>> quartets;
+  auto tree1 = trees_[0].get();
+  auto lca1 = lcas_[0];
+  for (auto a = 1; a <= get_leaf_count(); ++a) {
+    for (auto b = 1; b <= get_leaf_count(); ++b) {
+      if (a == b)
+        continue;
+      auto [lca1_a_b, node1_a_b] = lca1.query(a, b);
+      for (auto c = 1; c <= get_leaf_count(); ++c) {
+        if (c == b || c == a)
+          continue;
+        for (auto d = 1; d <= get_leaf_count(); ++d) {
+          if (d == c || d == a || d == b)
+            continue;
+          auto [lca1_ab_c, node1_ab_c] = lca1.query(a, b, c);
+          auto [lca1_ab_d, node1_ab_d] = lca1.query(a, b, d);
+          auto c_below_ab_1 = lca1_a_b == lca1_ab_c;
+          auto d_below_ab_1 = lca1_a_b == lca1_ab_d;
+          if (!c_below_ab_1 && !d_below_ab_1) {
+            for (auto &&[tree2, lca2] : *this) {
+              if (tree1->get_value() == tree2->get_value())
+                continue;
+              auto [lca2_a_b, node2_a_b] = lca2.query(a, b);
+              auto [lca2_ab_c, node2_ab_c] = lca2.query(a, b, c);
+              auto [lca2_ab_d, node2_ab_d] = lca2.query(a, b, d);
+              // Either one is below and the other match or the other way
+              // around.
+              auto c_below_ab_2 = lca2_a_b == lca2_ab_c;
+              auto d_below_ab_2 = lca2_a_b == lca2_ab_d;
+              if (c_below_ab_2 || d_below_ab_2) {
+                // We found triplet.
+                quartets.push_back(std::make_tuple(a, b, c, d));
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return quartets;
 }
 
 // =======================

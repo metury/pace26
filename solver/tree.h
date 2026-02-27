@@ -161,12 +161,12 @@ bool operator==(Node &lhs, Node &rhs);
 /// @return False if the trees exactly match.
 inline bool operator!=(Node &lhs, Node &rhs) { return !(lhs == rhs); }
 
-/// Compare two nodes if the left hand side is above right hand side.
+/// Compare two nodes if the left hand side is below right hand side.
 /// @param lhs Left hand side of the comparison.
 /// @param rhs Right hand side of the comparison.
-/// @return If rhs is below lhs.
+/// @return If lhs is below rhs.
 inline bool operator<(Node &lhs, Node &rhs) {
-  return lhs.get_descendants().contains(rhs.get_value());
+  return rhs.get_descendants().contains(lhs.get_value());
 }
 
 /// Compare two nodes if the left hand side is below right hand side.
@@ -295,7 +295,9 @@ public:
   Iterator begin() { return {0, *this}; }
   Iterator end() { return {lcas_.size(), *this}; }
 
-  std::vector<std::tuple<int, int, int>> compute_triplets();
+  std::vector<std::tuple<int, int, int>> compute_trios();
+
+  std::vector<std::tuple<int, int, int, int>> compute_quartets();
 
 private:
   /// The tree decomposition.

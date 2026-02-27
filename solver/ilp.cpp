@@ -7,13 +7,14 @@ void ilp(Input &input) {
 
   input.assign_numbers();
   input.compute_all_lca();
-  auto triplets = input.compute_triplets();
+  auto trios = input.compute_trios();
+  auto quartets = input.compute_quartets();
 
-  std::cout << "# Number of triplets: " << triplets.size() << std::endl;
+  std::cout << "# Computed trios and quartets" << std::endl;
 
   //! Pseudo random number.
   auto number_of_edges = input.get_leaf_count() * 2;
-  auto number_of_rows = triplets.size();
+  auto number_of_rows = trios.size() + quartets.size();
   auto [tree, lca] = *input.begin();
 
   if (number_of_rows == 0) {
@@ -36,32 +37,35 @@ void ilp(Input &input) {
   std::vector<int> start = {0};
   std::vector<int> index;
 
-  for (auto &&[a, b, c] : triplets) {
-    std::cout << a << " :: " << b << " :: " << c << ">> ";
+  for (auto &&[a, b, c] : trios) {
     std::set<int> edges;
     auto [lca_a_b, node_a_b] = lca.query(a, b);
-    auto [lca_ab_c, node_ab_c] = lca.query(a, b, c);
     auto node_a = tree->get_descendants().at(a);
     auto node_b = tree->get_descendants().at(b);
     auto node_c = tree->get_descendants().at(c);
-    node_a->get_edges(*node_ab_c, edges);
-    node_b->get_edges(*node_ab_c, edges);
-    node_c->get_edges(*node_ab_c, edges);
-    for (auto &&s : edges) {
-      std::cout << ";" << s;
-    }
-    std::cout << std::endl;
+    node_a->get_edges(*node_a_b, edges);
+    node_b->get_edges(*node_a_b, edges);
+    node_c->get_edges(*(tree->get_root()), edges);
     index.insert(index.end(), edges.begin(), edges.end());
     start.push_back(index.size());
   }
-  int j = 0;
-  for (int i = 0; i < index.size(); ++i) {
-    if (start[j] == i) {
-      std::cout << std::endl;
-      ++j;
-    }
-    std::cout << "Index: " << index[i] << ", ";
+
+  for (auto &&[a, b, c, d] : quartets) {
+    std::set<int> edges;
+    auto [lca_a_b, node_a_b] = lca.query(a, b);
+    auto [lca_c_d, node_c_d] = lca.query(c, d);
+    auto node_a = tree->get_descendants().at(a);
+    auto node_b = tree->get_descendants().at(b);
+    auto node_c = tree->get_descendants().at(c);
+    auto node_d = tree->get_descendants().at(d);
+    node_a->get_edges(*node_a_b, edges);
+    node_b->get_edges(*node_a_b, edges);
+    node_c->get_edges(*node_c_d, edges);
+    node_d->get_edges(*node_c_d, edges);
+    index.insert(index.end(), edges.begin(), edges.end());
+    start.push_back(index.size());
   }
+
   std::vector<double> values(index.size(), 1.0);
 
   // a_start_ has num_col_+1 entries, and the last entry is the number
@@ -82,11 +86,14 @@ void ilp(Input &input) {
   // Get a const reference to the LP data in HiGHS
   const HighsLp &lp = highs.getLp();
 
-  model.lp_.integrality_.resize(lp.num_col_);
-  for (int col = 0; col < lp.num_col_; col++)
-    model.lp_.integrality_[col] = HighsVarType::kInteger;
+  // model.lp_.integrality_.resize(lp.num_col_);
+  // for (int col = 0; col < lp.num_col_; col++)
+  //   model.lp_.integrality_[col] = HighsVarType::kInteger;
 
   highs.passModel(model);
+
+  highs.writeModel("model.lp");
+  return;
 
   // Solve the model
   return_status = highs.run();
