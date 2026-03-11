@@ -290,9 +290,7 @@ std::vector<std::tuple<int, int, int>> Input::compute_trios() {
   auto tree1 = trees_[0].get();
   auto lca1 = lcas_[0];
   for (auto a = 1; a <= get_leaf_count(); ++a) {
-    for (auto b = 1; b <= get_leaf_count(); ++b) {
-      if (a == b)
-        continue;
+    for (auto b = a + 1; b <= get_leaf_count(); ++b) {
       auto [lca1_a_b, node1_a_b] = lca1.query(a, b);
       for (auto c = 1; c <= get_leaf_count(); ++c) {
         if (c == b || c == a)
@@ -325,14 +323,12 @@ std::vector<std::tuple<int, int, int, int>> Input::compute_quartets() {
   auto tree1 = trees_[0].get();
   auto lca1 = lcas_[0];
   for (auto a = 1; a <= get_leaf_count(); ++a) {
-    for (auto b = 1; b <= get_leaf_count(); ++b) {
-      if (a == b)
-        continue;
+    for (auto b = a + 1; b <= get_leaf_count(); ++b) {
       auto [lca1_a_b, node1_a_b] = lca1.query(a, b);
       for (auto c = 1; c <= get_leaf_count(); ++c) {
         if (c == b || c == a)
           continue;
-        for (auto d = 1; d <= get_leaf_count(); ++d) {
+        for (auto d = c + 1; d <= get_leaf_count(); ++d) {
           if (d == c || d == a || d == b)
             continue;
           auto [lca1_ab_c, node1_ab_c] = lca1.query(a, b, c);
