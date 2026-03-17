@@ -81,6 +81,8 @@ void ilp(Input &input) {
   Highs highs;
   HighsStatus return_status;
 
+  highs.setOptionValue("output_flag", false);
+
   // Pass the model to HiGHS
   return_status = highs.passModel(model);
   assert(return_status == HighsStatus::kOk);
@@ -106,18 +108,18 @@ void ilp(Input &input) {
   assert(model_status == HighsModelStatus::kOptimal);
 
   const HighsInfo &info = highs.getInfo();
-  std::cout << "Simplex iteration count: " << info.simplex_iteration_count
-            << std::endl;
+  // std::cout << "Simplex iteration count: " << info.simplex_iteration_count
+  //           << std::endl;
   std::cout << "Objective function value: " << info.objective_function_value
             << std::endl;
-  std::cout << "Primal  solution status: "
-            << highs.solutionStatusToString(info.primal_solution_status)
-            << std::endl;
-  std::cout << "Dual    solution status: "
-            << highs.solutionStatusToString(info.dual_solution_status)
-            << std::endl;
-  std::cout << "Basis: " << highs.basisValidityToString(info.basis_validity)
-            << std::endl;
+  // std::cout << "Primal  solution status: "
+  //           << highs.solutionStatusToString(info.primal_solution_status)
+  //           << std::endl;
+  // std::cout << "Dual    solution status: "
+  //           << highs.solutionStatusToString(info.dual_solution_status)
+  //           << std::endl;
+  // std::cout << "Basis: " << highs.basisValidityToString(info.basis_validity)
+  //           << std::endl;
 
   const HighsSolution &solution = highs.getSolution();
   const HighsBasis &basis = highs.getBasis();
