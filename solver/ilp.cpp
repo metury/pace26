@@ -40,12 +40,14 @@ void ilp(Input &input) {
   for (auto &&[a, b, c] : trios) {
     std::set<int> edges;
     auto [lca_a_b, node_a_b] = lca.query(a, b);
+    auto [lca_ab_c, node_ab_c] = lca.query(a, b, c);
     auto node_a = tree->get_descendants().at(a);
     auto node_b = tree->get_descendants().at(b);
     auto node_c = tree->get_descendants().at(c);
     node_a->get_edges(*node_a_b, edges);
     node_b->get_edges(*node_a_b, edges);
-    node_c->get_edges(*(tree->get_root()), edges);
+    node_c->get_edges(*node_ab_c, edges);
+    node_a_b->get_edges(*node_ab_c, edges);
     index.insert(index.end(), edges.begin(), edges.end());
     start.push_back(index.size());
   }
@@ -86,14 +88,14 @@ void ilp(Input &input) {
   // Get a const reference to the LP data in HiGHS
   const HighsLp &lp = highs.getLp();
 
-  // model.lp_.integrality_.resize(lp.num_col_);
-  // for (int col = 0; col < lp.num_col_; col++)
-  //   model.lp_.integrality_[col] = HighsVarType::kInteger;
+  model.lp_.integrality_.resize(lp.num_col_);
+  for (int col = 0; col < lp.num_col_; col++)
+    model.lp_.integrality_[col] = HighsVarType::kInteger;
 
   highs.passModel(model);
 
-  highs.writeModel("model.lp");
-  return;
+  // highs.writeModel("model.lp");
+  // return;
 
   // Solve the model
   return_status = highs.run();
