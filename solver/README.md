@@ -8,10 +8,9 @@ To compile use cmake and then make. Afterwards you may run the program. Inputs a
 
 ```bash
 mkdir build
-cd build
-cmake ..
-make
-./pace input1 input2 ...
+cmake -B build
+cmake --build build
+./build/pace input1 input2 ...
 ```
 
 To keep consistency of the code you could use the following.
