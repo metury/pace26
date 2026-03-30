@@ -130,6 +130,7 @@ public:
   void assign_numbers(int i, int n);
   /// Force contractions and remove empty branches.
   void consolidate();
+  void contract_cherry(int first, int second);
   /// Compute both leaf pointers and lca values.
   void compute_lca_leafs();
   Node *lca_query(int first, int second);
@@ -139,6 +140,7 @@ public:
   /// Get pointer to the root node.
   /// @return Pointer to the root node.
   inline Node *get_root() const { return root_.get(); }
+  bool is_cherry(int first, int second) const;
   /// Output the tree to some ostream in a Newick notation.
   /// @param os Which output stream to use.
   void write(std::ostream &os) const;
@@ -215,7 +217,7 @@ public:
   std::vector<std::tuple<int, int, int, int>> compute_quartets();
 
 private:
-  void contract_cherries_(Node *node);
+  bool contract_cherries_(Node *node);
   /// The tree decomposition.
   TreeDecomposition decomp_;
   /// Number of leafs in each tree.

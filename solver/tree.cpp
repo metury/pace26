@@ -57,7 +57,6 @@ int Node::assign_numbers(int counter) {
 
 void Node::consolidate() {
   if (type_ != LEAF) {
-    //! Test this consolidation.
     if (left_ == nullptr && right_ == nullptr) {
       if (parent_ != nullptr) {
         if (parent_->get_left() == this) {
@@ -106,29 +105,6 @@ std::unordered_map<int, Node *> Node::compute_lca_leafs(lca &pairs,
   left.merge(right);
   return left;
 }
-
-// void Node::contract_cherry(int first, int second) {
-//   if (!is_cherry(first, second)) {
-//     return;
-//   }
-//   auto root = get_root();
-//   auto first_node = root->get_descendants().at(first);
-//   auto parent = first_node->get_parent();
-//   parent->set_value(first);
-//   parent->set_type(LEAF);
-//   parent->remove_left();
-//   parent->remove_right();
-// }
-
-//
-
-// bool Node::is_cherry(int first, int second) const {
-//   auto root = get_root();
-//   auto first_node = root->get_descendants().at(first);
-//   auto second_node = root->get_descendants().at(second);
-//   return first_node->get_parent() == second_node->get_parent() &&
-//          first_node->get_parent() != nullptr;
-// }
 
 std::unique_ptr<Node> Node::remove_left() {
   auto tmp = std::move(left_);
@@ -191,6 +167,19 @@ void Tree::assign_numbers(int i, int n) {
 
 void Tree::consolidate() { root_->consolidate(); }
 
+void Tree::contract_cherry(int first, int second) {
+  auto node_a = descendants_.at(first);
+  auto node_b = descendants_.at(second);
+  if (node_a->get_parent() != nullptr &&
+      node_a->get_parent() == node_b->get_parent()) {
+    auto parent = node_a->get_parent();
+    parent->set_value(first);
+    parent->set_type(LEAF);
+    parent->remove_left();
+    parent->remove_right();
+  }
+}
+
 void Tree::compute_lca_leafs() {
   descendants_ = root_->compute_lca_leafs(pairs_, triples_);
 }
@@ -210,6 +199,13 @@ Node *Tree::lca_query(int first, int second) {
 
 Node *Tree::lca_query(int first, int second, int third) {
   return triples_[get_lca_key(first, second, third)];
+}
+
+bool Tree::is_cherry(int first, int second) const {
+  auto node_a = descendants_.at(first);
+  auto node_b = descendants_.at(second);
+  return node_a->get_parent() != nullptr &&
+         node_a->get_parent() == node_b->get_parent();
 }
 
 void Tree::write(std::ostream &os) const {
@@ -263,31 +259,6 @@ void Input::set_tree_decomposition(const std::string &str) {
   decomp_ = TreeDecomposition(str);
 }
 
-//// void Input::contract_cherries() {
-////   auto tree1 = trees_[0].get();
-////   contract_cherries_(tree1);
-//// }
-////
-//// void Input::contract_cherries_(Node *node) {
-////   if (node->get_left()->get_type() == LEAF &&
-////       node->get_right()->get_type() == LEAF) {
-////     for (auto &&[tree, lca] : *this) {
-////       if (!tree->is_cherry(node->get_left()->get_value(),
-////                            node->get_right()->get_value())) {
-////         return;
-////       }
-////     }
-////     for (auto &&[tree, lca] : *this) {
-////       tree->contract_cherry(node->get_left()->get_value(),
-////                             node->get_right()->get_value());
-////     }
-////   } else if (node->get_right()->get_type() != LEAF) {
-////     contract_cherries_(node->get_right());
-////   } else {
-////     contract_cherries_(node->get_left());
-////   }
-//// }
-
 // This needs to be redone! Compute all wrong triples.
 std::vector<std::tuple<int, int, int>> Input::compute_trios() {
   std::vector<std::tuple<int, int, int>> trios;
@@ -320,6 +291,32 @@ std::vector<std::tuple<int, int, int>> Input::compute_trios() {
     }
   }
   return trios;
+}
+
+void Input::contract_cherries() {
+  while (contract_cherries_(trees_[0]->get_root())) {
+  };
+}
+
+bool Input::contract_cherries_(Node *n) {
+  if (n->get_type() == LEAF) {
+    return false;
+  }
+  auto left = n->get_left();
+  auto right = n->get_right();
+  if (left->get_type() == LEAF && right->get_type() == LEAF) {
+    for (auto &&tree : trees_) {
+      if (!tree->is_cherry(left->get_value(), right->get_value())) {
+        return false;
+      }
+    }
+    for (auto &&tree : trees_) {
+      tree->contract_cherry(left->get_value(), right->get_value());
+      tree->compute_lca_leafs();
+    }
+    return true;
+  }
+  return contract_cherries_(left) || contract_cherries_(right);
 }
 
 std::vector<std::tuple<int, int, int, int>> Input::compute_quartets() {
