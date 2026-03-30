@@ -1,11 +1,15 @@
 #ifndef tree_h_
 #define tree_h_
 
+#include "utils.h"
 #include <iostream>
 #include <memory>
 #include <set>
 #include <unordered_map>
 #include <vector>
+
+class Node;
+using lca = std::unordered_map<LCA_KEY, Node *>;
 
 /// Type of nodes, either LEAF or INTERNAL.
 enum NodeType {
@@ -50,18 +54,11 @@ public:
   /// @return Pointer to the new descendant.
   Node *add_right();
   /// Assign numbers to all nodes including INTERNAL nodes by a predefined way.
-  /// @param i Which tree is this.
-  /// @param n How many leafs the tree has.
-  void assign_numbers(int i, int n);
+  /// @param counter Which counter we are starting with.
+  int assign_numbers(int counter);
   /// Force iterative contraction of all 2 degree inner vertices.
   void consolidate();
-  /// Get the map of descendants and its pointers.
-  /// @return Reference to the map.
-  inline const std::unordered_map<int, Node *> &get_descendants() const {
-    return descendants_;
-  }
-  /// Get all edges between two nodes, where one is above the other.
-  void get_edges(Node &above, std::set<int> &edges) const;
+  std::unordered_map<int, Node *> compute_lca_leafs(lca &pairs, lca &triples);
   /// Get pointer to the left descendant.
   /// @return Pointer (monitor) to its left descendant.
   inline Node *get_left() const { return left_.get(); }
@@ -71,12 +68,6 @@ public:
   /// Get pointer to the right descendant.
   /// @return Pointer (monitor) to its right descendant.
   inline Node *get_right() const { return right_.get(); }
-  /// Traverse the tree and return the root.
-  /// @return Root of this tree.
-  Node *get_root();
-  /// Traverse the tree and return constant root pointer.
-  /// @preturn Constant root of this tree.
-  inline const Node *get_root() const { return get_root(); };
   /// Get current node type.
   /// @return Current node type.
   inline NodeType get_type() const { return type_; }
@@ -89,45 +80,20 @@ public:
   /// Remove the right descendant and also consolidate the tree.
   /// @return Its right descendant which was moved.
   std::unique_ptr<Node> remove_right();
-  /// Set left child to given node.
-  /// @param n Given new left child.
-  void set_left(Node n);
-  /// Set right child to given node.
-  /// @param n Given new right child.
-  void set_right(Node n);
-  void set_parent(Node *parent);
+  /// Set the pointer to its parent.
+  /// @param parent Pointer to the parent.
+  inline void set_parent(Node *parent) { parent_ = parent; }
+  /// Set type of current node.
+  /// @param type Its new type.
+  inline void set_type(NodeType type) { type_ = type; }
   /// Set value of current node.
   /// @param value Its new value.
-  void set_value(int value);
-  /// Pseudo sort the tree based on its leafs, left is smaller than right
-  /// descendant. Lexicographically: first, sum of leaf labels and second,
-  /// minimum label.
-  void sort();
-  /// Update all descendants in the tree.
-  inline void updated_descendants() { get_root()->updated_descendants_(); }
-  /// Output the tree to some ostream in a Newick notation.
-  /// @param os Which output stream to use.
-  void write(std::ostream &os) const;
-  /// Output the tree to standard outpu.
-  inline void write() const { write(std::cout); };
+  inline void set_value(int value) { value_ = value; }
 
 private:
-  /// Assign numbers to INTERNAL nodes.
-  /// @param counter What is the counter for this node.
-  /// @return Next free number from the tree below.
-  int assign_numbers_(int counter);
-  /// Recursive call of consolidation.
-  void consolidate_();
-  /// Sort the tree by swapping descendants.
-  /// @return Both minimal value and the sum.
-  std::tuple<int, int> sort_by_swaps_();
-  /// Recursive call for updating descendants.
-  void updated_descendants_();
-  /// Map of descendant. Also can be used as a set of descendants.
-  std::unordered_map<int, Node *> descendants_;
-  /// Left descendant.
+  /// Left child.
   std::unique_ptr<Node> left_;
-  /// Right descendant.
+  /// Right child.
   std::unique_ptr<Node> right_;
   /// Monitor pointer to parent if exists.
   Node *parent_;
@@ -149,73 +115,50 @@ std::ostream &operator<<(std::ostream &os, const Node &n);
 /// @return Changed input stream.
 std::istream &operator>>(std::istream &is, Node &n);
 
-/// Compare two trees if they are exactly same.
-/// @param lhs Tree on the left hand side.
-/// @param rhs Tree on the right hand side.
-/// @return True if the trees exactly match.
-bool operator==(Node &lhs, Node &rhs);
-
-/// Compare two trees if they are not exactly same.
-/// @param lhs Tree on the left hand side.
-/// @param rhs Tree on the right hand side.
-/// @return False if the trees exactly match.
-inline bool operator!=(Node &lhs, Node &rhs) { return !(lhs == rhs); }
-
-/// Compare two nodes if the left hand side is below right hand side.
-/// @param lhs Left hand side of the comparison.
-/// @param rhs Right hand side of the comparison.
-/// @return If lhs is below rhs.
-inline bool operator<(Node &lhs, Node &rhs) {
-  return rhs.get_descendants().contains(lhs.get_value());
+inline bool operator==(Node &lhs, Node &rhs) {
+  return lhs.get_value() == rhs.get_value();
 }
 
-/// Compare two nodes if the left hand side is below right hand side.
-/// @param lhs Left hand side of the comparison.
-/// @param rhs Right hand side of the comparison.
-/// @return If rhs is above lhs.
-inline bool operator>(Node &lhs, Node &rhs) { return rhs < lhs; }
+inline bool operator!=(Node &lhs, Node &rhs) { return !(lhs == rhs); }
 
-/// Precomputing and quering LCA for leafs.
-class LCA {
+class Tree {
 public:
-  /// Default constructor.
-  LCA() = default;
-  /// Precomputing all pairs for leafs.
-  /// @param node For which node we precompute recursively.
-  void compute(Node *node);
-  /// Return LCA for two leafs.
-  /// @param first First leaf.
-  /// @param second Second leaf.
-  /// @return Value and node pointer to their LCA.
-  std::pair<int, Node *> query(int first, int second) const;
-  /// Return LCA for three leafs.
-  /// @param first First leaf.
-  /// @param second Second leaf.
-  /// @param third Third leaf.
-  /// @return Value and node pointer to their LCA.
-  std::pair<int, Node *> query(int first, int second, int third) const;
-
-  /// Write all the LCA pairs.
-  void write() const;
+  inline Tree() : root_(std::make_unique<Node>()) {}
+  /// Assign numbers to internal nodes.
+  /// @param i Number of this tree.
+  /// @param n Number of leafs.
+  void assign_numbers(int i, int n);
+  /// Force contractions and remove empty branches.
+  void consolidate();
+  /// Compute both leaf pointers and lca values.
+  void compute_lca_leafs();
+  Node *lca_query(int first, int second);
+  Node *lca_query(int first, int second, int third);
+  void get_edges(Node *below, Node *above, std::set<int> &edges) const;
+  inline Node *get_leaf(int value) const { return descendants_.at(value); }
+  /// Get pointer to the root node.
+  /// @return Pointer to the root node.
+  inline Node *get_root() const { return root_.get(); }
+  /// Output the tree to some ostream in a Newick notation.
+  /// @param os Which output stream to use.
+  void write(std::ostream &os) const;
+  /// Output the tree to standard outpu.
+  inline void write() const { write(std::cout); };
 
 private:
-  /// Create a string key to the map as "first#second".
-  /// @param first First value. Will be the lower.
-  /// @param second Second value.
-  /// @return Hash string key.
-  std::string get_name_(int first, int second) const;
-  /// Create a string key to the map as "first#second#third".
-  /// @param first First value. Will be the lowest.
-  /// @param second Second value.
-  /// @param third Third value. Will be the highest.
-  /// @return Hash string key.
-  std::string get_name_(int first, int second, int third) const;
-  /// ALl LCAs for leaf pairs.
-  std::unordered_map<std::string, std::pair<int, Node *>> pairs_;
-  /// All LCAs for leaf triples.
-  ///! NOT YET implemented.
-  std::unordered_map<std::string, std::pair<int, Node *>> triples_;
+  /// Map of descendant. Also can be used as a set of descendants.
+  std::unordered_map<int, Node *> descendants_;
+  /// Rot of the tree.
+  std::unique_ptr<Node> root_;
+  lca pairs_;
+  lca triples_;
 };
+
+/// Parse the tree from input stream in Newick format using `>>`.
+/// @param is Which input stream to use.
+/// @param n Where to store the node.
+/// @return Changed input stream.
+std::istream &operator>>(std::istream &is, Tree &t);
 
 /// Tree decomposition of the display graph.
 class TreeDecomposition {
@@ -246,13 +189,12 @@ public:
   /// Constructor for parsing input from a file.
   /// @param file_path Path to the file.
   Input(const std::string &file_path);
-  /// Check if the trees are exactly same.
-  /// @return True if all are exactly same, false otherwise.
-  bool are_identical();
+  ~Input() = default;
   /// Assign numbers to all trees.
   void assign_numbers();
   /// Compute all LCA values for all trees.
   void compute_all_lca();
+  void contract_cherries();
   /// Get the leaf count, which is same for all trees.
   /// @return Leaf count.
   inline int get_leaf_count() const { return n_; }
@@ -264,42 +206,16 @@ public:
   inline TreeDecomposition &get_tree_decomposition() { return decomp_; }
   /// Get reference to all trees.
   /// @return Reference to all trees.
-  inline std::vector<std::unique_ptr<Node>> &get_trees() { return trees_; }
+  inline std::vector<std::unique_ptr<Tree>> &get_trees() { return trees_; }
   /// Set the tree decomposition by parsing its string representation.
   /// @param str Its string representation.
   void set_tree_decomposition(const std::string &str);
 
-  /// Forward iterator through the input. Returns both tree and lca.
-  struct Iterator {
-    using iterator_category = std::forward_iterator_tag;
-    using value_type = std::tuple<Node *, LCA &>;
-    using difference_type = std::ptrdiff_t;
-
-    size_t index;
-    Input &parent;
-
-    // Overload dereference to return a tuple of references
-    value_type operator*() const {
-      return {parent.trees_[index].get(), parent.lcas_[index]};
-    }
-
-    Iterator &operator++() {
-      ++index;
-      return *this;
-    }
-    bool operator!=(const Iterator &other) const {
-      return index != other.index;
-    }
-  };
-
-  Iterator begin() { return {0, *this}; }
-  Iterator end() { return {lcas_.size(), *this}; }
-
   std::vector<std::tuple<int, int, int>> compute_trios();
-
   std::vector<std::tuple<int, int, int, int>> compute_quartets();
 
 private:
+  void contract_cherries_(Node *node);
   /// The tree decomposition.
   TreeDecomposition decomp_;
   /// Number of leafs in each tree.
@@ -307,8 +223,6 @@ private:
   /// Number of trees.
   int t_;
   /// Array of all trees.
-  std::vector<std::unique_ptr<Node>> trees_;
-  /// Array of all precomputed lca.
-  std::vector<LCA> lcas_;
+  std::vector<std::unique_ptr<Tree>> trees_;
 };
 #endif

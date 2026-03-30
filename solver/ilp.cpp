@@ -5,20 +5,17 @@
 
 void ilp(Input &input) {
 
-  input.assign_numbers();
-  input.compute_all_lca();
   auto trios = input.compute_trios();
   auto quartets = input.compute_quartets();
-
-  std::cout << "# Computed trios and quartets" << std::endl;
 
   //! Pseudo random number.
   auto number_of_edges = input.get_leaf_count() * 2;
   auto number_of_rows = trios.size() + quartets.size();
-  auto [tree, lca] = *input.begin();
+  auto tree = input.get_trees().at(0).get();
 
   if (number_of_rows == 0) {
     // It is satisfied.
+    std::cout << "Objective function value: " << 0 << std::endl;
     return;
   }
 
@@ -39,31 +36,31 @@ void ilp(Input &input) {
 
   for (auto &&[a, b, c] : trios) {
     std::set<int> edges;
-    auto [lca_a_b, node_a_b] = lca.query(a, b);
-    auto [lca_ab_c, node_ab_c] = lca.query(a, b, c);
-    auto node_a = tree->get_descendants().at(a);
-    auto node_b = tree->get_descendants().at(b);
-    auto node_c = tree->get_descendants().at(c);
-    node_a->get_edges(*node_a_b, edges);
-    node_b->get_edges(*node_a_b, edges);
-    node_c->get_edges(*node_ab_c, edges);
-    node_a_b->get_edges(*node_ab_c, edges);
+    auto node_a_b = tree->lca_query(a, b);
+    auto node_ab_c = tree->lca_query(a, b, c);
+    auto node_a = tree->get_leaf(a);
+    auto node_b = tree->get_leaf(b);
+    auto node_c = tree->get_leaf(c);
+    tree->get_edges(node_a, node_a_b, edges);
+    tree->get_edges(node_b, node_a_b, edges);
+    tree->get_edges(node_c, node_ab_c, edges);
+    tree->get_edges(node_a_b, node_ab_c, edges);
     index.insert(index.end(), edges.begin(), edges.end());
     start.push_back(index.size());
   }
 
   for (auto &&[a, b, c, d] : quartets) {
     std::set<int> edges;
-    auto [lca_a_b, node_a_b] = lca.query(a, b);
-    auto [lca_c_d, node_c_d] = lca.query(c, d);
-    auto node_a = tree->get_descendants().at(a);
-    auto node_b = tree->get_descendants().at(b);
-    auto node_c = tree->get_descendants().at(c);
-    auto node_d = tree->get_descendants().at(d);
-    node_a->get_edges(*node_a_b, edges);
-    node_b->get_edges(*node_a_b, edges);
-    node_c->get_edges(*node_c_d, edges);
-    node_d->get_edges(*node_c_d, edges);
+    auto node_a_b = tree->lca_query(a, b);
+    auto node_c_d = tree->lca_query(c, d);
+    auto node_a = tree->get_leaf(a);
+    auto node_b = tree->get_leaf(b);
+    auto node_c = tree->get_leaf(c);
+    auto node_d = tree->get_leaf(d);
+    tree->get_edges(node_a, node_a_b, edges);
+    tree->get_edges(node_b, node_a_b, edges);
+    tree->get_edges(node_c, node_c_d, edges);
+    tree->get_edges(node_d, node_c_d, edges);
     index.insert(index.end(), edges.begin(), edges.end());
     start.push_back(index.size());
   }
@@ -125,9 +122,9 @@ void ilp(Input &input) {
   const HighsBasis &basis = highs.getBasis();
   //
   // Report the primal and solution values and basis
-  for (int col = 0; col < lp.num_col_; col++) {
-    std::cout << "Column " << col;
-    std::cout << "; value = " << solution.col_value[col];
-    std::cout << std::endl;
-  }
+  // for (int col = 0; col < lp.num_col_; col++) {
+  //  std::cout << "Column " << col;
+  //  std::cout << "; value = " << solution.col_value[col];
+  //  std::cout << std::endl;
+  //}
 }
