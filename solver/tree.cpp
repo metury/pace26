@@ -280,6 +280,8 @@ void Input::contract_cherries() {
     std::cout << "# No " << RED << "cherries" << RESET << " found."
               << std::endl;
   }
+  std::cout << "# Number of leafs reduced by " << RED << excluded_leafs_.size()
+            << RESET << "." << std::endl;
 }
 
 bool Input::contract_cherries_(Node *n) {
