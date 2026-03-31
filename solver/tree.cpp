@@ -25,7 +25,7 @@ void Tree::assign_numbers(int i, int n) {
 
 void Tree::consolidate() {
   root_->consolidate();
-  while (root_ != std::nullptr_t() && root_->get_type() != LEAF &&
+  while (root_ != std::nullptr_t() && !root_->is_leaf() &&
          (root_->get_left() == nullptr || root_->get_right() == nullptr)) {
     if (root_->get_left() == nullptr && root_->get_right() == nullptr) {
       root_ = std::nullptr_t();
@@ -42,7 +42,7 @@ void Tree::contract_cherry(int first, int second) {
   auto node_a = descendants_.at(first);
   auto node_b = descendants_.at(second);
   if (node_a->get_parent() != nullptr &&
-      node_a->get_parent() == node_b->get_parent()) {
+      *node_a->get_parent() == *node_b->get_parent()) {
     auto parent = node_a->get_parent();
     parent->set_value(first);
     parent->set_type(LEAF);
@@ -68,7 +68,7 @@ bool Tree::is_cherry(int first, int second) const {
   auto node_a = descendants_.at(first);
   auto node_b = descendants_.at(second);
   return node_a->get_parent() != nullptr &&
-         node_a->get_parent() == node_b->get_parent();
+         *node_a->get_parent() == *node_b->get_parent();
 }
 
 bool Tree::is_empty() const { return root_ == std::nullptr_t(); }
@@ -283,22 +283,24 @@ void Input::contract_cherries() {
 }
 
 bool Input::contract_cherries_(Node *n) {
-  if (n->get_type() == LEAF) {
+  if (n->is_leaf()) {
     return false;
   }
   auto left = n->get_left();
   auto right = n->get_right();
-  if (left->get_type() == LEAF && right->get_type() == LEAF) {
+  auto left_value = left->get_value();
+  auto right_value = right->get_value();
+  if (left->is_leaf() && right->is_leaf()) {
     for (auto &&tree : trees_) {
-      if (!tree->is_cherry(left->get_value(), right->get_value())) {
+      if (!tree->is_cherry(left_value, right_value)) {
         return false;
       }
     }
     for (auto &&tree : trees_) {
-      tree->contract_cherry(left->get_value(), right->get_value());
+      tree->contract_cherry(left_value, right_value);
       tree->compute_lca_leafs();
     }
-    add_contracted_(left->get_value(), right->get_value());
+    add_contracted_(left_value, right_value);
     return true;
   }
   return contract_cherries_(left) || contract_cherries_(right);
@@ -329,7 +331,7 @@ Input::remove_edges(const std::set<int> &edges_to_remove) {
 void Input::remove_edges_(const std::set<int> &edges_to_remove,
                           std::vector<std::unique_ptr<Node>> &trees,
                           Node *current_tree) {
-  if (current_tree->get_type() == LEAF) {
+  if (current_tree->is_leaf()) {
     return;
   }
   auto left_val = current_tree->get_left()->get_value();
