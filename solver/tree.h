@@ -4,6 +4,7 @@
 #include "utils.h"
 #include <iostream>
 #include <memory>
+#include <ostream>
 #include <set>
 #include <unordered_map>
 #include <vector>
@@ -80,6 +81,14 @@ public:
   /// Remove the right descendant and also consolidate the tree.
   /// @return Its right descendant which was moved.
   std::unique_ptr<Node> remove_right();
+  inline void set_left(std::unique_ptr<Node> node) {
+    left_ = std::move(node);
+    left_->set_parent(this);
+  }
+  inline void set_right(std::unique_ptr<Node> node) {
+    right_ = std::move(node);
+    right_->set_parent(this);
+  }
   /// Set the pointer to its parent.
   /// @param parent Pointer to the parent.
   inline void set_parent(Node *parent) { parent_ = parent; }
@@ -89,6 +98,10 @@ public:
   /// Set value of current node.
   /// @param value Its new value.
   inline void set_value(int value) { value_ = value; }
+
+  void write_with_substitution(
+      std::ostream &os,
+      const std::unordered_map<int, std::string> &subst) const;
 
 private:
   /// Left child.
@@ -124,6 +137,9 @@ inline bool operator!=(Node &lhs, Node &rhs) { return !(lhs == rhs); }
 class Tree {
 public:
   inline Tree() : root_(std::make_unique<Node>()) {}
+  inline Tree(std::unique_ptr<Node> root) : root_(std::move(root)) {
+    root_->set_parent(nullptr);
+  }
   /// Assign numbers to internal nodes.
   /// @param i Number of this tree.
   /// @param n Number of leafs.
@@ -141,11 +157,15 @@ public:
   /// @return Pointer to the root node.
   inline Node *get_root() const { return root_.get(); }
   bool is_cherry(int first, int second) const;
+  bool is_empty() const;
   /// Output the tree to some ostream in a Newick notation.
   /// @param os Which output stream to use.
-  void write(std::ostream &os) const;
+  void write(std::ostream &os,
+             const std::unordered_map<int, std::string> &subst) const;
   /// Output the tree to standard outpu.
-  inline void write() const { write(std::cout); };
+  inline void write(const std::unordered_map<int, std::string> &subst) const {
+    write(std::cout, subst);
+  };
 
 private:
   /// Map of descendant. Also can be used as a set of descendants.
@@ -215,10 +235,18 @@ public:
 
   std::vector<std::tuple<int, int, int>> compute_trios();
   std::vector<std::tuple<int, int, int, int>> compute_quartets();
+  std::vector<std::unique_ptr<Tree>>
+  remove_edges(const std::set<int> &edges_to_remove);
+  inline std::unordered_map<int, std::string> &get_contractions() {
+    return contracted_;
+  }
 
 private:
   void add_contracted_(int first, int second);
   bool contract_cherries_(Node *node);
+  void remove_edges_(const std::set<int> &edges_to_remove,
+                     std::vector<std::unique_ptr<Node>> &trees,
+                     Node *current_tree);
   /// The tree decomposition.
   TreeDecomposition decomp_;
   /// Number of leafs in each tree.

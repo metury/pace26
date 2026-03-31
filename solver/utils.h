@@ -27,4 +27,6 @@ LCA_KEY get_lca_key(int first, int second);
 
 LCA_KEY get_lca_key(int first, int second, int third);
 
+bool is_approx_one(float x, float tolerance = 1e-6f);
+
 #endif

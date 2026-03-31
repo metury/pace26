@@ -4,7 +4,7 @@
 #include <set>
 #include <vector>
 
-void ilp(Input &input) {
+std::set<int> ilp(Input &input) {
 
   auto trios = input.compute_trios();
   auto quartets = input.compute_quartets();
@@ -18,7 +18,7 @@ void ilp(Input &input) {
     // It is satisfied.
     std::cout << "# Objective function value: " << YELLOW << 0 << RESET
               << std::endl;
-    return;
+    return std::set<int>{};
   }
 
   HighsModel model;
@@ -112,4 +112,11 @@ void ilp(Input &input) {
 
   const HighsSolution &solution = highs.getSolution();
   const HighsBasis &basis = highs.getBasis();
+  std::set<int> edges_to_erase;
+  for (int col = 0; col < lp.num_col_; col++) {
+    if (is_approx_one(solution.col_value[col])) {
+      edges_to_erase.insert(col);
+    }
+  }
+  return edges_to_erase;
 }

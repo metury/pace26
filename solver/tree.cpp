@@ -1,5 +1,6 @@
 #include "tree.h"
 #include "utils.h"
+#include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -8,6 +9,7 @@
 #include <tuple>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 // ==========
 // == Node ==
@@ -57,27 +59,36 @@ int Node::assign_numbers(int counter) {
 
 void Node::consolidate() {
   if (type_ != LEAF) {
-    if (left_ == nullptr && right_ == nullptr) {
+    if (left_) {
+      left_->consolidate();
+    }
+    if (right_) {
+      right_->consolidate();
+    }
+    if (!left_ && !right_) {
       if (parent_ != nullptr) {
         if (parent_->get_left() == this) {
           parent_->remove_left();
         } else {
           parent_->remove_right();
         }
-        parent_->consolidate();
       }
-    }
-    if (left_ == nullptr) {
-      left_ = std::move(right_->left_);
-      right_ = std::move(right_->right_);
-      consolidate();
-    } else if (right_ == nullptr) {
-      left_ = std::move(left_->left_);
-      right_ = std::move(left_->right_);
-      consolidate();
-    } else {
-      left_->consolidate();
-      right_->consolidate();
+    } else if (right_ && !left_) {
+      if (parent_ != nullptr) {
+        if (parent_->get_left() == this) {
+          parent_->set_left(remove_right());
+        } else {
+          parent_->set_right(remove_right());
+        }
+      }
+    } else if (left_ && !right_) {
+      if (parent_ != nullptr) {
+        if (parent_->get_left() == this) {
+          parent_->set_left(remove_left());
+        } else {
+          parent_->set_right(remove_left());
+        }
+      }
     }
   }
 }
@@ -107,15 +118,34 @@ std::unordered_map<int, Node *> Node::compute_lca_leafs(lca &pairs,
 }
 
 std::unique_ptr<Node> Node::remove_left() {
-  auto tmp = std::move(left_);
-  consolidate();
-  return std::move(tmp);
+  // left_->set_parent(nullptr);
+  return std::move(left_);
 }
 
 std::unique_ptr<Node> Node::remove_right() {
-  auto tmp = std::move(right_);
-  consolidate();
-  return std::move(tmp);
+  // right_->set_parent(nullptr);
+  return std::move(right_);
+}
+
+void Node::write_with_substitution(
+    std::ostream &os, const std::unordered_map<int, std::string> &subst) const {
+  if (get_type() == LEAF) {
+    if (subst.contains(get_value())) {
+      os << subst.at(get_value());
+    } else {
+      os << get_value();
+    }
+  } else {
+    os << "(";
+    if (get_left() != nullptr) {
+      get_left()->write_with_substitution(os, subst);
+    }
+    os << ",";
+    if (get_right() != nullptr) {
+      get_right()->write_with_substitution(os, subst);
+    }
+    os << ")";
+  }
 }
 
 // ======================
@@ -123,11 +153,7 @@ std::unique_ptr<Node> Node::remove_right() {
 // ======================
 
 std::ostream &operator<<(std::ostream &os, const Node &n) {
-  if (n.get_type() == LEAF) {
-    os << n.get_value();
-  } else {
-    os << "(" << *(n.get_left()) << "," << *(n.get_right()) << ")";
-  }
+  n.write_with_substitution(os, std::unordered_map<int, std::string>{});
   return os;
 }
 
@@ -165,7 +191,20 @@ void Tree::assign_numbers(int i, int n) {
   root_->assign_numbers(i * (n - 1) + 2);
 }
 
-void Tree::consolidate() { root_->consolidate(); }
+void Tree::consolidate() {
+  root_->consolidate();
+  while (root_ != std::nullptr_t() && root_->get_type() != LEAF &&
+         (root_->get_left() == nullptr || root_->get_right() == nullptr)) {
+    if (root_->get_left() == nullptr && root_->get_right() == nullptr) {
+      root_ = std::nullptr_t();
+    }
+    if (root_->get_left() == nullptr) {
+      root_ = std::make_unique<Node>(std::move(*root_->remove_right()));
+    } else {
+      root_ = std::make_unique<Node>(std::move(*root_->remove_left()));
+    }
+  }
+}
 
 void Tree::contract_cherry(int first, int second) {
   auto node_a = descendants_.at(first);
@@ -208,8 +247,12 @@ bool Tree::is_cherry(int first, int second) const {
          node_a->get_parent() == node_b->get_parent();
 }
 
-void Tree::write(std::ostream &os) const {
-  os << get_root() << ";" << std::endl;
+bool Tree::is_empty() const { return root_ == std::nullptr_t(); }
+
+void Tree::write(std::ostream &os,
+                 const std::unordered_map<int, std::string> &subst) const {
+  get_root()->write_with_substitution(os, subst);
+  os << ";" << std::endl;
 }
 
 std::istream &operator>>(std::istream &is, Tree &t) {
@@ -374,6 +417,46 @@ std::vector<std::tuple<int, int, int, int>> Input::compute_quartets() {
     }
   }
   return quartets;
+}
+
+std::vector<std::unique_ptr<Tree>>
+Input::remove_edges(const std::set<int> &edges_to_remove) {
+  std::vector<std::unique_ptr<Node>> output;
+  std::vector<std::unique_ptr<Tree>> trees;
+  if (trees_.size() == 0) {
+    return trees;
+  }
+  output.push_back(std::make_unique<Node>(*trees_[0]->get_root()));
+  remove_edges_(edges_to_remove, output, output.at(0).get());
+  for (auto &&tree : output) {
+    trees.push_back(std::make_unique<Tree>(std::move(tree)));
+  }
+  for (auto &&tree : trees) {
+    tree->consolidate();
+  }
+  return trees;
+}
+
+void Input::remove_edges_(const std::set<int> &edges_to_remove,
+                          std::vector<std::unique_ptr<Node>> &trees,
+                          Node *current_tree) {
+  if (current_tree->get_type() == LEAF) {
+    return;
+  }
+  auto left_val = current_tree->get_left()->get_value();
+  if (edges_to_remove.contains(left_val)) {
+    trees.push_back(std::move(current_tree->remove_left()));
+    remove_edges_(edges_to_remove, trees, trees.at(trees.size() - 1).get());
+  } else {
+    remove_edges_(edges_to_remove, trees, current_tree->get_left());
+  }
+  auto right_val = current_tree->get_right()->get_value();
+  if (edges_to_remove.contains(right_val)) {
+    trees.push_back(current_tree->remove_right());
+    remove_edges_(edges_to_remove, trees, trees.at(trees.size() - 1).get());
+  } else {
+    remove_edges_(edges_to_remove, trees, current_tree->get_right());
+  }
 }
 
 void Input::add_contracted_(int first, int second) {

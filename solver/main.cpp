@@ -14,7 +14,12 @@ void process_input_file(const std::string &file) {
             << input.get_tree_count() << RESET << " trees with " << GREEN
             << input.get_leaf_count() << RESET << " leafs each." << std::endl;
   input.contract_cherries();
-  ilp(input);
+  auto edges_to_erase = ilp(input);
+  auto output = input.remove_edges(edges_to_erase);
+  for (auto &&tree : output) {
+    if (!tree->is_empty())
+      tree->write(input.get_contractions());
+  }
 }
 
 int main(int argc, char **argv) {

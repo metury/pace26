@@ -46,3 +46,7 @@ LCA_KEY get_lca_key(int first, int second, int third) {
   os << first << "#" << second << "#" << third;
   return os.str();
 }
+
+bool is_approx_one(float x, float tolerance) {
+  return std::abs(x - 1.0f) < tolerance;
+}

@@ -2,6 +2,6 @@
 #define ilp_h_
 #include "tree.h"
 
-void ilp(Input &input);
+std::set<int> ilp(Input &input);
 
 #endif
