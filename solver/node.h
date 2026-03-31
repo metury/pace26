@@ -1,3 +1,7 @@
+/// @file node.h
+/// @brief Common framework with nodes.
+/// A common framework for nodes. That is an object having two children, value,
+/// type and possibly parent.
 #ifndef node_h_
 #define node_h_
 
@@ -7,8 +11,11 @@
 #include <ostream>
 #include <unordered_map>
 
+// Predeclaraion.
 class Node;
-using lca = std::unordered_map<LCA_KEY, Node *>;
+
+/// Renaming the hash map using LCA_KEY for easier use.
+using LCA_TABLE = std::unordered_map<LCA_KEY, Node *>;
 
 /// Type of nodes, either LEAF or INTERNAL.
 enum NodeType {
@@ -16,7 +23,7 @@ enum NodeType {
   INTERNAL,
 };
 
-/// Node class for trees.
+/// Basic Node class.
 class Node {
 public:
   /// Constructor. Set 0 value, LEAF and no null pointers.
@@ -33,18 +40,21 @@ public:
   inline Node(Node *parent, int value)
       : type_(LEAF), value_(value), parent_(parent) {}
   /// (Deep) Copy constructor.
-  /// @param other Second node from which we copy.
+  /// @param other The other node from which we copy.
   Node(const Node &other);
   /// (Deep) Copy assignement.
-  /// @param other Second node from which we copy.
+  /// @param other The other node from which we copy.
+  /// @return Reference to the copied node.
   Node &operator=(const Node &other);
   /// Move constructor.
-  /// @param other Second node from which we move.
+  /// @param other The other node from which we move.
   Node(Node &&other) = default;
   /// Move assignement.
-  /// @param other Second node from which we move.
+  /// @param other The other node from which we move.
+  /// @return Reference to the moved node.
   Node &operator=(Node &&other) = default;
-  /// Destructor.
+  /// Destructor. All pointers are unique_ptr hence no need to specific
+  /// deletion.
   ~Node() = default;
   /// Add left descendant and set type to LEAF.
   /// @return Pointer to the new descendant.
@@ -57,14 +67,19 @@ public:
   int assign_numbers(int counter);
   /// Force iterative contraction of all 2 degree inner vertices.
   void consolidate();
-  std::unordered_map<int, Node *> compute_lca_leafs(lca &pairs, lca &triples);
-  /// Get pointer to the left descendant.
+  /// Compute both LCA tables and pointers to all leafs.
+  /// @param pairs LCA table for pair of leafs.
+  /// @param triples LCA table for triples of leafs.
+  /// @return A map of pointers to all leafs.
+  std::unordered_map<int, Node *> compute_lca_leafs(LCA_TABLE &pairs,
+                                                    LCA_TABLE &triples);
+  /// Get a pointer to the left descendant.
   /// @return Pointer (monitor) to its left descendant.
   inline Node *get_left() const { return left_.get(); }
-  /// Get pointer to the parent.
-  /// @return Pointer to the parent.
+  /// Get a pointer to the parent.
+  /// @return Raw pointer to the parent.
   inline Node *get_parent() const { return parent_; }
-  /// Get pointer to the right descendant.
+  /// Get a pointer to the right descendant.
   /// @return Pointer (monitor) to its right descendant.
   inline Node *get_right() const { return right_.get(); }
   /// Get current node type.
@@ -73,30 +88,34 @@ public:
   /// Get the value stored in this node.
   /// @return Its stored value.
   inline int get_value() const { return value_; }
-  /// Remove the left descendant and also consolidate the tree.
+  /// Return whether a node is a leaf or not.
+  /// @return If the node is leaf or not.
+  inline bool is_leaf() const { return type_ == LEAF; }
+  /// Remove the left descendant.
   /// @return Its left descendant which was moved.
   std::unique_ptr<Node> remove_left();
-  /// Remove the right descendant and also consolidate the tree.
+  /// Remove the right descendant.
   /// @return Its right descendant which was moved.
   std::unique_ptr<Node> remove_right();
-  inline void set_left(std::unique_ptr<Node> node) {
-    left_ = std::move(node);
-    left_->set_parent(this);
-  }
-  inline void set_right(std::unique_ptr<Node> node) {
-    right_ = std::move(node);
-    right_->set_parent(this);
-  }
+  /// Set new left child.
+  /// @param node New left child.
+  void set_left(std::unique_ptr<Node> node);
   /// Set the pointer to its parent.
   /// @param parent Pointer to the parent.
   inline void set_parent(Node *parent) { parent_ = parent; }
+  /// Set new right child.
+  /// @param node New right child.
+  void set_right(std::unique_ptr<Node> node);
   /// Set type of current node.
   /// @param type Its new type.
   inline void set_type(NodeType type) { type_ = type; }
   /// Set value of current node.
   /// @param value Its new value.
   inline void set_value(int value) { value_ = value; }
-
+  /// Write the node and its subtree with possible substitutions. Does not break
+  /// on empty subtrees.
+  /// @param os Which output stream to use.
+  /// @param subst List of substitutions.
   void write_with_substitution(
       std::ostream &os,
       const std::unordered_map<int, std::string> &subst) const;
@@ -126,9 +145,17 @@ std::ostream &operator<<(std::ostream &os, const Node &n);
 /// @return Changed input stream.
 std::istream &operator>>(std::istream &is, Node &n);
 
+/// Compare two nodes based on their values.
+/// @param lhs Left hand side.
+/// @param rhs Right hand side.
+/// @return If the values of both nodes are the same.
 inline bool operator==(Node &lhs, Node &rhs) {
   return lhs.get_value() == rhs.get_value();
 }
 
+/// Compare two nodes based on their values.
+/// @param lhs Left hand side.
+/// @param rhs Right hand side.
+/// @return If the values of both nodes are not the same.
 inline bool operator!=(Node &lhs, Node &rhs) { return !(lhs == rhs); }
 #endif

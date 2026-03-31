@@ -1,7 +1,6 @@
 /// @file utils.h
 /// @brief Common utility functions.
 /// Common functions like string spliting and comparing float numbers.
-
 #ifndef utils_h_
 #define utils_h_
 
@@ -11,11 +10,15 @@
 /// This is to generalize LCA table and possibly change it in the future.
 using LCA_KEY = std::string;
 
-/// Common colors for colorful printing.
+/// Common RED colos for colorful printing.
 const std::string RED = "\033[31m";
+/// Common BLUE colos for colorful printing.
 const std::string BLUE = "\033[34m";
+/// Common GREEN colos for colorful printing.
 const std::string GREEN = "\033[32m";
+/// Common YELLOW colos for colorful printing.
 const std::string YELLOW = "\033[33m";
+/// Common RESET colos for colorful printing.
 const std::string RESET = "\033[0m";
 
 /// Get the lca key for two leafs sort them and put in string "first"#"second".

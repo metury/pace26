@@ -88,8 +88,8 @@ void Node::consolidate() {
   }
 }
 
-std::unordered_map<int, Node *> Node::compute_lca_leafs(lca &pairs,
-                                                        lca &triples) {
+std::unordered_map<int, Node *> Node::compute_lca_leafs(LCA_TABLE &pairs,
+                                                        LCA_TABLE &triples) {
   if (type_ == LEAF) {
     std::unordered_map<int, Node *> descendants;
     descendants.insert_or_assign(value_, this);
@@ -113,13 +113,23 @@ std::unordered_map<int, Node *> Node::compute_lca_leafs(lca &pairs,
 }
 
 std::unique_ptr<Node> Node::remove_left() {
-  // left_->set_parent(nullptr);
+  left_->set_parent(nullptr);
   return std::move(left_);
 }
 
 std::unique_ptr<Node> Node::remove_right() {
-  // right_->set_parent(nullptr);
+  right_->set_parent(nullptr);
   return std::move(right_);
+}
+
+void Node::set_left(std::unique_ptr<Node> node) {
+  left_ = std::move(node);
+  left_->set_parent(this);
+}
+
+void Node::set_right(std::unique_ptr<Node> node) {
+  right_ = std::move(node);
+  right_->set_parent(this);
 }
 
 void Node::write_with_substitution(

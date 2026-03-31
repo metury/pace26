@@ -15,6 +15,10 @@
 // == Tree ==
 // ==========
 
+Tree::Tree(std::unique_ptr<Node> root) : root_(std::move(root)) {
+  root_->set_parent(nullptr);
+}
+
 void Tree::assign_numbers(int i, int n) {
   root_->assign_numbers(i * (n - 1) + 2);
 }
@@ -60,14 +64,6 @@ void Tree::get_edges(Node *below, Node *above, std::set<int> &edges) const {
   }
 }
 
-Node *Tree::lca_query(int first, int second) {
-  return pairs_[get_lca_key(first, second)];
-}
-
-Node *Tree::lca_query(int first, int second, int third) {
-  return triples_[get_lca_key(first, second, third)];
-}
-
 bool Tree::is_cherry(int first, int second) const {
   auto node_a = descendants_.at(first);
   auto node_b = descendants_.at(second);
@@ -76,6 +72,14 @@ bool Tree::is_cherry(int first, int second) const {
 }
 
 bool Tree::is_empty() const { return root_ == std::nullptr_t(); }
+
+Node *Tree::lca_query(int first, int second) {
+  return pairs_[get_lca_key(first, second)];
+}
+
+Node *Tree::lca_query(int first, int second, int third) {
+  return triples_[get_lca_key(first, second, third)];
+}
 
 void Tree::write(std::ostream &os,
                  const std::unordered_map<int, std::string> &subst) const {
@@ -86,6 +90,56 @@ void Tree::write(std::ostream &os,
 std::istream &operator>>(std::istream &is, Tree &t) {
   is >> *(t.get_root());
   return is;
+}
+
+// =======================
+// == TreeDecomposition ==
+// =======================
+
+TreeDecomposition::TreeDecomposition(const std::string &str) {
+  auto parts = split(str.substr(1, str.size() - 2), ',');
+  treewidth_ = std::stoi(parts[0]);
+  std::vector<int> bag;
+  bool edges = false;
+  for (int i = 1; i < parts.size(); ++i) {
+    if (edges) {
+      auto const pos = parts[i].find_last_of('[');
+      const auto first = parts[i].substr(pos + 1);
+      edges_.push_back(
+          std::make_tuple(std::stoi(first), std::stoi(parts[++i])));
+    } else {
+      if (parts[i][0] == '[') {
+        if (bag.size() > 0) {
+          bags_.push_back(bag);
+          bag.erase(bag.begin(), bag.end());
+        }
+      }
+      auto const pos = parts[i].find_last_of('[');
+      const auto first = parts[i].substr(pos + 1);
+      bag.push_back(std::stoi(first));
+      auto len = parts[i].length();
+      if (parts[i].size() > 2 && parts[i][len - 2] == ']') {
+        edges = true;
+        bags_.push_back(bag);
+      }
+    }
+  }
+}
+
+void TreeDecomposition::write(std::ostream &os) {
+  os << "TreeWidth: " << treewidth_ << std::endl;
+  os << "Bags:" << std::endl;
+  for (auto &&bag : bags_) {
+    os << "\t";
+    for (auto &&val : bag)
+      os << val << ";";
+    os << std::endl;
+  }
+  os << "Edges:" << std::endl;
+  for (auto &&edge : edges_) {
+    std::cout << "\t[" << std::get<0>(edge) << "," << std::get<1>(edge) << "]"
+              << std::endl;
+  }
 }
 
 // ===========
@@ -115,9 +169,7 @@ Input::Input(const std::string &file_path) {
   }
   ifs.close();
   assign_numbers();
-  for (auto &&tree : trees_) {
-    tree->compute_lca_leafs();
-  }
+  compute_all_lca();
 }
 
 void Input::assign_numbers() {
@@ -126,11 +178,12 @@ void Input::assign_numbers() {
   }
 }
 
-void Input::set_tree_decomposition(const std::string &str) {
-  decomp_ = TreeDecomposition(str);
+void Input::compute_all_lca() {
+  for (auto &&tree : trees_) {
+    tree->compute_lca_leafs();
+  }
 }
 
-// This needs to be redone! Compute all wrong triples.
 std::vector<std::tuple<int, int, int>> Input::compute_trios() {
   std::vector<std::tuple<int, int, int>> trios;
   auto tree1 = trees_[0].get();
@@ -168,37 +221,6 @@ std::vector<std::tuple<int, int, int>> Input::compute_trios() {
     }
   }
   return trios;
-}
-
-void Input::contract_cherries() {
-  while (contract_cherries_(trees_[0]->get_root())) {
-  };
-  for (auto &&[key, val] : contracted_) {
-    std::cout << "# Replacing cherry: " << RED << key << RESET << " <- " << RED
-              << val << RESET << std::endl;
-  }
-}
-
-bool Input::contract_cherries_(Node *n) {
-  if (n->get_type() == LEAF) {
-    return false;
-  }
-  auto left = n->get_left();
-  auto right = n->get_right();
-  if (left->get_type() == LEAF && right->get_type() == LEAF) {
-    for (auto &&tree : trees_) {
-      if (!tree->is_cherry(left->get_value(), right->get_value())) {
-        return false;
-      }
-    }
-    for (auto &&tree : trees_) {
-      tree->contract_cherry(left->get_value(), right->get_value());
-      tree->compute_lca_leafs();
-    }
-    add_contracted_(left->get_value(), right->get_value());
-    return true;
-  }
-  return contract_cherries_(left) || contract_cherries_(right);
 }
 
 std::vector<std::tuple<int, int, int, int>> Input::compute_quartets() {
@@ -245,6 +267,45 @@ std::vector<std::tuple<int, int, int, int>> Input::compute_quartets() {
     }
   }
   return quartets;
+}
+
+void Input::contract_cherries() {
+  while (contract_cherries_(trees_[0]->get_root())) {
+  };
+  for (auto &&[key, val] : contracted_) {
+    std::cout << "# Replacing cherry: " << RED << key << RESET << " <- " << RED
+              << val << RESET << std::endl;
+  }
+  if (contracted_.empty()) {
+    std::cout << "# No " << RED << "cherries" << RESET << " found."
+              << std::endl;
+  }
+}
+
+bool Input::contract_cherries_(Node *n) {
+  if (n->get_type() == LEAF) {
+    return false;
+  }
+  auto left = n->get_left();
+  auto right = n->get_right();
+  if (left->get_type() == LEAF && right->get_type() == LEAF) {
+    for (auto &&tree : trees_) {
+      if (!tree->is_cherry(left->get_value(), right->get_value())) {
+        return false;
+      }
+    }
+    for (auto &&tree : trees_) {
+      tree->contract_cherry(left->get_value(), right->get_value());
+      tree->compute_lca_leafs();
+    }
+    add_contracted_(left->get_value(), right->get_value());
+    return true;
+  }
+  return contract_cherries_(left) || contract_cherries_(right);
+}
+
+void Input::set_tree_decomposition(const std::string &str) {
+  decomp_ = TreeDecomposition(str);
 }
 
 std::vector<std::unique_ptr<Tree>>
@@ -302,54 +363,4 @@ void Input::add_contracted_(int first, int second) {
   }
   excluded_leafs_.insert(second);
   contracted_.insert_or_assign(first, oss.str());
-}
-
-// =======================
-// == TreeDecomposition ==
-// =======================
-
-TreeDecomposition::TreeDecomposition(const std::string &str) {
-  auto parts = split(str.substr(1, str.size() - 2), ',');
-  treewidth_ = std::stoi(parts[0]);
-  std::vector<int> bag;
-  bool edges = false;
-  for (int i = 1; i < parts.size(); ++i) {
-    if (edges) {
-      auto const pos = parts[i].find_last_of('[');
-      const auto first = parts[i].substr(pos + 1);
-      edges_.push_back(
-          std::make_tuple(std::stoi(first), std::stoi(parts[++i])));
-    } else {
-      if (parts[i][0] == '[') {
-        if (bag.size() > 0) {
-          bags_.push_back(bag);
-          bag.erase(bag.begin(), bag.end());
-        }
-      }
-      auto const pos = parts[i].find_last_of('[');
-      const auto first = parts[i].substr(pos + 1);
-      bag.push_back(std::stoi(first));
-      auto len = parts[i].length();
-      if (parts[i].size() > 2 && parts[i][len - 2] == ']') {
-        edges = true;
-        bags_.push_back(bag);
-      }
-    }
-  }
-}
-
-void TreeDecomposition::write(std::ostream &os) {
-  os << "TreeWidth: " << treewidth_ << std::endl;
-  os << "Bags:" << std::endl;
-  for (auto &&bag : bags_) {
-    os << "\t";
-    for (auto &&val : bag)
-      os << val << ";";
-    os << std::endl;
-  }
-  os << "Edges:" << std::endl;
-  for (auto &&edge : edges_) {
-    std::cout << "\t[" << std::get<0>(edge) << "," << std::get<1>(edge) << "]"
-              << std::endl;
-  }
 }

@@ -2,9 +2,9 @@
 /// @brief Creating and running ILP.
 /// Definition and computation of the ILP. Also solving the ILP itself.
 /// Used solver: highs.dev
-
 #ifndef ilp_h_
 #define ilp_h_
+
 #include "tree.h"
 
 /// Solve ILP. Return set of edges as a solution, where each edge has number
