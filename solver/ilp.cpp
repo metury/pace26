@@ -98,6 +98,10 @@ std::set<int> ilp(Input &input) {
   // highs.writeModel("model.lp");
   // return;
 
+  std::cout << "# Solving ILP with " << YELLOW << number_of_rows << RESET
+            << " constraints and " << YELLOW << number_of_edges << RESET
+            << " variables." << std::endl;
+
   // Solve the model
   return_status = highs.run();
   assert(return_status == HighsStatus::kOk);
