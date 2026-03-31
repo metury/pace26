@@ -228,5 +228,6 @@ private:
   /// Array of all trees.
   std::vector<std::unique_ptr<Tree>> trees_;
   std::unordered_map<int, std::string> contracted_;
+  std::set<int> excluded_leafs_;
 };
 #endif

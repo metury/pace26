@@ -264,9 +264,15 @@ std::vector<std::tuple<int, int, int>> Input::compute_trios() {
   std::vector<std::tuple<int, int, int>> trios;
   auto tree1 = trees_[0].get();
   for (auto a = 1; a <= get_leaf_count(); ++a) {
+    if (excluded_leafs_.contains(a))
+      continue;
     for (auto b = a + 1; b <= get_leaf_count(); ++b) {
+      if (excluded_leafs_.contains(b))
+        continue;
       auto node1_a_b = tree1->lca_query(a, b);
       for (auto c = 1; c <= get_leaf_count(); ++c) {
+        if (excluded_leafs_.contains(c))
+          continue;
         if (c == b || c == a)
           continue;
         auto node1_ab_c = tree1->lca_query(a, b, c);
@@ -327,13 +333,17 @@ std::vector<std::tuple<int, int, int, int>> Input::compute_quartets() {
   std::vector<std::tuple<int, int, int, int>> quartets;
   auto tree1 = trees_[0].get();
   for (auto a = 1; a <= get_leaf_count(); ++a) {
+    if (excluded_leafs_.contains(a))
+      continue;
     for (auto b = a + 1; b <= get_leaf_count(); ++b) {
+      if (excluded_leafs_.contains(b))
+        continue;
       auto node1_a_b = tree1->lca_query(a, b);
       for (auto c = 1; c <= get_leaf_count(); ++c) {
-        if (c == b || c == a)
+        if (c == b || c == a || excluded_leafs_.contains(c))
           continue;
         for (auto d = c + 1; d <= get_leaf_count(); ++d) {
-          if (d == c || d == a || d == b)
+          if (d == c || d == a || d == b || excluded_leafs_.contains(d))
             continue;
           auto node1_ab_c = tree1->lca_query(a, b, c);
           auto node1_ab_d = tree1->lca_query(a, b, d);
@@ -378,6 +388,7 @@ void Input::add_contracted_(int first, int second) {
   } else {
     oss << "(" << first << "," << second << ")";
   }
+  excluded_leafs_.insert(second);
   contracted_.insert_or_assign(first, oss.str());
 }
 
