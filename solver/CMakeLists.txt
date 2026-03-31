@@ -9,7 +9,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(highs CONFIG REQUIRED)
 
-add_executable(pace utils.cpp tree.cpp main.cpp ilp.cpp)
+add_executable(pace utils.cpp node.cpp tree.cpp main.cpp ilp.cpp)
 
 target_link_libraries(pace PRIVATE highs)
 
