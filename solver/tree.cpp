@@ -303,7 +303,8 @@ void Input::contract_cherries() {
   while (contract_cherries_(trees_[0]->get_root())) {
   };
   for (auto &&[key, val] : contracted_) {
-    std::cout << key << " -> " << val << std::endl;
+    std::cout << "# Replacing cherries: " << RED << key << RESET << " -> "
+              << RED << val << RESET << std::endl;
   }
 }
 

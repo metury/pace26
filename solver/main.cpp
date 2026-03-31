@@ -3,15 +3,16 @@
 #include <iostream>
 
 void process_input_file(const std::string &file) {
-  std::cout << "# Processing file \"" << file << "\"." << std::endl;
+  std::cout << "# Processing file \"" << BLUE << file << RESET << "\"."
+            << std::endl;
 
   // Load the input from the file.
   auto input = Input(file);
 
   // Output what is inside.
-  std::cout << "# File \"" << file << "\" contains " << input.get_tree_count()
-            << " trees with " << input.get_leaf_count() << " leafs each."
-            << std::endl;
+  std::cout << "# File \"" << GREEN << file << RESET << "\" contains " << GREEN
+            << input.get_tree_count() << RESET << " trees with " << GREEN
+            << input.get_leaf_count() << RESET << " leafs each." << std::endl;
   input.contract_cherries();
   ilp(input);
 }

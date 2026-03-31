@@ -1,5 +1,6 @@
 #include "ilp.h"
 #include "Highs.h"
+#include "utils.h"
 #include <set>
 #include <vector>
 
@@ -15,7 +16,8 @@ void ilp(Input &input) {
 
   if (number_of_rows == 0) {
     // It is satisfied.
-    std::cout << "Objective function value: " << 0 << std::endl;
+    std::cout << "# Objective function value: " << YELLOW << 0 << RESET
+              << std::endl;
     return;
   }
 
@@ -105,26 +107,9 @@ void ilp(Input &input) {
   assert(model_status == HighsModelStatus::kOptimal);
 
   const HighsInfo &info = highs.getInfo();
-  // std::cout << "Simplex iteration count: " << info.simplex_iteration_count
-  //           << std::endl;
-  std::cout << "Objective function value: " << info.objective_function_value
-            << std::endl;
-  // std::cout << "Primal  solution status: "
-  //           << highs.solutionStatusToString(info.primal_solution_status)
-  //           << std::endl;
-  // std::cout << "Dual    solution status: "
-  //           << highs.solutionStatusToString(info.dual_solution_status)
-  //           << std::endl;
-  // std::cout << "Basis: " << highs.basisValidityToString(info.basis_validity)
-  //           << std::endl;
+  std::cout << "# Objective function value: " << YELLOW
+            << info.objective_function_value << RESET << std::endl;
 
   const HighsSolution &solution = highs.getSolution();
   const HighsBasis &basis = highs.getBasis();
-  //
-  // Report the primal and solution values and basis
-  // for (int col = 0; col < lp.num_col_; col++) {
-  //  std::cout << "Column " << col;
-  //  std::cout << "; value = " << solution.col_value[col];
-  //  std::cout << std::endl;
-  //}
 }
