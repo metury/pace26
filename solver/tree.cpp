@@ -296,6 +296,9 @@ std::vector<std::tuple<int, int, int>> Input::compute_trios() {
 void Input::contract_cherries() {
   while (contract_cherries_(trees_[0]->get_root())) {
   };
+  for (auto &&[key, val] : contracted_) {
+    std::cout << key << " -> " << val << std::endl;
+  }
 }
 
 bool Input::contract_cherries_(Node *n) {
@@ -314,6 +317,7 @@ bool Input::contract_cherries_(Node *n) {
       tree->contract_cherry(left->get_value(), right->get_value());
       tree->compute_lca_leafs();
     }
+    add_contracted_(left->get_value(), right->get_value());
     return true;
   }
   return contract_cherries_(left) || contract_cherries_(right);
@@ -359,6 +363,22 @@ std::vector<std::tuple<int, int, int, int>> Input::compute_quartets() {
     }
   }
   return quartets;
+}
+
+void Input::add_contracted_(int first, int second) {
+  std::ostringstream oss;
+  if (contracted_.contains(first) && contracted_.contains(second)) {
+    oss << "(" << contracted_.at(first) << "," << contracted_.at(second) << ")";
+    contracted_.erase(second);
+  } else if (contracted_.contains(first)) {
+    oss << "(" << contracted_.at(first) << "," << second << ")";
+  } else if (contracted_.contains(second)) {
+    oss << "(" << first << "," << contracted_.at(second) << ")";
+    contracted_.erase(second);
+  } else {
+    oss << "(" << first << "," << second << ")";
+  }
+  contracted_.insert_or_assign(first, oss.str());
 }
 
 // =======================

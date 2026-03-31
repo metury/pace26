@@ -12,9 +12,9 @@ void process_input_file(const std::string &file) {
   std::cout << "# File \"" << file << "\" contains " << input.get_tree_count()
             << " trees with " << input.get_leaf_count() << " leafs each."
             << std::endl;
-  // input.contract_cherries(); // I HAVE DELETED SEVERAL LEAFS AND DO NOT CHECK
+  input.contract_cherries(); // I HAVE DELETED SEVERAL LEAFS AND DO NOT CHECK
   // IF THEY ARE IN OR NOT
-  ilp(input);
+  // ilp(input);
 }
 
 int main(int argc, char **argv) {

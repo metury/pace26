@@ -4,4 +4,4 @@
 
 void ilp(Input &input);
 
-#endif // !ilp_h_
+#endif

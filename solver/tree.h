@@ -217,6 +217,7 @@ public:
   std::vector<std::tuple<int, int, int, int>> compute_quartets();
 
 private:
+  void add_contracted_(int first, int second);
   bool contract_cherries_(Node *node);
   /// The tree decomposition.
   TreeDecomposition decomp_;
@@ -226,5 +227,6 @@ private:
   int t_;
   /// Array of all trees.
   std::vector<std::unique_ptr<Tree>> trees_;
+  std::unordered_map<int, std::string> contracted_;
 };
 #endif
