@@ -1,0 +1,280 @@
+\documentclass{article}
+
+\usepackage[a4paper,left=3cm, top=3cm, right=3cm, bottom=3cm]{geometry}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tikz}
+\usepackage{subcaption}
+\usepackage[linesnumbered,lined,boxed,commentsnumbered]{algorithm2e}
+\usepackage{todonotes}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+\theoremstyle{plain}
+\newtheorem{thm}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{claim}{Claim}[thm]
+\newtheorem{observ}{Observation}[section]
+
+\theoremstyle{definition}
+\newtheorem{defn}{Definition}
+
+\newcommand{\lca}{\mathrm{lca}}
+\newcommand{\bigO}{\mathcal{O}}
+\newcommand{\trios}{\mathcal{R}}
+\newcommand{\quartets}{\mathcal{Q}}
+
+\title{LCA properties of MAF}
+\author{}
+\date{}
+
+\begin{document}
+  \maketitle
+	\tableofcontents
+
+  \section{Introduction to LCA}
+
+  By LCA we mean \emph{lowest common ancestor}. For now assume we have a rooted tree $T = (V,E)$, where
+  $\rho$ denotes the root vertex. For two vertices $u, v \in V$ we say that $u < v$, $u$ \emph{lies below} $v$,
+  if $v$ lies on the $\rho-u$ path. Next, equality $u = v$ is that both $u < v$ and $v < u$ hold.
+  Lastly we say that $u \lessgtr v$ if neither $u < v$ nor $v < u$, we say that $u$ and $v$ are
+  \emph{incomparable}.
+
+  More precisely we define for any subset $S \subseteq V$ their lca as a vertex $v \in V$, for which
+  $\forall s \in S: s \leq v$ and it is smallest one, i.e. no other such $u \in V, u < v$ exsits.
+  We denote this as $\lca(S)$. When we talk about sets of specific elements, for example
+  $S = \{u,v\}$ then we abreviate our notation to $\lca(a,b)$ only.
+
+  \section{Necessary and Sufficient Conditions for MAF}
+
+  Let us denote the trees on input as $\mathcal{T} = \{T_1, T_2, \dots, T_t\}$. Each tree has set $X$
+  as its leafs of size $|X| = n$. Now the goal is to find an agreement forest
+  $\mathcal{F} = \{F_1, F_2, \dots, F_r\}$ for minimum value of $r$.
+
+  \subsection{Inner Forest Conditions}
+
+  For now fix single tree $F$ in the forest $\mathcal{F}$. For an internal vertex $v \in V(F)$
+  we denote $X_L(v)$ leafs below left child of $v$ and $X_R(v)$ leafs below right
+  child. Furthermore we denote $\lca_i(S)$ to be lca in the input tree $T_i$ on set
+  $S$. Now the condition is following:
+
+  \begin{equation}
+    \lca_i(X_L(v)) \lessgtr \lca_i(X_R(v)) \quad \forall i \in [t]
+  \end{equation}
+
+  \subsection{Pairwise Trees in the Forest Condition}
+
+  Fix two different trees in the forest $F_1, F_2 \in \mathcal{F}$. By $X(F_i)$
+  we denote the set of leafs in forest $F_i$, for $i = 1,2$. Now the condition is
+  that either
+
+  \begin{equation}
+    \lca_i(X(F_1)) \lessgtr \lca_i(X(F_2))
+  \end{equation}
+
+  \noindent or if $\lca_i(X(F_j)) < \lca_i(X(F_{j +_2 1}))$ then $\forall x \in X(F_{j +_2 1})$
+  are not underneath $\lca_i (X_F{j})$, for all $i \in [t]$. Note that the
+  second case also matches in the first one.
+
+  We claim that these conditions are sufficient. Therefore one can develop a constraint programm
+  which can solve MAF.
+
+  \section{ILP Based on LCA}
+
+  Already in \cite{ilp-maf} the authors presented a very simple ILP to solve
+  MAF on unrooted and undirected trees. Notably it can be more than just one
+  tree. We reuse some of their notation and furthermore, we define incompatible
+  trios and quartets and also ILP to solve MAF on rooted and directed trees.
+
+  We use the following notation for tree $T$ and set $Y \subseteq X$ we define
+  $T[Y]$ to be the smallest subtree of $T$ having all leafs $Y$.
+  Next, $T|_Y$ stands for $T[Y]$ with forced contractions.
+
+  To speed up the implementation we use LCA to classify all cases
+  in a constant time if we precompute the LCA table for all pairs and
+  triples of leafs.
+
+  We look at trios denoted as $a,b|c$ such that it looks like on the picture \ref{fig:trio}.
+  Observe that this is the only constelation in which three leafs $R = \{a,b,c\}$ can encounter
+  in $T|_R$, unless the labels are switched. Also see that $a,b|c$ and $b,a|c$ has the
+  same properties hence we do not distinquish them.
+
+  Next look at quartets, here we can have up to two cases, first we call ``fork'', denote as
+  $a,b|c,d$ and is depicted on \ref{fig:quartet-fork}. The second
+  case we call ``line'', denote as $a,b|c|d$ and is shown on \ref{fig:quartet-line}.
+  Now, observe that there is no difference in the structure if we switch $a,b$ or $c,d$ in fork or
+  $a,b$ in line. Therefore we do not distinquish between these cases. You may imagine that
+  comma represents a set and line the distinguishing point. This also hold for trios.
+
+  \begin{figure}[!ht]\centering
+    \begin{subfigure}{.3\textwidth}\centering
+      \begin{tikzpicture}[main/.style = {draw, circle, inner sep=1.5pt}, scale =.6]
+        \node[main] (root) at (4,5) {};
+        \node[main] (mid) at (3,4) {};
+        \node (a) at (2,3) {$a$};
+        \node (b) at (4,3) {$b$};
+        \node (c) at (5,4) {$c$};
+        \draw (root) -- (c);
+        \draw (root) -- (mid);
+        \draw (mid) -- (a);
+        \draw (mid) -- (b);
+      \end{tikzpicture}
+      \caption{Trio.}\label{fig:trio}
+    \end{subfigure}
+    \begin{subfigure}{.3\textwidth}\centering
+      \begin{tikzpicture}[main/.style = {draw, circle, inner sep=1.5pt}, scale =.6]
+        \node[main] (root) at (5,5) {};
+        \node[main] (mid) at (3,4) {};
+        \node[main] (mid2) at (7,4) {};
+        \node (a) at (2,3) {$a$};
+        \node (b) at (4,3) {$b$};
+        \node (c) at (6,3) {$c$};
+        \node (d) at (8,3) {$d$};
+        \draw (root) -- (mid2);
+        \draw (root) -- (mid);
+        \draw (mid) -- (a);
+        \draw (mid) -- (b);
+        \draw (mid2) -- (c);
+        \draw (mid2) -- (d);
+      \end{tikzpicture}
+      \caption{Quartet ``fork''.}\label{fig:quartet-fork}
+    \end{subfigure}
+    \begin{subfigure}{.3\textwidth}\centering
+      \begin{tikzpicture}[main/.style = {draw, circle, inner sep=1.5pt}, scale =.6]
+        \node[main] (root) at (4,5) {};
+        \node[main] (mid) at (3,4) {};
+        \node[main] (mid2) at (2,3) {};
+        \node (c) at (4,3) {$c$};
+        \node (d) at (5,4) {$d$};
+        \node (a) at (1,2) {$a$};
+        \node (b) at (3,2) {$b$};
+        \draw (root) -- (d);
+        \draw (root) -- (mid);
+        \draw (mid) -- (c);
+        \draw (mid) -- (mid2);
+        \draw (mid2) -- (a);
+        \draw (mid2) -- (b);
+      \end{tikzpicture}
+      \caption{Quartet ``line''.}\label{fig:quartet-line}
+    \end{subfigure}
+  \end{figure}
+
+  \subsection{Incompatible Trios}
+
+  An incompatible trio is if in $T_1$ we have $a,b|c$ trio and in some $T_j$, for $1 < j \leq t$
+  we have either $a,c|b$ or $b,c|a$. See that cutting one of the edges in $T_1[\{a,b,c\}]$ is enough
+  to resolve this incompatible trio. This is due to the fact that one edge will
+  remove one of $a,b$ or $c$ from the rest. Then the trio on itself would be fine
+  with the definition of MAF. We must note that this is not yet sufficient, see
+  an example of two trees in a ``fork'' structure $a,b|c,d$ and $a,c|b,d$.
+
+  It is easily to find such occurance of incompatible trios in our input. First, we go
+  over all triples of leafs $a,b,c$, in $\bigO(n^3)$ time, and find such triple that
+  suffices the following inequality. $\lca_1(a,b) \neq \lca_1(a,b,c)$. Since
+  easily seen it must be $\lca_1(a,b) \leq \lca_1(a,b,c)$, then when inequality
+  occurs it is our trio. Then, we go through all other trees and if
+  there is trio for which $\lca_j(a,b) = \lca_j(a,b,c)$ we have found incompatible
+  trio.
+
+  So we gather all trios into the set of $\trios$ and we define $\mathcal{L}(R)$,
+  for $R \in \trios$, to be $T_1[R]$.
+
+  \subsection{Incompatible Quartets}
+
+  As we have said trios are not sufficient. Therefore, we look at quartest, but now there
+  are more options. Let us first observe how specific quartets could be found. First,
+  quartet ``fork'' can be found by sufficing all following (in)equalities in \eqref{eq:fork}.
+
+  \begin{equation}\label{eq:fork}
+    \begin{aligned}
+      \lca_1(a,b) \neq \lca_1(a,b,c)\\
+      \lca_1(a,b) \neq \lca_1(a,b,d)\\
+      \lca_1(a,b,c) = \lca_1(a,b,d)\\
+    \end{aligned}
+  \end{equation}
+
+  On the other hand for quartet ``line'' we use these inequalities in \eqref{eq:line}.
+
+  \begin{equation}\label{eq:line}
+    \begin{aligned}
+      \lca_1(a,b) \neq \lca_1(a,b,c)\\
+      \lca_1(a,b) \neq \lca_1(a,b,d)\\
+      \lca_1(a,b,c) \neq \lca_1(a,b,d)\\
+    \end{aligned}
+  \end{equation}
+
+  Now we must look at all possible combinations of quartets appearing in two trees and
+  whether included trios are enough or not, for that see the table \ref{tab:quartets}.
+  For forks we have $\binom{4}{2}$ options, but due to the symmetry we only have $\binom{4}{2} / 2 = 3$.
+  For lines we have $4 \cdot 3 = 12$ options and here we cannot get rid of any cases.
+
+  By adding these quartets we mean that in our trees we must do more cuts than just one based on
+  trios only. It seems there is a nice pattern, therefore some cells have been filled by a gut-feeling.
+
+  Before finishing the table there is very easily observable pattern. If we have a fork with at least
+  three trios we just add this quartet. Whereas for line it is exactly three. Alternatively one of
+  the quartets must be a fork and they need to have at least some number of collisions.
+
+  \begin{table}[!ht]
+    \begin{center}
+      \begin{tabular}[c]{l|l|l|l}
+        \hline
+        Start & End & Trios & We must add it? \\
+        \hline
+        $a,b|c,d$ & $a,b|c,d$ & $\emptyset$ & No. It is the same. \\
+                  & $a,c|b,d$ & $a,b|c;a,b|d;c,d|a;c,d|b$ & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
+                  & $a,d|b,c$ & $a,b|c;a,b|d;c,d|a;c,d|b$ & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
+        \hline
+                  & $c,d|a|b$ & $a,b|c;a,b|d$ & No, trios are sufficient. \\
+                  & $b,d|a|c$ & $a,b|d;c,d|a;c,d|b$ & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
+                  & $c,b|a|d$ & $a,b|c;c,d|a,c,d|b$ & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
+        \hline
+                  & $c,d|b|a$ & $a,b|c;a,b|d$ & No, trios are sufficient. \\
+                  & $a,d|b|c$ & $a,b|d;c,d|b;c,d|a$ & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
+                  & $c,a|b|d$ &  & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
+        \hline
+                  & $b,d|c|a$ &  & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
+                  & $a,d|c|b$ &  & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
+                  & $b,a|c|d$ &  & No, trios are sufficient. \\
+        \hline
+                  & $b,c|d|a$ &  & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
+                  & $a,c|d|b$ &  & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
+                  & $b,a|d|c$ &  & No, trios are sufficient. \\
+        \hline
+        $a,b|c|d$ & $a,b|c,d$ & $b,c|d;a,c|d$ & No, trios are sufficient. \\
+                  & $a,c|b,d$ & $a,b|c;a,b|d;b,c|d$ & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
+                  & $a,d|b,c$ & $a,b|c;a,c|d;a,b|d$ & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
+        \hline
+                  & $c,d|a|b$ &  &  \\
+                  & $b,d|a|c$ &  &  \\
+                  & $c,b|a|d$ &  &  \\
+                  & $c,d|b|a$ &  &  \\
+                  & $a,d|b|c$ &  &  \\
+                  & $c,a|b|d$ &  &  \\
+                  & $b,d|c|a$ &  &  \\
+                  & $a,d|c|b$ &  &  \\
+                  & $b,a|c|d$ &  &  \\
+                  & $b,c|d|a$ &  &  \\
+                  & $a,c|d|b$ &  &  \\
+                  & $b,a|d|c$ &  &  \\
+        \hline
+      \end{tabular}
+    \end{center}
+    \caption{All possible combinations of quartets.}\label{tab:quartets}
+  \end{table}
+
+  By using these definitions we create our ILP.
+
+  \begin{align*}
+    \text{Minimize: } & \sum_{e \in E(T_1)} x_e \\
+    \text{Subject to: } & \sum_{e \in \mathcal{L}(R)} x_e \geq 1 & \forall R \in \trios \\
+                & \sum_{e \in \mathcal{L}(Q)} x_e \geq 1 & \forall Q \in \quartets \\
+            & x_e \in \{0, 1\} & \forall e \in E(T_1)
+  \end{align*}
+
+  \bibliographystyle{alpha}
+  \bibliography{ref}
+\end{document}
