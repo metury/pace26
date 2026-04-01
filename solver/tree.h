@@ -169,8 +169,7 @@ private:
   void add_contracted_(int first, int second);
   /// Recursively construct cherries we find.
   /// @param node Which node we are considering now.
-  /// @return Whether there was some cherry.
-  bool contract_cherries_(Node *node);
+  void contract_cherries_(Node *node);
   /// Recursively remove all edges.
   /// @param edges_to_remove Which edges to remove.
   /// @param trees Which trees we are considering.

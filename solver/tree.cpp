@@ -48,6 +48,8 @@ void Tree::contract_cherry(int first, int second) {
     parent->set_type(LEAF);
     parent->remove_left();
     parent->remove_right();
+    descendants_.insert_or_assign(first, parent);
+    descendants_.erase(second);
   }
 }
 
@@ -270,8 +272,8 @@ std::vector<std::tuple<int, int, int, int>> Input::compute_quartets() {
 }
 
 void Input::contract_cherries() {
-  while (contract_cherries_(trees_[0]->get_root())) {
-  };
+  contract_cherries_(trees_[0]->get_root());
+  compute_all_lca();
   for (auto &&[key, val] : contracted_) {
     std::cout << "# Replacing cherry: " << RED << key << RESET << " <- " << RED
               << val << RESET << std::endl;
@@ -284,10 +286,14 @@ void Input::contract_cherries() {
             << RESET << "." << std::endl;
 }
 
-bool Input::contract_cherries_(Node *n) {
+void Input::contract_cherries_(Node *n) {
   if (n->is_leaf()) {
-    return false;
+    return;
   }
+  // First contract all possbile descendants.
+  contract_cherries_(n->get_left());
+  contract_cherries_(n->get_right());
+  // Now also this one if it is a cherry.
   auto left = n->get_left();
   auto right = n->get_right();
   auto left_value = left->get_value();
@@ -295,17 +301,15 @@ bool Input::contract_cherries_(Node *n) {
   if (left->is_leaf() && right->is_leaf()) {
     for (auto &&tree : trees_) {
       if (!tree->is_cherry(left_value, right_value)) {
-        return false;
+        return;
       }
     }
     for (auto &&tree : trees_) {
       tree->contract_cherry(left_value, right_value);
-      tree->compute_lca_leafs();
     }
     add_contracted_(left_value, right_value);
-    return true;
+    return;
   }
-  return contract_cherries_(left) || contract_cherries_(right);
 }
 
 void Input::set_tree_decomposition(const std::string &str) {
