@@ -31,6 +31,7 @@ public:
   /// @param first Label of the first leaf.
   /// @param second Label of the second leaf.
   void contract_cherry(int first, int second);
+  void contract_chain(int a, int b, int c, int d);
   /// Compute both leaf pointers and lca values.
   void compute_lca_leafs();
   /// Add all edges between the nodes.
@@ -50,6 +51,7 @@ public:
   /// @param second Label of the second leaf.
   /// @return True if they are siblings.
   bool is_cherry(int first, int second) const;
+  bool is_chain(int a, int b, int c, int d) const;
   /// Return whether a tree has (almost) no nodes.
   /// @return True if the root is empty.
   bool is_empty() const;
@@ -126,6 +128,7 @@ public:
   ~Input() = default;
   /// Assign numbers to all trees.
   void assign_numbers();
+  void contract_chains();
   /// Contract all cherries.
   void contract_cherries();
   /// Compute all LCA values for all trees.
@@ -163,10 +166,13 @@ public:
   void set_tree_decomposition(const std::string &str);
 
 private:
-  /// Add contracted cherry.
+  /// Add contracted cherry or chain.
   /// @param first Label of the first leaf.
   /// @param second Label of the second leaf.
   void add_contracted_(int first, int second);
+  /// Recursively construct chains we find.
+  /// @param node Which node we are considering now.
+  void contract_chains_(Node *node, std::vector<int> &candidates);
   /// Recursively construct cherries we find.
   /// @param node Which node we are considering now.
   void contract_cherries_(Node *node);

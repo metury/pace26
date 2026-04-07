@@ -53,6 +53,27 @@ void Tree::contract_cherry(int first, int second) {
   }
 }
 
+void Tree::contract_chain(int a, int b, int c, int d) {
+  auto node_b = get_leaf(b);
+  auto parent_b = node_b->get_parent();
+  std::unique_ptr<Node> child;
+  if (parent_b->get_left() == node_b) {
+    parent_b->remove_left();
+    child = parent_b->remove_right();
+  } else {
+    parent_b->remove_right();
+    child = parent_b->remove_left();
+  }
+  auto parent = parent_b->get_parent();
+  if (parent_b == parent->get_left()) {
+    parent->remove_left();
+    parent->set_left(std::move(child));
+  } else {
+    parent->remove_right();
+    parent->set_right(std::move(child));
+  }
+}
+
 void Tree::compute_lca_leafs() {
   descendants_ = root_->compute_lca_leafs(pairs_, triples_);
 }
@@ -71,6 +92,25 @@ bool Tree::is_cherry(int first, int second) const {
   auto node_b = descendants_.at(second);
   return node_a->get_parent() != nullptr &&
          *node_a->get_parent() == *node_b->get_parent();
+}
+
+bool Tree::is_chain(int a, int b, int c, int d) const {
+  auto parent = get_leaf(d)->get_parent();
+  if (parent == nullptr)
+    return false;
+  parent = parent->get_parent();
+  auto tmp_parent = get_leaf(c)->get_parent();
+  if (tmp_parent == nullptr || parent != tmp_parent)
+    return false;
+  parent = parent->get_parent();
+  tmp_parent = get_leaf(b)->get_parent();
+  if (tmp_parent == nullptr || parent != tmp_parent)
+    return false;
+  parent = parent->get_parent();
+  tmp_parent = get_leaf(a)->get_parent();
+  if (tmp_parent == nullptr || parent != tmp_parent)
+    return false;
+  return true;
 }
 
 bool Tree::is_empty() const { return root_ == std::nullptr_t(); }
@@ -275,6 +315,52 @@ std::vector<std::tuple<int, int, int, int>> Input::compute_quartets() {
     }
   }
   return quartets;
+}
+
+void Input::contract_chains() {
+  std::vector<int> candidates{};
+  contract_chains_(trees_[0]->get_root(), candidates);
+  compute_all_lca();
+  std::cout << "# All " << CYAN << "chains" << RESET << " how been contracted."
+            << std::endl;
+}
+
+void Input::contract_chains_(Node *n, std::vector<int> &candidates) {
+  if (n == nullptr || n->is_leaf()) {
+    return;
+  }
+  bool chain = false;
+  if (candidates.size() == 4) {
+    chain = true;
+    for (auto &&tree : get_trees()) {
+      chain = chain && tree->is_chain(candidates[0], candidates[1],
+                                      candidates[2], candidates[3]);
+    }
+    if (!chain) {
+      candidates.erase(candidates.begin());
+    }
+  }
+  if (chain) {
+    for (auto &&tree : get_trees()) {
+      tree->contract_chain(candidates[0], candidates[1], candidates[2],
+                           candidates[3]);
+    }
+    excluded_leafs_.insert(candidates[1]);
+    std::cout << "# Contracted part of a chain: " << CYAN << candidates[1]
+              << RESET << "." << std::endl;
+    candidates.erase(candidates.begin() + 1);
+  }
+  if (n->get_left()->is_leaf() && !n->get_right()->is_leaf()) {
+    candidates.push_back(n->get_left()->get_value());
+    contract_chains_(n->get_right(), candidates);
+  } else if (n->get_right()->is_leaf() && !n->get_left()->is_leaf()) {
+    candidates.push_back(n->get_right()->get_value());
+    contract_chains_(n->get_left(), candidates);
+  } else {
+    candidates.clear();
+    contract_chains_(n->get_left(), candidates);
+    contract_chains_(n->get_left(), candidates);
+  }
 }
 
 void Input::contract_cherries() {

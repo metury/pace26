@@ -16,6 +16,7 @@ void process_input_file(const std::string &file) {
 
   // Contract cherries to reduce size.
   input.contract_cherries();
+  input.contract_chains();
   // Find the solution.
   auto edges_to_erase = ilp(input);
   // Remove the edges.

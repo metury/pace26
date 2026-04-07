@@ -11,13 +11,15 @@
 using LCA_KEY = std::string;
 
 /// Common RED colos for colorful printing.
-const std::string RED = "\033[31m";
+const std::string RED = "\033[1;31m";
 /// Common BLUE colos for colorful printing.
-const std::string BLUE = "\033[34m";
+const std::string BLUE = "\033[1;34m";
 /// Common GREEN colos for colorful printing.
-const std::string GREEN = "\033[32m";
+const std::string GREEN = "\033[1;32m";
 /// Common YELLOW colos for colorful printing.
-const std::string YELLOW = "\033[33m";
+const std::string YELLOW = "\033[1;33m";
+/// Common CYAN colos for colorful printing.
+const std::string CYAN = "\033[1;36m";
 /// Common RESET colos for colorful printing.
 const std::string RESET = "\033[0m";
 
