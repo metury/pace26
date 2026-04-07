@@ -57,13 +57,13 @@ public:
   /// @param first Label of the first leaf.
   /// @param second Label of the second leaf.
   /// @return Pointer to their common lca.
-  Node *lca_query(int first, int second);
+  Node *lca_query(int first, int second) const;
   /// Return a LCA node for three leafs.
   /// @param first Label of the first leaf.
   /// @param second Label of the second leaf.
   /// @param third Label of the third leaf.
   /// @return Pointer to their common lca.
-  Node *lca_query(int first, int second, int third);
+  Node *lca_query(int first, int second, int third) const;
   /// Output the tree to some stream in a Newick notation.
   /// @param os Which output stream to use.
   /// @param subst Which substitutions have to be propagated.

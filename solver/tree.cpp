@@ -75,12 +75,12 @@ bool Tree::is_cherry(int first, int second) const {
 
 bool Tree::is_empty() const { return root_ == std::nullptr_t(); }
 
-Node *Tree::lca_query(int first, int second) {
-  return pairs_[get_lca_key(first, second)];
+Node *Tree::lca_query(int first, int second) const {
+  return pairs_.at(get_lca_key(first, second));
 }
 
-Node *Tree::lca_query(int first, int second, int third) {
-  return triples_[get_lca_key(first, second, third)];
+Node *Tree::lca_query(int first, int second, int third) const {
+  return triples_.at(get_lca_key(first, second, third));
 }
 
 void Tree::write(std::ostream &os,
@@ -251,14 +251,20 @@ std::vector<std::tuple<int, int, int, int>> Input::compute_quartets() {
                   tree2->get_root()->get_value())
                 continue;
               auto node2_a_b = tree2->lca_query(a, b);
+              auto node2_c_d = tree2->lca_query(c, d);
               auto node2_ab_c = tree2->lca_query(a, b, c);
               auto node2_ab_d = tree2->lca_query(a, b, d);
-              // Either one is below and the other match or the other way
-              // around.
+              auto node2_cd_a = tree2->lca_query(a, d, c);
+              auto node2_cd_b = tree2->lca_query(c, b, d);
               auto c_below_ab_2 = node2_a_b == node2_ab_c;
               auto d_below_ab_2 = node2_a_b == node2_ab_d;
-              if (c_below_ab_2 || d_below_ab_2) {
-                // We found triplet.
+              auto a_below_cd_2 = node2_c_d == node2_cd_a;
+              auto b_below_cd_2 = node2_c_d == node2_cd_b;
+              // We look whether it is mashed up or not.
+              // Therefore at least c or d must be below and a or b ust be
+              // below.
+              if ((c_below_ab_2 || d_below_ab_2) &&
+                  (a_below_cd_2 || b_below_cd_2)) {
                 quartets.push_back(std::make_tuple(a, b, c, d));
                 break;
               }
