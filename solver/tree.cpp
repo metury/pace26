@@ -317,14 +317,6 @@ std::vector<std::tuple<int, int, int, int>> Input::compute_quartets() {
   return quartets;
 }
 
-void Input::contract_chains() {
-  std::vector<int> candidates{};
-  contract_chains_(trees_[0]->get_root(), candidates);
-  compute_all_lca();
-  std::cout << "# All " << CYAN << "chains" << RESET << " how been contracted."
-            << std::endl;
-}
-
 void Input::contract_chains_(Node *n, std::vector<int> &candidates) {
   if (n == nullptr || n->is_leaf()) {
     return;
@@ -363,7 +355,7 @@ void Input::contract_chains_(Node *n, std::vector<int> &candidates) {
   }
 }
 
-void Input::contract_cherries() {
+void Input::contract_cherries_chains() {
   contract_cherries_(trees_[0]->get_root());
   compute_all_lca();
   for (auto &&[key, val] : contracted_) {
@@ -371,11 +363,19 @@ void Input::contract_cherries() {
               << val << RESET << std::endl;
   }
   if (contracted_.empty()) {
-    std::cout << "# No " << RED << "cherries" << RESET << " found."
+    std::cout << "# No " << RED << "cherry" << RESET << " found." << std::endl;
+  }
+  auto cherries = excluded_leafs_.size();
+  std::vector<int> candidates;
+  contract_chains_(trees_[0]->get_root(), candidates);
+  compute_all_lca();
+  if (excluded_leafs_.size() == cherries) {
+    std::cout << "# No " << CYAN << "chain" << RESET << " was contracted."
               << std::endl;
   }
-  std::cout << "# Number of leafs reduced by " << RED << excluded_leafs_.size()
-            << RESET << "." << std::endl;
+  std::cout << "# Number of leafs reduced by " << RED << cherries << RESET
+            << " + " << CYAN << excluded_leafs_.size() - cherries << RESET
+            << " = " << excluded_leafs_.size() << "." << std::endl;
 }
 
 void Input::contract_cherries_(Node *n) {

@@ -1,5 +1,6 @@
 #include "ilp.h"
 #include "tree.h"
+#include "utils.h"
 #include <iostream>
 
 void process_input_file(const std::string &file) {
@@ -15,17 +16,21 @@ void process_input_file(const std::string &file) {
             << input.get_leaf_count() << RESET << " leafs each." << std::endl;
 
   // Contract cherries to reduce size.
-  input.contract_cherries();
-  input.contract_chains();
+  input.contract_cherries_chains();
   // Find the solution.
   auto edges_to_erase = ilp(input);
   // Remove the edges.
   auto output = input.remove_edges(edges_to_erase);
   // Print the result.
+  auto result = 0;
   for (auto &&tree : output) {
-    if (!tree->is_empty())
+    if (!tree->is_empty()) {
       tree->write(input.get_contractions());
+      ++result;
+    }
   }
+  std::cout << "# Size of the solution: " << VIOLET << result << RESET << "."
+            << std::endl;
 }
 
 int main(int argc, char **argv) {

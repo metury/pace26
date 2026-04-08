@@ -128,9 +128,8 @@ public:
   ~Input() = default;
   /// Assign numbers to all trees.
   void assign_numbers();
-  void contract_chains();
   /// Contract all cherries.
-  void contract_cherries();
+  void contract_cherries_chains();
   /// Compute all LCA values for all trees.
   void compute_all_lca();
   /// Compute all incompatible trios.
