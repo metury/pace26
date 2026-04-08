@@ -223,6 +223,57 @@
             & x_e \in \{0, 1\} & \forall e \in E(T_1)
   \end{align*}
 
+  \section{Reductions}
+
+  We implement some simple and known reductions to reduce the size of the input trees.
+  First one is regarding \emph{cherries}. We call $a,b \in X$ a \emph{cherry} (fig. \ref{fig:cherry}) if
+  it $a$ and $b$ shares the same parent. Then we can reduce this by substituting their parent
+  with $a$ and remember that $b$ is also included. Notably one cherry could lead to creating another cherry.
+
+  Second reduction rule is regarding \emph{chains} (fig. \ref{fig:chain}). Once
+  we find such $a,b,c,d$ chain that is the same in all trees we can reduce such chain to
+  $a,c,d$ only. Generally we can choose arbitrary, but to determinise and simplifly it
+  we get rid of $b$.
+
+  \begin{figure}[!ht]\centering
+    \begin{subfigure}{.45\textwidth}\centering
+      \begin{tikzpicture}[main/.style = {draw, circle, inner sep=1.5pt}, scale =.6]
+        \node[main] (root) at (4,5) {};
+        \node (a) at (3,4) {$a$};
+        \node (b) at (5,4) {$b$};
+        \draw (root) -- (a);
+        \draw (root) -- (b);
+      \end{tikzpicture}
+      \caption{A cherry.}\label{fig:cherry}
+    \end{subfigure}
+    \begin{subfigure}{.45\textwidth}\centering
+      \begin{tikzpicture}[main/.style = {draw, circle, inner sep=1.5pt}, scale =.6]
+        \node[main] (root) at (5,5) {};
+        \node[main] (mid) at (4,4) {};
+        \node[main] (mid2) at (3,3) {};
+        \node[main] (mid3) at (2,2) {};
+        \node[main] (mid4) at (1,1) {};
+        \node (a) at (6,4) {$a$};
+        \node (b) at (5,3) {$b$};
+        \node (c) at (4,2) {$c$};
+        \node (d) at (3,1) {$d$};
+        \node (e) at (2,0) {};
+        \node (f) at (0,0) {};
+        \draw (mid) -- (mid2);
+        \draw (root) -- (mid);
+        \draw (mid2) -- (mid3);
+        \draw (mid3) -- (mid4);
+        \draw (mid4) -- (e);
+        \draw (mid4) -- (f);
+        \draw (root) -- (a);
+        \draw (mid) -- (b);
+        \draw (mid2) -- (c);
+        \draw (mid3) -- (d);
+      \end{tikzpicture}
+      \caption{A chain.}\label{fig:chain}
+    \end{subfigure}
+  \end{figure}
+
   \section*{Appendix With Table}
 
   Now we must look at all possible combinations of quartets appearing in two trees and
