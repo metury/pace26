@@ -206,6 +206,25 @@
     \end{aligned}
   \end{equation}
 
+  Due to the pattern arrising from the below table we do the following.
+  Whenever we find either $a,b|c,d$ or $a,b|c|d$ or $a,b|d|c$. We check if
+  there is another tree having these not only swapped, but completely mixed up.
+  For example $a,c|b,d$ or $a,c|b|d$. Meaning that for example $c,d|a|b$ is
+  just swapped simply and trios suffice to resolve this quartet. We record
+  all such quartets into $\quartets$ and for each $Q \in \quartets$ we
+  define $\mathcal{L}(Q)$ as $T[\{a,b\}] \cup T[\{c,d\}]$.
+
+  By using these definitions we create our ILP.
+
+  \begin{align*}
+    \text{Minimize: } & \sum_{e \in E(T_1)} x_e \\
+    \text{Subject to: } & \sum_{e \in \mathcal{L}(R)} x_e \geq 1 & \forall R \in \trios \\
+                & \sum_{e \in \mathcal{L}(Q)} x_e \geq 1 & \forall Q \in \quartets \\
+            & x_e \in \{0, 1\} & \forall e \in E(T_1)
+  \end{align*}
+
+  \section*{Appendix With Table}
+
   Now we must look at all possible combinations of quartets appearing in two trees and
   whether included trios are enough or not, for that see the table \ref{tab:quartets}.
   For forks we have $\binom{4}{2}$ options, but due to the symmetry we only have $\binom{4}{2} / 2 = 3$.
@@ -266,14 +285,6 @@
     \caption{All possible combinations of quartets.}\label{tab:quartets}
   \end{table}
 
-  By using these definitions we create our ILP.
-
-  \begin{align*}
-    \text{Minimize: } & \sum_{e \in E(T_1)} x_e \\
-    \text{Subject to: } & \sum_{e \in \mathcal{L}(R)} x_e \geq 1 & \forall R \in \trios \\
-                & \sum_{e \in \mathcal{L}(Q)} x_e \geq 1 & \forall Q \in \quartets \\
-            & x_e \in \{0, 1\} & \forall e \in E(T_1)
-  \end{align*}
 
   \bibliographystyle{alpha}
   \bibliography{ref}
