@@ -2,10 +2,23 @@
 #include "Highs.h"
 #include "utils.h"
 #include <set>
+#include <unordered_map>
 #include <vector>
 
-std::set<int> ilp(Input &input) {
+void lp(Input &input) { ilp_general(input, false); }
 
+std::set<int> ilp(Input &input) {
+  auto results = ilp_general(input, true);
+  std::set<int> edges_to_erase;
+  for (auto &&[key, value] : results) {
+    if (is_approx_one(value)) {
+      edges_to_erase.insert(key);
+    }
+  }
+  return edges_to_erase;
+}
+
+std::unordered_map<int, float> ilp_general(Input &input, bool integer) {
   auto trios = input.compute_trios();
   auto quartets = input.compute_quartets();
 
@@ -18,7 +31,7 @@ std::set<int> ilp(Input &input) {
     // It is satisfied.
     std::cout << "# Objective function value: " << YELLOW << 0 << RESET
               << std::endl;
-    return std::set<int>{};
+    return std::unordered_map<int, float>{};
   }
 
   HighsModel model;
@@ -89,9 +102,13 @@ std::set<int> ilp(Input &input) {
   // Get a const reference to the LP data in HiGHS
   const HighsLp &lp = highs.getLp();
 
-  model.lp_.integrality_.resize(lp.num_col_);
-  for (int col = 0; col < lp.num_col_; col++)
-    model.lp_.integrality_[col] = HighsVarType::kInteger;
+  // IF IT IS INTEGER! ==========================================
+  if (integer) {
+    model.lp_.integrality_.resize(lp.num_col_);
+    for (int col = 0; col < lp.num_col_; col++)
+      model.lp_.integrality_[col] = HighsVarType::kInteger;
+  }
+  // IF IT IS INTEGER! ==========================================
 
   highs.passModel(model);
 
@@ -116,11 +133,15 @@ std::set<int> ilp(Input &input) {
 
   const HighsSolution &solution = highs.getSolution();
   const HighsBasis &basis = highs.getBasis();
-  std::set<int> edges_to_erase;
+
+  // IF IT IS INTEGER! ==========================================
+  // OTHERWISE WE JUST RETURN THE VALUES.
+  // IN ILP WE ROUND TO ALMOST ONES.
+  // IN LP WE EITHER JUST RETURN OR DO ROUDING IMMEDIATELY.
+  std::unordered_map<int, float> edge_values;
   for (int col = 0; col < lp.num_col_; col++) {
-    if (is_approx_one(solution.col_value[col])) {
-      edges_to_erase.insert(col);
-    }
+    edge_values.insert_or_assign(col, solution.col_value[col]);
   }
-  return edges_to_erase;
+  return edge_values;
+  // IF IT IS INTEGER! ==========================================
 }
