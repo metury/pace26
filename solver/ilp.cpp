@@ -5,7 +5,12 @@
 #include <unordered_map>
 #include <vector>
 
-void lp(Input &input) { ilp_general(input, false); }
+void lp(Input &input) {
+  auto edge_values = ilp_general(input, false);
+  for (auto &&[key, val] : edge_values) {
+    std::cout << "# Edge " << key << " has value " << val << std::endl;
+  }
+}
 
 std::set<int> ilp(Input &input) {
   auto results = ilp_general(input, true);
