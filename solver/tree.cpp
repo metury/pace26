@@ -285,7 +285,14 @@ std::vector<std::tuple<int, int, int, int>> Input::compute_quartets() {
           auto node1_ab_d = tree1->lca_query(a, b, d);
           auto c_below_ab_1 = node1_a_b == node1_ab_c;
           auto d_below_ab_1 = node1_a_b == node1_ab_d;
+          auto node1_cd_a = tree1->lca_query(c, d, a);
+          auto node1_cd_b = tree1->lca_query(c, d, b);
+          auto node1_c_d = tree1->lca_query(c, d);
+          auto a_below_cd_1 = node1_c_d == node1_cd_a;
+          auto b_below_cd_1 = node1_c_d == node1_cd_b;
           if (!c_below_ab_1 && !d_below_ab_1) {
+            if (!a_below_cd_1 && !b_below_cd_1 && a > c)
+              continue;
             for (auto &&tree2 : get_trees()) {
               if (tree1->get_root()->get_value() ==
                   tree2->get_root()->get_value())

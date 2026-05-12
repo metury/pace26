@@ -17,6 +17,9 @@ void process_input_file(const std::string &file) {
 
   // Contract cherries to reduce size.
   input.contract_cherries_chains();
+  auto lower_bound = lp(input);
+  std::cout << "# Lower bound: " << YELLOW << lower_bound << RESET << "."
+            << std::endl;
   // Find the solution.
   auto edges_to_erase = ilp(input);
   // Remove the edges.

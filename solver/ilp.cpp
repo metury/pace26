@@ -1,15 +1,19 @@
 #include "ilp.h"
 #include "Highs.h"
 #include "utils.h"
+#include <fstream>
 #include <set>
 #include <unordered_map>
 #include <vector>
 
-void lp(Input &input) {
+int lp(Input &input) {
   auto edge_values = ilp_general(input, false);
+  auto sum = 0.0;
   for (auto &&[key, val] : edge_values) {
-    std::cout << "# Edge " << key << " has value " << val << std::endl;
+    sum += val;
+    std::cout << key << ": value :" << val << std::endl;
   }
+  return std::ceil(sum);
 }
 
 std::set<int> ilp(Input &input) {
@@ -27,6 +31,10 @@ std::unordered_map<int, float> ilp_general(Input &input, bool integer) {
   auto trios = input.compute_trios();
   auto quartets = input.compute_quartets();
 
+  // std::ofstream file("sat.pi");
+
+  // file << "import sat." << std::endl << "main() =>" << std::endl;
+
   //! Pseudo random number.
   auto number_of_edges = input.get_leaf_count() * 2;
   auto number_of_rows = trios.size() + quartets.size();
@@ -36,6 +44,7 @@ std::unordered_map<int, float> ilp_general(Input &input, bool integer) {
     // It is satisfied.
     std::cout << "# Objective function value: " << YELLOW << 0 << RESET
               << std::endl;
+    // file << "writeln(\"DONE\")." << std::endl;
     return std::unordered_map<int, float>{};
   }
 
@@ -51,6 +60,11 @@ std::unordered_map<int, float> ilp_general(Input &input, bool integer) {
 
   model.lp_.a_matrix_.format_ = MatrixFormat::kRowwise;
 
+  // file << "\tAs = new_array(" << number_of_edges << "),";
+  // file << "\tAs :: 0..1,";
+  // file << "\tValue #= sum(As),";
+  // file << "\tValue #=< " << input.get_leaf_count() << ",";
+
   std::vector<int> start = {0};
   std::vector<int> index;
 
@@ -65,6 +79,16 @@ std::unordered_map<int, float> ilp_general(Input &input, bool integer) {
     tree->get_edges(node_b, node_a_b, edges);
     tree->get_edges(node_c, node_ab_c, edges);
     tree->get_edges(node_a_b, node_ab_c, edges);
+    // bool first = true;
+    //  file << "\tsum([";
+    //  for (auto &&edge : edges) {
+    //    if (first)
+    //      file << "As[" << edge << "]";
+    //    else
+    //      file << ", As[" << edge << "]";
+    //    first = false;
+    //  }
+    //  file << "]) #>= 1," << std::endl;
     index.insert(index.end(), edges.begin(), edges.end());
     start.push_back(index.size());
   }
@@ -81,11 +105,24 @@ std::unordered_map<int, float> ilp_general(Input &input, bool integer) {
     tree->get_edges(node_b, node_a_b, edges);
     tree->get_edges(node_c, node_c_d, edges);
     tree->get_edges(node_d, node_c_d, edges);
+    // bool first = true;
+    // file << "\tsum([";
+    // for (auto &&edge : edges) {
+    //   if (first)
+    //     file << "As[" << edge << "]";
+    //   else
+    //     file << ", As[" << edge << "]";
+    //   first = false;
+    // }
+    // file << "]) #>= 1," << std::endl;
     index.insert(index.end(), edges.begin(), edges.end());
     start.push_back(index.size());
   }
 
   std::vector<double> values(index.size(), 1.0);
+
+  // file << "\tsolve([$min(Value)],As)," << std::endl;
+  // file << "\twrite(As)." << std::endl;
 
   // a_start_ has num_col_+1 entries, and the last entry is the number
   // of nonzeros in A, allowing the number of nonzeros in the last
@@ -118,7 +155,7 @@ std::unordered_map<int, float> ilp_general(Input &input, bool integer) {
   highs.passModel(model);
 
   // highs.writeModel("model.lp");
-  // return;
+  // return std::unordered_map<int, float>{};
 
   std::cout << "# Solving ILP with " << YELLOW << number_of_rows << RESET
             << " constraints and " << YELLOW << number_of_edges << RESET

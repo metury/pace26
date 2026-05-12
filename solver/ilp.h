@@ -15,7 +15,7 @@ std::set<int> ilp(Input &input);
 
 /// Solve LP relaxation.
 /// @param input On which input we should solve the LP.
-void lp(Input &input);
+int lp(Input &input);
 
 /// Solve the ilp either with integers or floats.
 /// @param input On which input we should solve the (I)LP.
