@@ -372,17 +372,17 @@ void Input::contract_cherries_chains() {
   if (contracted_.empty()) {
     std::cout << "# No " << RED << "cherry" << RESET << " found." << std::endl;
   }
-  auto cherries = excluded_leafs_.size();
-  std::vector<int> candidates;
-  contract_chains_(trees_[0]->get_root(), candidates);
-  compute_all_lca();
-  if (excluded_leafs_.size() == cherries) {
-    std::cout << "# No " << CYAN << "chain" << RESET << " was contracted."
-              << std::endl;
-  }
-  std::cout << "# Number of leafs reduced by " << RED << cherries << RESET
-            << " + " << CYAN << excluded_leafs_.size() - cherries << RESET
-            << " = " << excluded_leafs_.size() << "." << std::endl;
+  // auto cherries = excluded_leafs_.size();
+  // std::vector<int> candidates;
+  // contract_chains_(trees_[0]->get_root(), candidates);
+  // compute_all_lca();
+  // if (excluded_leafs_.size() == cherries) {
+  //   std::cout << "# No " << CYAN << "chain" << RESET << " was contracted."
+  //             << std::endl;
+  // }
+  // std::cout << "# Number of leafs reduced by " << RED << cherries << RESET
+  //           << " + " << CYAN << excluded_leafs_.size() - cherries << RESET
+  //           << " = " << excluded_leafs_.size() << "." << std::endl;
 }
 
 void Input::contract_cherries_(Node *n) {
