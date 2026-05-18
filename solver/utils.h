@@ -55,4 +55,7 @@ std::vector<std::string> split(const std::string &str);
 /// @param delimiter Given delimiter.
 /// @return Vector of all substrings.
 std::vector<std::string> split(const std::string &str, char delimiter);
+
+int get_matrix_index(int edge_index, int size, int first_vertex = 0,
+                     int second_vertex = 0);
 #endif

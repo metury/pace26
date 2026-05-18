@@ -138,6 +138,9 @@ public:
   /// Compute all incompatible quartets.
   /// @return List of all incompatible quartets.
   std::vector<std::tuple<int, int, int, int>> compute_quartets();
+  /// Compute all predecassors.
+  /// @return Map of node - parents coresspondens.
+  std::unordered_map<int, std::set<int>> compute_parents();
   /// Get all contracted parts from the input tree.
   /// @return All contractions.
   inline std::unordered_map<int, std::string> &get_contractions() {
@@ -146,6 +149,9 @@ public:
   /// Get the leaf count, which is same for all trees.
   /// @return Leaf count.
   inline int get_leaf_count() const { return n_; }
+  /// Get the node count.
+  /// @return Node count.
+  inline int get_node_count() const { return n_ + n_ - 1; }
   /// Get the tree count.
   /// @return Tree count.
   inline int get_tree_count() const { return t_; }
@@ -175,6 +181,9 @@ private:
   /// Recursively construct cherries we find.
   /// @param node Which node we are considering now.
   void contract_cherries_(Node *node);
+  void compute_parents_(Node *node,
+                        std::unordered_map<int, std::set<int>> &parents,
+                        std::set<int> &current);
   /// Recursively remove all edges.
   /// @param edges_to_remove Which edges to remove.
   /// @param trees Which trees we are considering.

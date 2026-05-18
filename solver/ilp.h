@@ -22,4 +22,5 @@ int lp(Input &input);
 /// @param integer Whether it should be on integer values or not.
 /// @return What is the value for each edge in the input tree.
 std::unordered_map<int, float> ilp_general(Input &input, bool integer);
+std::unordered_map<int, float> ilp_general_alt(Input &input, bool integer);
 #endif
