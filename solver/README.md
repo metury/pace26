@@ -46,6 +46,9 @@ cd latex
 make
 xdg-open refman.pdf
 ```
+# Submitting and compiling the code
+
+In order to compile this one must have compiled highs library (ideally in musl for optil) and libz to static libraries. Then one can link the compilation to these libraries and set it to static as well.
 
 ```shell
 x86_64-linux-musl-g++ *.cpp -o pace -I/home/totur5524/Repositories/highs/build -L/home/totur5524/Repositories/highs/build/lib -lhighs -L/home/totur5524/Downloads/zlib-1.3.2 -lz -static -march=haswell
