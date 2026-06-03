@@ -46,3 +46,7 @@ cd latex
 make
 xdg-open refman.pdf
 ```
+
+```shell
+x86_64-linux-musl-g++ *.cpp -o pace -I/home/totur5524/Repositories/highs/build -L/home/totur5524/Repositories/highs/build/lib -lhighs -L/home/totur5524/Downloads/zlib-1.3.2 -lz -static -march=haswell
+```

@@ -42,17 +42,18 @@ void process_input_file(const std::string &file) {
   // Load the input from the file.
   std::ifstream ifs(file);
   process(ifs);
+  ifs.close();
 }
 
 int main(int argc, char **argv) {
   try {
-    std::vector<std::string> arguments(argv + 1, argv + argc);
-    for (auto &&file : arguments) {
-      process_input_file(file);
-    }
-    if (arguments.empty()) {
-      process(std::cin);
-    }
+    // std::vector<std::string> arguments(argv + 1, argv + argc);
+    // for (auto &&file : arguments) {
+    //   process_input_file(file);
+    // }
+    // if (arguments.empty()) {
+    process(std::cin);
+    //}
     return 0;
   } catch (...) {
     std::cerr << "# Something went wrong." << std::endl;
