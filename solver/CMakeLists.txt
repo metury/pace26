@@ -12,7 +12,7 @@ find_package(highs CONFIG REQUIRED)
 add_executable(pace utils.cpp node.cpp tree.cpp main.cpp ilp.cpp)
 
 ## For static build.
-target_link_options(pace PRIVATE -static)
+target_link_options(pace PRIVATE -static -march=haswell)
 target_link_libraries(pace PRIVATE highs z)
 
 ## For dynamic build.

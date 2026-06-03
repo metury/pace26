@@ -122,8 +122,8 @@ public:
   inline Input() : t_(0), n_(0) {}
   /// Constructor for parsing input from a file also assign numbers and compute
   /// LCA.
-  /// @param file_path Path to the file.
-  Input(const std::string &file_path);
+  /// @param is Where is the input.
+  Input(std::istream &is);
   /// Default destructor.
   ~Input() = default;
   /// Assign numbers to all trees.

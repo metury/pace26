@@ -188,10 +188,9 @@ void TreeDecomposition::write(std::ostream &os) {
 // == Input ==
 // ===========
 
-Input::Input(const std::string &file_path) {
-  std::ifstream ifs(file_path);
+Input::Input(std::istream &is) {
   std::string line;
-  while (getline(ifs, line)) {
+  while (getline(is, line)) {
     if (line.size() > 0 && line[0] == '#') {
       if (line.size() > 1 && line[1] == 'p') {
         auto tokens = split(line);
@@ -209,7 +208,6 @@ Input::Input(const std::string &file_path) {
       iss >> *(trees_.at(trees_.size() - 1).get());
     }
   }
-  ifs.close();
   assign_numbers();
   compute_all_lca();
 }
