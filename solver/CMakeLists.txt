@@ -11,6 +11,11 @@ find_package(highs CONFIG REQUIRED)
 
 add_executable(pace utils.cpp node.cpp tree.cpp main.cpp ilp.cpp)
 
-target_link_libraries(pace PRIVATE highs)
+## For static build.
+target_link_options(pace PRIVATE -static)
+target_link_libraries(pace PRIVATE highs z)
+
+## For dynamic build.
+# target_link_libraries(pace PRIVATE highs)
 
 target_compile_features(pace PUBLIC cxx_std_20)
