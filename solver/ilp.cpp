@@ -27,8 +27,9 @@ std::set<int> ilp(Input &input) {
 }
 
 std::unordered_map<int, float> ilp_general(Input &input, bool integer) {
-  auto trios = input.compute_trios();
-  auto quartets = input.compute_quartets();
+  auto trios = std::vector<std::tuple<int, int, int>>();
+  auto quartets = std::vector<std::tuple<int, int, int, int>>();
+  input.compute_trios_quartets(trios, quartets);
 
   //! Pseudo random number.
   auto number_of_edges = input.get_node_count();

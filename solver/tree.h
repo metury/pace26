@@ -133,6 +133,9 @@ public:
   /// Compute all incompatible trios.
   /// @return List of all incompatible trios.
   std::vector<std::tuple<int, int, int>> compute_trios();
+  void
+  compute_trios_quartets(std::vector<std::tuple<int, int, int>> &trios,
+                         std::vector<std::tuple<int, int, int, int>> &quartets);
   /// Compute all incompatible quartets.
   /// @return List of all incompatible quartets.
   std::vector<std::tuple<int, int, int, int>> compute_quartets();
