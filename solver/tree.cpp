@@ -58,7 +58,7 @@ void Tree::compute_lca_leafs(int number_of_nodes) {
   descendants_ = root_->compute_lca_leafs(lca_table_);
 }
 
-void Tree::delete_lca_table() { lca_table_.clear(); }
+void Tree::delete_lca_table() { lca_table_ = {}; }
 
 void Tree::get_edges(Node *below, Node *above, std::set<int> &edges) const {
   auto current = below;
