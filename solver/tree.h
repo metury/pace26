@@ -47,7 +47,18 @@ public:
   /// Get pointer to the root node.
   /// @return Pointer to the root node.
   inline Node *get_root() const { return root_.get(); }
+  /// Check if paths between a-b and x-y intersect or not.
+  /// @param a Vertex a.
+  /// @param b Vertex b.
+  /// @param x Vertex x.
+  /// @param y Vertex y.
+  /// @return If a-b and x-y paths intersect.
   bool has_disjoint_paths(int a, int b, int x, int y) const;
+  /// Check if the provided trio a,b|x is proper or not.
+  /// @param a Vertex a.
+  /// @param b Vertex b.
+  /// @param x Vertex x.
+  /// @return True if x is not below a and b.
   bool has_disjoint_trio(int a, int b, int x) const;
   /// Find if two leafs create a cherry.
   /// @param first Label of the first leaf.
