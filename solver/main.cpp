@@ -1,24 +1,20 @@
 #include "ilp.h"
 #include "tree.h"
 #include "utils.h"
-#include <fstream>
 #include <iostream>
 
 void process(std::istream &is) {
-
   // Load the input from the file.
   auto input = Input(is);
+  input.compute_all_lca();
 
   // Output what is inside.
-  std::cout << "# Instance \"" << GREEN << RESET << "\" contains " << GREEN
+  std::cout << GREEN << "Instance " << RESET << " contains " << GREEN
             << input.get_tree_count() << RESET << " trees with " << GREEN
             << input.get_leaf_count() << RESET << " leafs each." << std::endl;
 
   // Contract cherries to reduce size.
-  input.contract_cherries_chains();
-  // auto lower_bound = lp(input);
-  // std::cout << "# Lower bound: " << YELLOW << lower_bound << RESET << "."
-  //           << std::endl;
+  input.contract_cherries();
   //  Find the solution.
   auto edges_to_erase = ilp(input);
   // Remove the edges.
@@ -35,25 +31,9 @@ void process(std::istream &is) {
             << std::endl;
 }
 
-void process_input_file(const std::string &file) {
-  std::cout << "# Processing file \"" << BLUE << file << RESET << "\"."
-            << std::endl;
-
-  // Load the input from the file.
-  std::ifstream ifs(file);
-  process(ifs);
-  ifs.close();
-}
-
 int main(int argc, char **argv) {
   try {
-    // std::vector<std::string> arguments(argv + 1, argv + argc);
-    // for (auto &&file : arguments) {
-    //   process_input_file(file);
-    // }
-    // if (arguments.empty()) {
     process(std::cin);
-    //}
     return 0;
   } catch (...) {
     std::cerr << "# Something went wrong." << std::endl;
