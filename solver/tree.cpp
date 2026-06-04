@@ -83,7 +83,7 @@ Node *Tree::lca_query(int first, int second) const {
 }
 
 Node *Tree::lca_query(int first, int second, int third) const {
-  auto first_second = descendants_.at(lca_table_[first][second])->get_value();
+  auto first_second = lca_table_[first][second];
   return descendants_.at(lca_table_[first_second][third]);
 }
 
