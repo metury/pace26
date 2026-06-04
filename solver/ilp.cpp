@@ -30,6 +30,8 @@ std::unordered_map<int, float> ilp_general(Input &input, bool integer) {
   auto trios = std::vector<std::tuple<int, int, int>>();
   auto quartets = std::vector<std::tuple<int, int, int, int>>();
   input.compute_trios_quartets(trios, quartets);
+  // auto trios = input.compute_trios();
+  // auto quartets = input.compute_quartets();
 
   //! Pseudo random number.
   auto number_of_edges = input.get_node_count();
@@ -43,6 +45,9 @@ std::unordered_map<int, float> ilp_general(Input &input, bool integer) {
     return std::unordered_map<int, float>{};
   }
 
+  // Add last row that says we have upper bound on the all edges.
+  number_of_rows += 1;
+
   HighsModel model;
   model.lp_.num_col_ = number_of_edges;
   model.lp_.num_row_ = number_of_rows;
@@ -51,7 +56,8 @@ std::unordered_map<int, float> ilp_general(Input &input, bool integer) {
   model.lp_.col_lower_ = std::vector<double>(number_of_edges, 0.0);
   model.lp_.col_upper_ = std::vector<double>(number_of_edges, 1.0);
   model.lp_.row_lower_ = std::vector<double>(number_of_rows, 1.0);
-  model.lp_.row_upper_ = std::vector<double>(number_of_rows, 1.0e30);
+  model.lp_.row_upper_ =
+      std::vector<double>(number_of_rows, input.get_leaf_count() - 1);
 
   model.lp_.a_matrix_.format_ = MatrixFormat::kRowwise;
 
@@ -89,12 +95,11 @@ std::unordered_map<int, float> ilp_general(Input &input, bool integer) {
     start.push_back(index.size());
   }
 
-  // for (int i = 0; i <= input->nodes_in_first_tree(); ++i) {
-  //  M_ii = 1
-  //  Same as M_ii >= 1.
-  //}
-
-  // Perform tree search.
+  // At most number of leafs for all edges.
+  for (int a = 0; a < number_of_edges; ++a) {
+    index.push_back(a);
+  }
+  start.push_back(index.size());
 
   std::vector<double> values(index.size(), 1.0);
 

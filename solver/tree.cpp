@@ -69,6 +69,28 @@ void Tree::get_edges(Node *below, Node *above, std::set<int> &edges) const {
   }
 }
 
+bool Tree::has_disjoint_paths(int a, int b, int x, int y) const {
+  bool result = lca_query(a, b) != lca_query(x, y);
+  if (!result) {
+    return false;
+  }
+  if (lca_query(a, b, x) == lca_query(a, b)) {
+    return lca_query(a, x) != lca_query(x, y) &&
+           lca_query(b, x) != lca_query(x, y) &&
+           lca_query(a, y) != lca_query(x, y) &&
+           lca_query(b, y) != lca_query(x, y);
+  } else {
+    return lca_query(a, x) != lca_query(a, b) &&
+           lca_query(b, x) != lca_query(a, b) &&
+           lca_query(a, y) != lca_query(a, b) &&
+           lca_query(b, y) != lca_query(a, b);
+  }
+}
+
+bool Tree::has_disjoint_trio(int a, int b, int x) const {
+  return lca_query(a, b) != lca_query(a, b, x);
+}
+
 bool Tree::is_cherry(int first, int second) const {
   auto node_a = descendants_.at(first);
   auto node_b = descendants_.at(second);
@@ -198,60 +220,29 @@ void Input::compute_trios_quartets(
     for (auto b = a + 1; b <= get_leaf_count(); ++b) {
       if (excluded_leafs_.contains(b))
         continue;
-      auto node1_a_b = tree1->lca_query(a, b);
       for (auto c = 1; c <= get_leaf_count(); ++c) {
         if (excluded_leafs_.contains(c))
           continue;
         if (c == b || c == a)
           continue;
-        auto node1_ab_c = tree1->lca_query(a, b, c);
-        // Either one is below and the other match or the other way around.
-        auto c_below_ab_1 = node1_a_b == node1_ab_c;
-        if (!c_below_ab_1) {
+        if (tree1->has_disjoint_trio(a, b, c)) {
           for (auto &&tree2 : get_trees()) {
-            auto node2_a_b = tree2->lca_query(a, b);
-            auto node2_ab_c = tree2->lca_query(a, b, c);
-            auto c_below_ab_2 = node2_a_b == node2_ab_c;
-            if (c_below_ab_2) {
-              // We found triplet.
+            if (!tree2->has_disjoint_trio(a, b, c)) {
               trios.push_back(std::make_tuple(a, b, c));
               break;
             }
           }
         }
-        for (auto d = c + 1; d <= get_leaf_count(); ++d) {
-          if (d == c || d == a || d == b || excluded_leafs_.contains(d))
-            continue;
-          auto node1_ab_c = tree1->lca_query(a, b, c);
-          auto node1_ab_d = tree1->lca_query(a, b, d);
-          auto c_below_ab_1 = node1_a_b == node1_ab_c;
-          auto d_below_ab_1 = node1_a_b == node1_ab_d;
-          auto node1_cd_a = tree1->lca_query(c, d, a);
-          auto node1_cd_b = tree1->lca_query(c, d, b);
-          auto node1_c_d = tree1->lca_query(c, d);
-          auto a_below_cd_1 = node1_c_d == node1_cd_a;
-          auto b_below_cd_1 = node1_c_d == node1_cd_b;
-          if (!c_below_ab_1 && !d_below_ab_1) {
-            if (!a_below_cd_1 && !b_below_cd_1 && a > c)
+        if (c >= a + 1) {
+          for (auto d = c + 1; d <= get_leaf_count(); ++d) {
+            if (d == a || d == b || excluded_leafs_.contains(d))
               continue;
-            for (auto &&tree2 : get_trees()) {
-              auto node2_a_b = tree2->lca_query(a, b);
-              auto node2_c_d = tree2->lca_query(c, d);
-              auto node2_ab_c = tree2->lca_query(a, b, c);
-              auto node2_ab_d = tree2->lca_query(a, b, d);
-              auto node2_cd_a = tree2->lca_query(a, d, c);
-              auto node2_cd_b = tree2->lca_query(c, b, d);
-              auto c_below_ab_2 = node2_a_b == node2_ab_c;
-              auto d_below_ab_2 = node2_a_b == node2_ab_d;
-              auto a_below_cd_2 = node2_c_d == node2_cd_a;
-              auto b_below_cd_2 = node2_c_d == node2_cd_b;
-              // We look whether it is mashed up or not.
-              // Therefore at least c or d must be below and a or b ust be
-              // below.
-              if ((c_below_ab_2 || d_below_ab_2) &&
-                  (a_below_cd_2 || b_below_cd_2)) {
-                quartets.push_back(std::make_tuple(a, b, c, d));
-                break;
+            if (tree1->has_disjoint_paths(a, b, c, d)) {
+              for (auto &&tree2 : get_trees()) {
+                if (!tree2->has_disjoint_paths(a, b, c, d)) {
+                  quartets.push_back(std::make_tuple(a, b, c, d));
+                  break;
+                }
               }
             }
           }
@@ -270,22 +261,14 @@ std::vector<std::tuple<int, int, int>> Input::compute_trios() {
     for (auto b = a + 1; b <= get_leaf_count(); ++b) {
       if (excluded_leafs_.contains(b))
         continue;
-      auto node1_a_b = tree1->lca_query(a, b);
       for (auto c = 1; c <= get_leaf_count(); ++c) {
         if (excluded_leafs_.contains(c))
           continue;
         if (c == b || c == a)
           continue;
-        auto node1_ab_c = tree1->lca_query(a, b, c);
-        // Either one is below and the other match or the other way around.
-        auto c_below_ab_1 = node1_a_b == node1_ab_c;
-        if (!c_below_ab_1) {
+        if (tree1->has_disjoint_trio(a, b, c)) {
           for (auto &&tree2 : get_trees()) {
-            auto node2_a_b = tree2->lca_query(a, b);
-            auto node2_ab_c = tree2->lca_query(a, b, c);
-            auto c_below_ab_2 = node2_a_b == node2_ab_c;
-            if (c_below_ab_2) {
-              // We found triplet.
+            if (!tree2->has_disjoint_trio(a, b, c)) {
               trios.push_back(std::make_tuple(a, b, c));
               break;
             }
@@ -307,40 +290,15 @@ std::vector<std::tuple<int, int, int, int>> Input::compute_quartets() {
       if (excluded_leafs_.contains(b))
         continue;
       auto node1_a_b = tree1->lca_query(a, b);
-      for (auto c = 1; c <= get_leaf_count(); ++c) {
-        if (c == b || c == a || excluded_leafs_.contains(c))
+      for (auto c = a + 1; c <= get_leaf_count(); ++c) {
+        if (c == b || excluded_leafs_.contains(c))
           continue;
         for (auto d = c + 1; d <= get_leaf_count(); ++d) {
-          if (d == c || d == a || d == b || excluded_leafs_.contains(d))
+          if (d == a || d == b || excluded_leafs_.contains(d))
             continue;
-          auto node1_ab_c = tree1->lca_query(a, b, c);
-          auto node1_ab_d = tree1->lca_query(a, b, d);
-          auto c_below_ab_1 = node1_a_b == node1_ab_c;
-          auto d_below_ab_1 = node1_a_b == node1_ab_d;
-          auto node1_cd_a = tree1->lca_query(c, d, a);
-          auto node1_cd_b = tree1->lca_query(c, d, b);
-          auto node1_c_d = tree1->lca_query(c, d);
-          auto a_below_cd_1 = node1_c_d == node1_cd_a;
-          auto b_below_cd_1 = node1_c_d == node1_cd_b;
-          if (!c_below_ab_1 && !d_below_ab_1) {
-            if (!a_below_cd_1 && !b_below_cd_1 && a > c)
-              continue;
+          if (tree1->has_disjoint_paths(a, b, c, d)) {
             for (auto &&tree2 : get_trees()) {
-              auto node2_a_b = tree2->lca_query(a, b);
-              auto node2_c_d = tree2->lca_query(c, d);
-              auto node2_ab_c = tree2->lca_query(a, b, c);
-              auto node2_ab_d = tree2->lca_query(a, b, d);
-              auto node2_cd_a = tree2->lca_query(a, d, c);
-              auto node2_cd_b = tree2->lca_query(c, b, d);
-              auto c_below_ab_2 = node2_a_b == node2_ab_c;
-              auto d_below_ab_2 = node2_a_b == node2_ab_d;
-              auto a_below_cd_2 = node2_c_d == node2_cd_a;
-              auto b_below_cd_2 = node2_c_d == node2_cd_b;
-              // We look whether it is mashed up or not.
-              // Therefore at least c or d must be below and a or b ust be
-              // below.
-              if ((c_below_ab_2 || d_below_ab_2) &&
-                  (a_below_cd_2 || b_below_cd_2)) {
+              if (!tree2->has_disjoint_paths(a, b, c, d)) {
                 quartets.push_back(std::make_tuple(a, b, c, d));
                 break;
               }
