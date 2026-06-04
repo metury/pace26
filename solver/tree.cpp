@@ -195,14 +195,14 @@ std::vector<std::tuple<int, int, int>> Input::compute_trios() {
   std::vector<std::tuple<int, int, int>> trios;
   auto tree1 = trees_[0].get();
   for (auto a = 1; a <= get_leaf_count(); ++a) {
-    if (excluded_leafs_.find(a) != excluded_leafs_.end())
+    if (excluded_leafs_.contains(a))
       continue;
     for (auto b = a + 1; b <= get_leaf_count(); ++b) {
-      if (excluded_leafs_.find(b) != excluded_leafs_.end())
+      if (excluded_leafs_.contains(b))
         continue;
       auto node1_a_b = tree1->lca_query(a, b);
       for (auto c = 1; c <= get_leaf_count(); ++c) {
-        if (excluded_leafs_.find(c) != excluded_leafs_.end())
+        if (excluded_leafs_.contains(c))
           continue;
         if (c == b || c == a)
           continue;
@@ -231,19 +231,17 @@ std::vector<std::tuple<int, int, int, int>> Input::compute_quartets() {
   std::vector<std::tuple<int, int, int, int>> quartets;
   auto tree1 = trees_[0].get();
   for (auto a = 1; a <= get_leaf_count(); ++a) {
-    if (excluded_leafs_.find(a) != excluded_leafs_.end())
+    if (excluded_leafs_.contains(a))
       continue;
     for (auto b = a + 1; b <= get_leaf_count(); ++b) {
-      if (excluded_leafs_.find(b) != excluded_leafs_.end())
+      if (excluded_leafs_.contains(b))
         continue;
       auto node1_a_b = tree1->lca_query(a, b);
       for (auto c = 1; c <= get_leaf_count(); ++c) {
-        if (c == b || c == a ||
-            excluded_leafs_.find(c) != excluded_leafs_.end())
+        if (c == b || c == a || excluded_leafs_.contains(c))
           continue;
         for (auto d = c + 1; d <= get_leaf_count(); ++d) {
-          if (d == c || d == a || d == b ||
-              excluded_leafs_.find(d) != excluded_leafs_.end())
+          if (d == c || d == a || d == b || excluded_leafs_.contains(d))
             continue;
           auto node1_ab_c = tree1->lca_query(a, b, c);
           auto node1_ab_d = tree1->lca_query(a, b, d);
@@ -384,14 +382,14 @@ void Input::remove_edges_(const std::set<int> &edges_to_remove,
     return;
   }
   auto left_val = current_tree->get_left()->get_value();
-  if (edges_to_remove.find(left_val) != edges_to_remove.end()) {
+  if (edges_to_remove.contains(left_val)) {
     trees.push_back(std::move(current_tree->remove_left()));
     remove_edges_(edges_to_remove, trees, trees.at(trees.size() - 1).get());
   } else {
     remove_edges_(edges_to_remove, trees, current_tree->get_left());
   }
   auto right_val = current_tree->get_right()->get_value();
-  if (edges_to_remove.find(right_val) != edges_to_remove.end()) {
+  if (edges_to_remove.contains(right_val)) {
     trees.push_back(current_tree->remove_right());
     remove_edges_(edges_to_remove, trees, trees.at(trees.size() - 1).get());
   } else {
@@ -401,13 +399,12 @@ void Input::remove_edges_(const std::set<int> &edges_to_remove,
 
 void Input::add_contracted_(int first, int second) {
   std::ostringstream oss;
-  if (contracted_.find(first) != contracted_.end() &&
-      contracted_.find(second) != contracted_.end()) {
+  if (contracted_.contains(first) && contracted_.contains(second)) {
     oss << "(" << contracted_.at(first) << "," << contracted_.at(second) << ")";
     contracted_.erase(second);
-  } else if (contracted_.find(first) != contracted_.end()) {
+  } else if (contracted_.contains(first)) {
     oss << "(" << contracted_.at(first) << "," << second << ")";
-  } else if (contracted_.find(second) != contracted_.end()) {
+  } else if (contracted_.contains(second)) {
     oss << "(" << first << "," << contracted_.at(second) << ")";
     contracted_.erase(second);
   } else {

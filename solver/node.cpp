@@ -131,7 +131,7 @@ void Node::set_right(std::unique_ptr<Node> node) {
 void Node::write_with_substitution(
     std::ostream &os, const std::unordered_map<int, std::string> &subst) const {
   if (get_type() == LEAF) {
-    if (subst.find(get_value()) != subst.end()) {
+    if (subst.contains(get_value())) {
       os << subst.at(get_value());
     } else {
       os << get_value();
