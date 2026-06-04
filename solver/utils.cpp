@@ -1,29 +1,6 @@
 #include "utils.h"
 #include <sstream>
 
-LCA_KEY get_lca_key(int first, int second) {
-  std::ostringstream os;
-  if (first > second) {
-    std::swap(first, second);
-  }
-  os << first << "#" << second;
-  return os.str();
-}
-
-LCA_KEY get_lca_key(int first, int second, int third) {
-  std::ostringstream os;
-  if (second < first && second < third) {
-    std::swap(first, second);
-  } else if (third < first && third < second) {
-    std::swap(first, third);
-  }
-  if (second > third) {
-    std::swap(second, third);
-  }
-  os << first << "#" << second << "#" << third;
-  return os.str();
-}
-
 bool is_approx_one(float x, float tolerance) {
   return std::abs(x - 1.0f) < tolerance;
 }

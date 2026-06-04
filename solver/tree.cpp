@@ -52,30 +52,13 @@ void Tree::contract_cherry(int first, int second) {
   }
 }
 
-void Tree::contract_chain(int a, int b, int c, int d) {
-  auto node_b = get_leaf(b);
-  auto parent_b = node_b->get_parent();
-  std::unique_ptr<Node> child;
-  if (parent_b->get_left() == node_b) {
-    parent_b->remove_left();
-    child = parent_b->remove_right();
-  } else {
-    parent_b->remove_right();
-    child = parent_b->remove_left();
-  }
-  auto parent = parent_b->get_parent();
-  if (parent_b == parent->get_left()) {
-    parent->remove_left();
-    parent->set_left(std::move(child));
-  } else {
-    parent->remove_right();
-    parent->set_right(std::move(child));
-  }
+void Tree::compute_lca_leafs(int number_of_nodes) {
+  lca_table_ = std::vector<std::vector<int>>(
+      number_of_nodes, std::vector<int>(number_of_nodes, 1));
+  descendants_ = root_->compute_lca_leafs(lca_table_);
 }
 
-void Tree::compute_lca_leafs() {
-  descendants_ = root_->compute_lca_leafs(pairs_, triples_);
-}
+void Tree::delete_lca_table() { lca_table_.clear(); }
 
 void Tree::get_edges(Node *below, Node *above, std::set<int> &edges) const {
   auto current = below;
@@ -93,33 +76,15 @@ bool Tree::is_cherry(int first, int second) const {
          *node_a->get_parent() == *node_b->get_parent();
 }
 
-bool Tree::is_chain(int a, int b, int c, int d) const {
-  auto parent = get_leaf(d)->get_parent();
-  if (parent == nullptr)
-    return false;
-  parent = parent->get_parent();
-  auto tmp_parent = get_leaf(c)->get_parent();
-  if (tmp_parent == nullptr || parent != tmp_parent)
-    return false;
-  parent = parent->get_parent();
-  tmp_parent = get_leaf(b)->get_parent();
-  if (tmp_parent == nullptr || parent != tmp_parent)
-    return false;
-  parent = parent->get_parent();
-  tmp_parent = get_leaf(a)->get_parent();
-  if (tmp_parent == nullptr || parent != tmp_parent)
-    return false;
-  return true;
-}
-
 bool Tree::is_empty() const { return root_ == std::nullptr_t(); }
 
 Node *Tree::lca_query(int first, int second) const {
-  return pairs_.at(get_lca_key(first, second));
+  return descendants_.at(lca_table_[first][second]);
 }
 
 Node *Tree::lca_query(int first, int second, int third) const {
-  return triples_.at(get_lca_key(first, second, third));
+  auto first_second = descendants_.at(lca_table_[first][second])->get_value();
+  return descendants_.at(lca_table_[first_second][third]);
 }
 
 void Tree::write(std::ostream &os,
@@ -216,13 +181,13 @@ Input::Input(std::istream &is) {
 
 void Input::assign_numbers() {
   for (int i = 0; i < t_; ++i) {
-    trees_[i]->assign_numbers(i + 1, n_);
+    trees_[i]->assign_numbers(1, n_);
   }
 }
 
 void Input::compute_all_lca() {
   for (auto &&tree : trees_) {
-    tree->compute_lca_leafs();
+    tree->compute_lca_leafs(get_node_count() + 1);
   }
 }
 
@@ -246,9 +211,6 @@ std::vector<std::tuple<int, int, int>> Input::compute_trios() {
         auto c_below_ab_1 = node1_a_b == node1_ab_c;
         if (!c_below_ab_1) {
           for (auto &&tree2 : get_trees()) {
-            if (tree1->get_root()->get_value() ==
-                tree2->get_root()->get_value())
-              continue;
             auto node2_a_b = tree2->lca_query(a, b);
             auto node2_ab_c = tree2->lca_query(a, b, c);
             auto c_below_ab_2 = node2_a_b == node2_ab_c;
@@ -296,9 +258,6 @@ std::vector<std::tuple<int, int, int, int>> Input::compute_quartets() {
             if (!a_below_cd_1 && !b_below_cd_1 && a > c)
               continue;
             for (auto &&tree2 : get_trees()) {
-              if (tree1->get_root()->get_value() ==
-                  tree2->get_root()->get_value())
-                continue;
               auto node2_a_b = tree2->lca_query(a, b);
               auto node2_c_d = tree2->lca_query(c, d);
               auto node2_ab_c = tree2->lca_query(a, b, c);
@@ -350,44 +309,6 @@ void Input::compute_parents_(Node *node,
   }
 }
 
-void Input::contract_chains_(Node *n, std::vector<int> &candidates) {
-  if (n == nullptr || n->is_leaf()) {
-    return;
-  }
-  bool chain = false;
-  if (candidates.size() == 4) {
-    chain = true;
-    for (auto &&tree : get_trees()) {
-      chain = chain && tree->is_chain(candidates[0], candidates[1],
-                                      candidates[2], candidates[3]);
-    }
-    if (!chain) {
-      candidates.erase(candidates.begin());
-    }
-  }
-  if (chain) {
-    for (auto &&tree : get_trees()) {
-      tree->contract_chain(candidates[0], candidates[1], candidates[2],
-                           candidates[3]);
-    }
-    excluded_leafs_.insert(candidates[1]);
-    std::cout << "# Contracted part of a chain: " << CYAN << candidates[1]
-              << RESET << "." << std::endl;
-    candidates.erase(candidates.begin() + 1);
-  }
-  if (n->get_left()->is_leaf() && !n->get_right()->is_leaf()) {
-    candidates.push_back(n->get_left()->get_value());
-    contract_chains_(n->get_right(), candidates);
-  } else if (n->get_right()->is_leaf() && !n->get_left()->is_leaf()) {
-    candidates.push_back(n->get_right()->get_value());
-    contract_chains_(n->get_left(), candidates);
-  } else {
-    candidates.clear();
-    contract_chains_(n->get_left(), candidates);
-    contract_chains_(n->get_left(), candidates);
-  }
-}
-
 void Input::contract_cherries() {
   contract_cherries_(trees_[0]->get_root());
   compute_all_lca();
@@ -425,6 +346,12 @@ void Input::contract_cherries_(Node *n) {
     }
     add_contracted_(left_value, right_value);
     return;
+  }
+}
+
+void Input::delete_lca_tables() {
+  for (auto &&tree : trees_) {
+    tree->delete_lca_table();
   }
 }
 

@@ -31,9 +31,10 @@ public:
   /// @param first Label of the first leaf.
   /// @param second Label of the second leaf.
   void contract_cherry(int first, int second);
-  void contract_chain(int a, int b, int c, int d);
   /// Compute both leaf pointers and lca values.
-  void compute_lca_leafs();
+  /// @param number_of_leafs How many leafs does the tree have.
+  void compute_lca_leafs(int number_of_nodes);
+  void delete_lca_table();
   /// Add all edges between the nodes.
   /// @param below Pointer to the node below.
   /// @param above Pointer to the node above.
@@ -51,7 +52,6 @@ public:
   /// @param second Label of the second leaf.
   /// @return True if they are siblings.
   bool is_cherry(int first, int second) const;
-  bool is_chain(int a, int b, int c, int d) const;
   /// Return whether a tree has (almost) no nodes.
   /// @return True if the root is empty.
   bool is_empty() const;
@@ -82,10 +82,8 @@ private:
   std::unordered_map<int, Node *> descendants_;
   /// Rot of the tree.
   std::unique_ptr<Node> root_;
-  /// LCA table for pairs.
-  LCA_TABLE pairs_;
-  /// LCA table for triples.
-  LCA_TABLE triples_;
+  /// LCA table.
+  std::vector<std::vector<int>> lca_table_;
 };
 
 /// Parse the tree from input stream in Newick format using `>>`.
@@ -141,6 +139,7 @@ public:
   /// Compute all predecassors.
   /// @return Map of node - parents coresspondens.
   std::unordered_map<int, std::set<int>> compute_parents();
+  void delete_lca_tables();
   /// Get all contracted parts from the input tree.
   /// @return All contractions.
   inline std::unordered_map<int, std::string> &get_contractions() {
@@ -175,9 +174,6 @@ private:
   /// @param first Label of the first leaf.
   /// @param second Label of the second leaf.
   void add_contracted_(int first, int second);
-  /// Recursively construct chains we find.
-  /// @param node Which node we are considering now.
-  void contract_chains_(Node *node, std::vector<int> &candidates);
   /// Recursively construct cherries we find.
   /// @param node Which node we are considering now.
   void contract_cherries_(Node *node);

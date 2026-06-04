@@ -1,5 +1,4 @@
 #include "node.h"
-#include "utils.h"
 #include <iostream>
 #include <memory>
 #include <string>
@@ -88,26 +87,23 @@ void Node::consolidate() {
   }
 }
 
-std::unordered_map<int, Node *> Node::compute_lca_leafs(LCA_TABLE &pairs,
-                                                        LCA_TABLE &triples) {
+std::unordered_map<int, Node *>
+Node::compute_lca_leafs(std::vector<std::vector<int>> &lca_table) {
   if (type_ == LEAF) {
     std::unordered_map<int, Node *> descendants;
     descendants.insert_or_assign(value_, this);
     return descendants;
   }
-  auto left = left_->compute_lca_leafs(pairs, triples);
-  auto right = right_->compute_lca_leafs(pairs, triples);
+  auto left = left_->compute_lca_leafs(lca_table);
+  auto right = right_->compute_lca_leafs(lca_table);
   for (auto &&[first, first_node] : left) {
+    lca_table[first][value_] = lca_table[value_][first] = this->get_value();
     for (auto &&[second, second_node] : right) {
-      pairs.insert_or_assign(get_lca_key(first, second), this);
-      for (auto &&[third, third_node] : left) {
-        triples.insert_or_assign(get_lca_key(first, second, third), this);
-      }
-      for (auto &&[third, third_node] : right) {
-        triples.insert_or_assign(get_lca_key(first, second, third), this);
-      }
+      lca_table[first][second] = lca_table[second][first] = this->get_value();
+      lca_table[second][value_] = lca_table[value_][second] = this->get_value();
     }
   }
+  left.insert_or_assign(this->get_value(), this);
   left.merge(right);
   return left;
 }

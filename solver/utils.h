@@ -7,9 +7,6 @@
 #include <string>
 #include <vector>
 
-/// This is to generalize LCA table and possibly change it in the future.
-using LCA_KEY = std::string;
-
 /// Common RED colos for colorful printing.
 const std::string RED = "\033[1;31m";
 /// Common GREEN colos for colorful printing.
@@ -24,20 +21,6 @@ const std::string VIOLET = "\033[1;35m";
 const std::string CYAN = "\033[1;36m";
 /// Common RESET colos for colorful printing.
 const std::string RESET = "\033[0m";
-
-/// Get the lca key for two leafs sort them and put in string "first"#"second".
-/// @param first First leaf.
-/// @param second Second leaf.
-/// @return LCA key for the hash table.
-LCA_KEY get_lca_key(int first, int second);
-
-/// Get the lca key for three leafs sort them and put in string
-/// "first"#"second"#"three.
-/// @param first First leaf.
-/// @param second Second leaf.
-/// @param third Third leaf.
-/// @return LCA key for the hash table.
-LCA_KEY get_lca_key(int first, int second, int third);
 
 /// Compare float value to "almost one".
 /// @param x Given value to comparing to one.

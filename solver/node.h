@@ -5,17 +5,11 @@
 #ifndef node_h_
 #define node_h_
 
-#include "utils.h"
 #include <iostream>
 #include <memory>
 #include <ostream>
 #include <unordered_map>
-
-// Predeclaraion.
-class Node;
-
-/// Renaming the hash map using LCA_KEY for easier use.
-using LCA_TABLE = std::unordered_map<LCA_KEY, Node *>;
+#include <vector>
 
 /// Type of nodes, either LEAF or INTERNAL.
 enum NodeType {
@@ -71,8 +65,8 @@ public:
   /// @param pairs LCA table for pair of leafs.
   /// @param triples LCA table for triples of leafs.
   /// @return A map of pointers to all leafs.
-  std::unordered_map<int, Node *> compute_lca_leafs(LCA_TABLE &pairs,
-                                                    LCA_TABLE &triples);
+  std::unordered_map<int, Node *>
+  compute_lca_leafs(std::vector<std::vector<int>> &lca_table);
   /// Get a pointer to the left descendant.
   /// @return Pointer (monitor) to its left descendant.
   inline Node *get_left() const { return left_.get(); }
