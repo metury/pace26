@@ -9,9 +9,9 @@ void process(std::istream &is) {
   input.compute_all_lca();
 
   // Output what is inside.
-  std::cout << GREEN << "Instance " << RESET << " contains " << GREEN
-            << input.get_tree_count() << RESET << " trees with " << GREEN
-            << input.get_leaf_count() << RESET << " leafs each." << std::endl;
+  std::cout << "Instance contains " << GREEN << input.get_tree_count() << RESET
+            << " trees with " << GREEN << input.get_leaf_count() << RESET
+            << " leafs each." << std::endl;
 
   // Contract cherries to reduce size.
   input.contract_cherries();
