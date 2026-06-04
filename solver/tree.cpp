@@ -172,9 +172,6 @@ Input::Input(std::istream &is) {
       std::istringstream iss(line);
       iss >> *(trees_.at(trees_.size() - 1).get());
     }
-    if (t_ > 0 && trees_.size() == t_) {
-      break;
-    }
   }
   assign_numbers();
 }
