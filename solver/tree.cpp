@@ -196,10 +196,11 @@ Input::Input(std::istream &is) {
         t_ = std::stoi(tokens[1]);
         n_ = std::stoi(tokens[2]);
       } else if (line.size() > 1 && line[1] == 'x') {
-        auto tokens = split(line);
-        if (tokens[1] == "treedecomp") {
-          set_tree_decomposition(tokens[2]);
-        }
+        // Do not read tree decomposition!
+        // auto tokens = split(line);
+        // if (tokens[1] == "treedecomp") {
+        //   set_tree_decomposition(tokens[2]);
+        // }
       }
     } else if (!line.empty()) {
       trees_.push_back(std::make_unique<Tree>());
@@ -211,7 +212,6 @@ Input::Input(std::istream &is) {
     }
   }
   assign_numbers();
-  compute_all_lca();
 }
 
 void Input::assign_numbers() {
@@ -388,7 +388,7 @@ void Input::contract_chains_(Node *n, std::vector<int> &candidates) {
   }
 }
 
-void Input::contract_cherries_chains() {
+void Input::contract_cherries() {
   contract_cherries_(trees_[0]->get_root());
   compute_all_lca();
   for (auto &&[key, val] : contracted_) {
@@ -398,17 +398,8 @@ void Input::contract_cherries_chains() {
   if (contracted_.empty()) {
     std::cout << "# No " << RED << "cherry" << RESET << " found." << std::endl;
   }
-  // auto cherries = excluded_leafs_.size();
-  // std::vector<int> candidates;
-  // contract_chains_(trees_[0]->get_root(), candidates);
-  // compute_all_lca();
-  // if (excluded_leafs_.size() == cherries) {
-  //   std::cout << "# No " << CYAN << "chain" << RESET << " was contracted."
-  //             << std::endl;
-  // }
-  // std::cout << "# Number of leafs reduced by " << RED << cherries << RESET
-  //           << " + " << CYAN << excluded_leafs_.size() - cherries << RESET
-  //           << " = " << excluded_leafs_.size() << "." << std::endl;
+  std::cout << "# Number of leafs reduced by " << RED << contracted_.size()
+            << RESET << std::endl;
 }
 
 void Input::contract_cherries_(Node *n) {

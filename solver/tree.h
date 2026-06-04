@@ -122,14 +122,14 @@ public:
   inline Input() : t_(0), n_(0) {}
   /// Constructor for parsing input from a file also assign numbers and compute
   /// LCA.
-  /// @param is Where is the input.
+  /// @param is On which stream the input will be provided.
   Input(std::istream &is);
   /// Default destructor.
   ~Input() = default;
   /// Assign numbers to all trees.
   void assign_numbers();
   /// Contract all cherries.
-  void contract_cherries_chains();
+  void contract_cherries();
   /// Compute all LCA values for all trees.
   void compute_all_lca();
   /// Compute all incompatible trios.
