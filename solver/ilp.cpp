@@ -30,8 +30,6 @@ std::unordered_map<int, float> ilp_general(Input &input, bool integer) {
   auto trios = std::vector<std::tuple<int, int, int>>();
   auto quartets = std::vector<std::tuple<int, int, int, int>>();
   input.compute_trios_quartets(trios, quartets);
-  // auto trios = input.compute_trios();
-  // auto quartets = input.compute_quartets();
 
   //! Pseudo random number.
   auto number_of_edges = input.get_node_count();
@@ -102,6 +100,8 @@ std::unordered_map<int, float> ilp_general(Input &input, bool integer) {
   start.push_back(index.size());
 
   std::vector<double> values(index.size(), 1.0);
+
+  input.delete_lca_tables();
 
   // a_start_ has num_col_+1 entries, and the last entry is the number
   // of nonzeros in A, allowing the number of nonzeros in the last
