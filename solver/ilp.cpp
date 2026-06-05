@@ -16,7 +16,7 @@ int lp(Input &input) {
 }
 
 std::set<int> ilp(Input &input) {
-  auto results = ilp_general_alt(input, true);
+  auto results = ilp_general(input, true);
   std::set<int> edges_to_erase;
   for (auto &&[key, value] : results) {
     if (is_approx_one(value)) {
