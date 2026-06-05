@@ -152,9 +152,6 @@ public:
   /// Compute all incompatible quartets.
   /// @return List of all incompatible quartets.
   std::vector<std::tuple<int, int, int, int>> compute_quartets();
-  /// Compute all predecassors.
-  /// @return Map of node - parents coresspondens.
-  std::unordered_map<int, std::set<int>> compute_parents();
   void delete_lca_tables();
   /// Get all contracted parts from the input tree.
   /// @return All contractions.
@@ -193,9 +190,6 @@ private:
   /// Recursively construct cherries we find.
   /// @param node Which node we are considering now.
   void contract_cherries_(Node *node);
-  void compute_parents_(Node *node,
-                        std::unordered_map<int, std::set<int>> &parents,
-                        std::set<int> &current);
   /// Recursively remove all edges.
   /// @param edges_to_remove Which edges to remove.
   /// @param trees Which trees we are considering.

@@ -311,30 +311,6 @@ std::vector<std::tuple<int, int, int, int>> Input::compute_quartets() {
   return quartets;
 }
 
-std::unordered_map<int, std::set<int>> Input::compute_parents() {
-  std::unordered_map<int, std::set<int>> parents{};
-  if (trees_.empty())
-    return parents;
-  std::set<int> current{};
-  compute_parents_(trees_[0]->get_root(), parents, current);
-  return parents;
-}
-
-void Input::compute_parents_(Node *node,
-                             std::unordered_map<int, std::set<int>> &parents,
-                             std::set<int> &current) {
-  if (!current.empty())
-    parents.insert_or_assign(node->get_value(), current);
-  if (!node->is_leaf()) {
-    auto left = node->get_left();
-    current.insert(node->get_value());
-    compute_parents_(left, parents, current);
-    auto right = node->get_right();
-    compute_parents_(right, parents, current);
-    current.erase(node->get_value());
-  }
-}
-
 void Input::contract_cherries() {
   contract_cherries_(trees_[0]->get_root());
   compute_all_lca();

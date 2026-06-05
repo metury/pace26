@@ -15,12 +15,11 @@ std::set<int> ilp(Input &input);
 
 /// Solve LP relaxation.
 /// @param input On which input we should solve the LP.
-int lp(Input &input);
+// int lp(Input &input);
 
 /// Solve the ilp either with integers or floats.
 /// @param input On which input we should solve the (I)LP.
 /// @param integer Whether it should be on integer values or not.
 /// @return What is the value for each edge in the input tree.
 std::unordered_map<int, float> ilp_general(Input &input, bool integer);
-std::unordered_map<int, float> ilp_general_alt(Input &input, bool integer);
 #endif
