@@ -108,6 +108,15 @@ Node::compute_lca_leafs(std::vector<std::vector<int>> &lca_table) {
   return left;
 }
 
+void Node::get_leafs(std::set<int> &taxa) const {
+  if (is_leaf()) {
+    taxa.insert(value_);
+    return;
+  }
+  left_->get_leafs(taxa);
+  right_->get_leafs(taxa);
+}
+
 std::unique_ptr<Node> Node::remove_left() {
   left_->set_parent(nullptr);
   return std::move(left_);

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <memory>
 #include <ostream>
+#include <set>
 #include <unordered_map>
 #include <vector>
 
@@ -82,6 +83,7 @@ public:
   /// Get the value stored in this node.
   /// @return Its stored value.
   inline int get_value() const { return value_; }
+  void get_leafs(std::set<int> &taxa) const;
   /// Return whether a node is a leaf or not.
   /// @return If the node is leaf or not.
   inline bool is_leaf() const { return type_ == LEAF; }

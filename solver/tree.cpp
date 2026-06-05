@@ -69,6 +69,12 @@ void Tree::get_edges(Node *below, Node *above, std::set<int> &edges) const {
   }
 }
 
+std::set<int> Tree::get_leafs() const {
+  std::set<int> leafs;
+  root_->get_leafs(leafs);
+  return leafs;
+}
+
 bool Tree::has_disjoint_paths(int a, int b, int x, int y) const {
   bool result = lca_query(a, b) != lca_query(x, y);
   if (!result) {
@@ -212,35 +218,40 @@ void Input::compute_all_lca() {
 
 void Input::compute_trios_quartets(
     std::vector<std::tuple<int, int, int>> &trios,
-    std::vector<std::tuple<int, int, int, int>> &quartets) {
+    std::vector<std::tuple<int, int, int, int>> &quartets, int limit,
+    const std::vector<int> &components) {
   auto tree1 = trees_[0].get();
+  auto trio_count = 0;
+  auto quartet_count = 0;
   for (auto a = 1; a <= get_leaf_count(); ++a) {
     if (excluded_leafs_.contains(a))
       continue;
     for (auto b = a + 1; b <= get_leaf_count(); ++b) {
-      if (excluded_leafs_.contains(b))
+      if (excluded_leafs_.contains(b) || components[a] != components[b])
         continue;
       for (auto c = 1; c <= get_leaf_count(); ++c) {
-        if (excluded_leafs_.contains(c))
+        if (excluded_leafs_.contains(c) || c == b || c == a)
           continue;
-        if (c == b || c == a)
-          continue;
-        if (tree1->has_disjoint_trio(a, b, c)) {
+        if (components[a] == components[c] && trio_count <= limit &&
+            tree1->has_disjoint_trio(a, b, c)) {
           for (auto &&tree2 : get_trees()) {
             if (!tree2->has_disjoint_trio(a, b, c)) {
               trios.push_back(std::make_tuple(a, b, c));
+              ++trio_count;
               break;
             }
           }
         }
-        if (c >= a + 1) {
+        if (c >= a + 1 && quartet_count <= limit) {
           for (auto d = c + 1; d <= get_leaf_count(); ++d) {
-            if (d == a || d == b || excluded_leafs_.contains(d))
+            if (d == a || d == b || excluded_leafs_.contains(d) ||
+                components[d] != components[c])
               continue;
             if (tree1->has_disjoint_paths(a, b, c, d)) {
               for (auto &&tree2 : get_trees()) {
                 if (!tree2->has_disjoint_paths(a, b, c, d)) {
                   quartets.push_back(std::make_tuple(a, b, c, d));
+                  ++quartet_count;
                   break;
                 }
               }
@@ -309,7 +320,8 @@ Input::remove_edges(const std::set<int> &edges_to_remove) {
   if (trees_.size() == 0) {
     return trees;
   }
-  output.push_back(std::make_unique<Node>(*trees_[0]->get_root()));
+  Node tree(*trees_[0]->get_root());
+  output.push_back(std::make_unique<Node>(tree));
   remove_edges_(edges_to_remove, output, output.at(0).get());
   for (auto &&tree : output) {
     trees.push_back(std::make_unique<Tree>(std::move(tree)));

@@ -5,18 +5,20 @@
 #include <unordered_map>
 #include <vector>
 
-int lp(Input &input) {
-  auto edge_values = ilp_general(input, false);
-  auto sum = 0.0;
-  for (auto &&[key, val] : edge_values) {
-    sum += val;
-    std::cout << key << " has value: " << val << std::endl;
-  }
-  return std::ceil(sum);
-}
+// int lp(Input &input) {
+//   auto edge_values = ilp_general(input, false);
+//   auto sum = 0.0;
+//   for (auto &&[key, val] : edge_values) {
+//     sum += val;
+//     std::cout << key << " has value: " << val << std::endl;
+//   }
+//   return std::ceil(sum);
+// }
 
-std::set<int> ilp(Input &input) {
-  auto results = ilp_general(input, true);
+std::set<int> ilp(Input &input, int limit,
+                  const std::vector<std::tuple<int, int, int>> &trios,
+                  const std::vector<std::tuple<int, int, int, int>> &quartets) {
+  auto results = ilp_general(input, limit, trios, quartets, true);
   std::set<int> edges_to_erase;
   for (auto &&[key, value] : results) {
     if (is_approx_one(value)) {
@@ -26,12 +28,14 @@ std::set<int> ilp(Input &input) {
   return edges_to_erase;
 }
 
-std::unordered_map<int, float> ilp_general(Input &input, bool integer) {
-  const int LIMIT = 1000;
-
-  auto trios = std::vector<std::tuple<int, int, int>>();
-  auto quartets = std::vector<std::tuple<int, int, int, int>>();
-  input.compute_trios_quartets(trios, quartets);
+std::unordered_map<int, float>
+ilp_general(Input &input, int limit,
+            const std::vector<std::tuple<int, int, int>> &trios,
+            const std::vector<std::tuple<int, int, int, int>> &quartets,
+            bool integer) {
+  // auto trios = std::vector<std::tuple<int, int, int>>();
+  // auto quartets = std::vector<std::tuple<int, int, int, int>>();
+  // input.compute_trios_quartets(trios, quartets, limit, components);
 
   // auto nr_of_trios = LIMIT > trios.size() ? trios.size() : LIMIT;
   // auto nr_of_quartets = LIMIT > quartets.size() ? quartets.size() : LIMIT;
@@ -60,9 +64,12 @@ std::unordered_map<int, float> ilp_general(Input &input, bool integer) {
   model.lp_.col_cost_ = std::vector<double>(number_of_edges, 1.0);
   model.lp_.col_lower_ = std::vector<double>(number_of_edges, 0.0);
   model.lp_.col_upper_ = std::vector<double>(number_of_edges, 1.0);
-  model.lp_.row_lower_ = std::vector<double>(number_of_rows, 1.0);
-  model.lp_.row_upper_ =
-      std::vector<double>(number_of_rows, input.get_leaf_count() - 2);
+  auto low = std::vector<double>(number_of_rows - 1, 1.0);
+  low.push_back(limit);
+  model.lp_.row_lower_ = low;
+  auto high = std::vector<double>(number_of_rows - 1, 1.0e30);
+  high.push_back(input.get_leaf_count() - 2);
+  model.lp_.row_upper_ = high;
 
   model.lp_.a_matrix_.format_ = MatrixFormat::kRowwise;
 
@@ -83,8 +90,6 @@ std::unordered_map<int, float> ilp_general(Input &input, bool integer) {
     tree->get_edges(node_a_b, node_ab_c, edges);
     index.insert(index.end(), edges.begin(), edges.end());
     start.push_back(index.size());
-    if (++counter >= nr_of_trios)
-      break;
   }
 
   counter = 0;
@@ -102,8 +107,6 @@ std::unordered_map<int, float> ilp_general(Input &input, bool integer) {
     tree->get_edges(node_d, node_c_d, edges);
     index.insert(index.end(), edges.begin(), edges.end());
     start.push_back(index.size());
-    if (++counter >= nr_of_quartets)
-      break;
   }
 
   // At most number of leafs for all edges.
@@ -113,8 +116,6 @@ std::unordered_map<int, float> ilp_general(Input &input, bool integer) {
   start.push_back(index.size());
 
   std::vector<double> values(index.size(), 1.0);
-
-  input.delete_lca_tables();
 
   // a_start_ has num_col_+1 entries, and the last entry is the number
   // of nonzeros in A, allowing the number of nonzeros in the last

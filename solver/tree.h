@@ -44,6 +44,7 @@ public:
   /// @param value Label of that leaf.
   /// @return Pointer to such leaf.
   inline Node *get_leaf(int value) const { return descendants_.at(value); }
+  std::set<int> get_leafs() const;
   /// Get pointer to the root node.
   /// @return Pointer to the root node.
   inline Node *get_root() const { return root_.get(); }
@@ -148,7 +149,8 @@ public:
   /// @param quartets List of all incompatible quartets.
   void
   compute_trios_quartets(std::vector<std::tuple<int, int, int>> &trios,
-                         std::vector<std::tuple<int, int, int, int>> &quartets);
+                         std::vector<std::tuple<int, int, int, int>> &quartets,
+                         int limit, const std::vector<int> &components);
   void delete_lca_tables();
   /// Get all contracted parts from the input tree.
   /// @return All contractions.
