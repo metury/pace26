@@ -252,65 +252,6 @@ void Input::compute_trios_quartets(
   }
 }
 
-std::vector<std::tuple<int, int, int>> Input::compute_trios() {
-  std::vector<std::tuple<int, int, int>> trios;
-  auto tree1 = trees_[0].get();
-  for (auto a = 1; a <= get_leaf_count(); ++a) {
-    if (excluded_leafs_.contains(a))
-      continue;
-    for (auto b = a + 1; b <= get_leaf_count(); ++b) {
-      if (excluded_leafs_.contains(b))
-        continue;
-      for (auto c = 1; c <= get_leaf_count(); ++c) {
-        if (excluded_leafs_.contains(c))
-          continue;
-        if (c == b || c == a)
-          continue;
-        if (tree1->has_disjoint_trio(a, b, c)) {
-          for (auto &&tree2 : get_trees()) {
-            if (!tree2->has_disjoint_trio(a, b, c)) {
-              trios.push_back(std::make_tuple(a, b, c));
-              break;
-            }
-          }
-        }
-      }
-    }
-  }
-  return trios;
-}
-
-std::vector<std::tuple<int, int, int, int>> Input::compute_quartets() {
-  std::vector<std::tuple<int, int, int, int>> quartets;
-  auto tree1 = trees_[0].get();
-  for (auto a = 1; a <= get_leaf_count(); ++a) {
-    if (excluded_leafs_.contains(a))
-      continue;
-    for (auto b = a + 1; b <= get_leaf_count(); ++b) {
-      if (excluded_leafs_.contains(b))
-        continue;
-      auto node1_a_b = tree1->lca_query(a, b);
-      for (auto c = a + 1; c <= get_leaf_count(); ++c) {
-        if (c == b || excluded_leafs_.contains(c))
-          continue;
-        for (auto d = c + 1; d <= get_leaf_count(); ++d) {
-          if (d == a || d == b || excluded_leafs_.contains(d))
-            continue;
-          if (tree1->has_disjoint_paths(a, b, c, d)) {
-            for (auto &&tree2 : get_trees()) {
-              if (!tree2->has_disjoint_paths(a, b, c, d)) {
-                quartets.push_back(std::make_tuple(a, b, c, d));
-                break;
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  return quartets;
-}
-
 void Input::contract_cherries() {
   contract_cherries_(trees_[0]->get_root());
   compute_all_lca();
