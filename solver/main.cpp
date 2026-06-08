@@ -16,43 +16,24 @@ void process(std::istream &is) {
 
   // Contract cherries to reduce size.
   input.contract_cherries();
-
-  std::vector<std::tuple<int, int, int>> trios;
-  std::vector<std::tuple<int, int, int, int>> quartets;
-  auto result = 0;
-  auto output = std::vector<std::unique_ptr<Tree>>{};
-  auto components = std::vector<int>(input.get_leaf_count() + 1, 1);
-  auto counter = 0;
-  while (true) {
-    input.compute_trios_quartets(trios, quartets, 1000, components);
-    if (counter == trios.size() + quartets.size()) {
-      break;
-    }
-    counter = trios.size() + quartets.size();
-    //  Find the solution.
-    auto edges_to_erase = ilp(input, result - 1, trios, quartets);
+  auto ilp = ILP(input);
+  std::set<int> edges_to_erase;
+  std::vector<std::unique_ptr<Tree>> output;
+  do {
+    edges_to_erase = ilp.run(input);
     output = input.remove_edges(edges_to_erase);
-    // Print the result.
-    result = 0;
-    auto tree_counter = 0;
-    for (auto &&tree : output) {
-      ++tree_counter;
-      if (!tree->is_empty()) {
-        ++result;
-        auto leafs = tree->get_leafs();
-        for (auto &&taxa : leafs) {
-          components[taxa] = tree_counter;
-        }
-      }
-    }
-  }
+  } while (ilp.update(input, output));
+
+  auto result = 0;
   for (auto &&tree : output) {
     if (!tree->is_empty()) {
       tree->write(input.get_contractions());
     }
+    ++result;
   }
   if (output.empty()) {
     input.get_trees()[0]->write(input.get_contractions());
+    ++result;
   }
   std::cout << "# Size of the solution: " << VIOLET << result << RESET << "."
             << std::endl;

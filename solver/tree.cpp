@@ -232,7 +232,7 @@ void Input::compute_trios_quartets(
       for (auto c = 1; c <= get_leaf_count(); ++c) {
         if (excluded_leafs_.contains(c) || c == b || c == a)
           continue;
-        if (components[a] == components[c] && trio_count <= limit &&
+        if (components[a] == components[c] && limit >= trio_count &&
             tree1->has_disjoint_trio(a, b, c)) {
           for (auto &&tree2 : get_trees()) {
             if (!tree2->has_disjoint_trio(a, b, c)) {
@@ -242,7 +242,7 @@ void Input::compute_trios_quartets(
             }
           }
         }
-        if (c >= a + 1 && quartet_count <= limit) {
+        if (c >= a + 1 && limit >= quartet_count) {
           for (auto d = c + 1; d <= get_leaf_count(); ++d) {
             if (d == a || d == b || excluded_leafs_.contains(d) ||
                 components[d] != components[c])

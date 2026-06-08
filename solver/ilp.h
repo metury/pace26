@@ -5,29 +5,22 @@
 #ifndef ilp_h_
 #define ilp_h_
 
+#include "Highs.h"
 #include "tree.h"
 #include <tuple>
 #include <vector>
 
-/// Solve ILP. Return set of edges as a solution, where each edge has number
-/// from its lower vertex.
-/// @param input On which input we should solve the ILP.
-/// @return Indices of edges to be removed.
-std::set<int> ilp(Input &input, int limit,
-                  const std::vector<std::tuple<int, int, int>> &trios,
-                  const std::vector<std::tuple<int, int, int, int>> &quartets);
+class ILP {
+public:
+  ILP(Input &input);
+  std::set<int> run(Input &input);
+  bool update(Input &input, std::vector<std::unique_ptr<Tree>> &output);
 
-/// Solve LP relaxation.
-/// @param input On which input we should solve the LP.
-// int lp(Input &input);
-
-/// Solve the ilp either with integers or floats.
-/// @param input On which input we should solve the (I)LP.
-/// @param integer Whether it should be on integer values or not.
-/// @return What is the value for each edge in the input tree.
-std::unordered_map<int, float>
-ilp_general(Input &input, int limit,
-            const std::vector<std::tuple<int, int, int>> &trios,
-            const std::vector<std::tuple<int, int, int, int>> &quartets,
-            bool integer);
+private:
+  const int limit_ = 500;
+  Highs highs_;
+  std::vector<std::tuple<int, int, int>> trios_;
+  std::vector<std::tuple<int, int, int, int>> quartets_;
+  std::vector<int> components_;
+};
 #endif
