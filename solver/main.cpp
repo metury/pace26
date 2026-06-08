@@ -9,31 +9,32 @@ void process(std::istream &is) {
   auto input = Input(is);
   input.compute_all_lca();
 
-  // Output what is inside.
-  std::cout << "Instance contains " << GREEN << input.get_tree_count() << RESET
-            << " trees with " << GREEN << input.get_leaf_count() << RESET
-            << " leafs each." << std::endl;
-
-  // Contract cherries to reduce size.
-  input.contract_cherries();
-  auto ilp = ILP(input);
-  std::set<int> edges_to_erase;
-  std::vector<std::unique_ptr<Tree>> output;
-  do {
-    edges_to_erase = ilp.run(input);
-    output = input.remove_edges(edges_to_erase);
-  } while (ilp.update(input, output));
-
   auto result = 0;
-  for (auto &&tree : output) {
-    if (!tree->is_empty()) {
-      tree->write(input.get_contractions());
-    }
-    ++result;
-  }
-  if (output.empty()) {
+  // Contract cherries to reduce size.
+  bool single_node = input.contract_cherries();
+
+  if (single_node) {
+    // Trees are already identical.
     input.get_trees()[0]->write(input.get_contractions());
-    ++result;
+    result = 1;
+  } else {
+    auto ilp = ILP(input);
+    ilp.initialize();
+    std::set<int> edges_to_erase;
+    std::vector<std::unique_ptr<Tree>> output;
+    do {
+      edges_to_erase = ilp.run();
+      output = input.remove_edges(edges_to_erase);
+      ilp.set_components(output);
+    } while (ilp.update());
+
+    for (auto &&tree : output) {
+      if (!tree->is_empty()) {
+        tree->write(input.get_contractions());
+      }
+    }
+
+    result = edges_to_erase.size() + 1;
   }
   std::cout << "# Size of the solution: " << VIOLET << result << RESET << "."
             << std::endl;

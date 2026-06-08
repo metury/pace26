@@ -235,6 +235,10 @@ Input::Input(std::istream &is) {
     }
   }
   assign_numbers();
+  // Output what is inside.
+  std::cout << "Instance contains " << GREEN << get_tree_count() << RESET
+            << " trees with " << GREEN << get_leaf_count() << RESET
+            << " leafs each." << std::endl;
 }
 
 void Input::assign_numbers() {
@@ -314,7 +318,7 @@ void Input::compute_trios_quartets(
   }
 }
 
-void Input::contract_cherries() {
+bool Input::contract_cherries() {
   contract_cherries_(trees_[0]->get_root());
   compute_all_lca();
   for (auto &&[key, val] : contracted_) {
@@ -326,6 +330,7 @@ void Input::contract_cherries() {
   }
   std::cout << "# Number of leafs reduced by " << RED << excluded_leafs_.size()
             << RESET << std::endl;
+  return excluded_leafs_.size() + 1 == get_leaf_count();
 }
 
 void Input::contract_cherries_(Node *n) {

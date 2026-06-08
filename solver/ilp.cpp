@@ -1,38 +1,39 @@
 #include "ilp.h"
+#include "lp_data/HighsStatus.h"
 #include "tree.h"
 #include "utils.h"
 #include <set>
 #include <vector>
 
-ILP::ILP(Input &input) {
-  components_ = std::vector<int>(input.get_leaf_count() + 1, 1);
-  input.compute_trios_quartets(trios_, quartets_, limit_, components_);
+ILP::ILP(Input &input) : input_(input) {
+  // Do not print useless lines.
+  highs_.setOptionValue("output_flag", false);
+  components_ = std::vector<int>(input_.get_leaf_count() + 1, 1);
+}
 
-  auto number_of_edges = input.get_node_count();
-  auto number_of_rows = trios_.size() + quartets_.size();
-  auto tree = input.get_trees().at(0).get();
+void ILP::initialize() {
+  input_.compute_trios_quartets(trios_, quartets_, limit_, components_);
 
-  if (number_of_rows == 0) {
-    std::cout << "# Objective function value: " << YELLOW << 0 << RESET
-              << std::endl;
-  }
-
-  number_of_rows += 1;
+  auto number_of_edges = input_.get_node_count();
+  auto number_of_rows = trios_.size() + quartets_.size() + 1;
+  auto tree = input_.get_trees().at(0).get();
 
   HighsModel model;
+
   model.lp_.num_col_ = number_of_edges;
-  model.lp_.num_row_ = number_of_rows;
-  model.lp_.sense_ = ObjSense::kMinimize;
   model.lp_.col_cost_ = std::vector<double>(number_of_edges, 1.0);
   model.lp_.col_lower_ = std::vector<double>(number_of_edges, 0.0);
   model.lp_.col_upper_ = std::vector<double>(number_of_edges, 1.0);
+
+  model.lp_.num_row_ = number_of_rows;
   auto low = std::vector<double>(number_of_rows - 1, 1.0);
   low.push_back(0);
   model.lp_.row_lower_ = low;
   auto high = std::vector<double>(number_of_rows - 1, 1.0e30);
-  high.push_back(input.get_leaf_count() - 2);
+  high.push_back(input_.get_leaf_count() - 2);
   model.lp_.row_upper_ = high;
 
+  model.lp_.sense_ = ObjSense::kMinimize;
   model.lp_.a_matrix_.format_ = MatrixFormat::kRowwise;
 
   std::vector<int> start = {0};
@@ -60,12 +61,8 @@ ILP::ILP(Input &input) {
   model.lp_.a_matrix_.index_ = index;
   model.lp_.a_matrix_.value_ = values;
 
-  HighsStatus return_status_;
-
-  highs_.setOptionValue("output_flag", false);
-
-  return_status_ = highs_.passModel(model);
-  assert(return_status_ == HighsStatus::kOk);
+  HighsStatus return_status = highs_.passModel(model);
+  assert(return_status == HighsStatus::kOk);
 
   const HighsLp &lp = highs_.getLp();
 
@@ -76,7 +73,7 @@ ILP::ILP(Input &input) {
   highs_.passModel(model);
 }
 
-std::set<int> ILP::run(Input &input) {
+std::set<int> ILP::run() {
   std::cout << "# Solving ILP with " << YELLOW << highs_.getNumRow() << RESET
             << " constraints and " << YELLOW << highs_.getNumCol() << RESET
             << " variables." << std::endl;
@@ -105,36 +102,39 @@ std::set<int> ILP::run(Input &input) {
     }
   }
   std::vector<int> indices;
-  for (int a = 0; a < input.get_node_count(); ++a) {
+  for (int a = 0; a < input_.get_node_count(); ++a) {
     indices.push_back(a);
   }
   std::vector<double> values = std::vector<double>(indices.size(), 1);
   HighsStatus status =
-      highs_.addRow(edges_to_erase.size(), input.get_leaf_count() - 2,
+      highs_.addRow(edges_to_erase.size(), input_.get_leaf_count() - 2,
                     indices.size(), indices.data(), values.data());
   return edges_to_erase;
 }
 
-bool ILP::update(Input &input, std::vector<std::unique_ptr<Tree>> &output) {
-  auto result = 0;
-  auto trio_counter = trios_.size();
-  auto quartet_counter = quartets_.size();
-
+void ILP::set_components(const std::vector<std::unique_ptr<Tree>> &output) {
+  auto tree_count = 0;
   for (auto &&tree : output) {
     if (!tree->is_empty()) {
-      ++result;
+      ++tree_count;
       auto leafs = tree->get_leafs();
       for (auto &&taxa : leafs) {
-        components_[taxa] = result;
+        components_[taxa] = tree_count;
       }
     }
   }
-  input.compute_trios_quartets(trios_, quartets_, limit_, components_);
+}
+
+bool ILP::update() {
+  auto trio_counter = trios_.size();
+  auto quartet_counter = quartets_.size();
+
+  input_.compute_trios_quartets(trios_, quartets_, limit_, components_);
   if (trio_counter == trios_.size() && quartet_counter == quartets_.size()) {
     return false;
   }
 
-  auto tree = input.get_trees().at(0).get();
+  auto tree = input_.get_trees().at(0).get();
 
   for (int i = trio_counter; i < trios_.size(); ++i) {
     auto edges = tree->get_trio_edges(trios_[i]);
@@ -143,6 +143,7 @@ bool ILP::update(Input &input, std::vector<std::unique_ptr<Tree>> &output) {
     auto values = std::vector<double>(indices.size(), 1);
     HighsStatus status =
         highs_.addRow(1, 1.0e30, indices.size(), indices.data(), values.data());
+    assert(status == HighsStatus::kOk);
   }
 
   for (int i = quartet_counter; i < quartets_.size(); ++i) {
@@ -152,6 +153,7 @@ bool ILP::update(Input &input, std::vector<std::unique_ptr<Tree>> &output) {
     auto values = std::vector<double>(indices.size(), 1);
     HighsStatus status =
         highs_.addRow(1, 1.0e30, indices.size(), indices.data(), values.data());
+    assert(status == HighsStatus::kOk);
   }
 
   return true;
