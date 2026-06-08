@@ -75,6 +75,39 @@ std::set<int> Tree::get_leafs() const {
   return leafs;
 }
 
+std::set<int>
+Tree::get_trio_edges(const std::tuple<int, int, int> &trio) const {
+  std::set<int> edges;
+  auto [a, b, c] = trio;
+  auto node_a_b = lca_query(a, b);
+  auto node_ab_c = lca_query(a, b, c);
+  auto node_a = get_leaf(a);
+  auto node_b = get_leaf(b);
+  auto node_c = get_leaf(c);
+  get_edges(node_a, node_a_b, edges);
+  get_edges(node_b, node_a_b, edges);
+  get_edges(node_c, node_ab_c, edges);
+  get_edges(node_a_b, node_ab_c, edges);
+  return edges;
+}
+
+std::set<int>
+Tree::get_quartet_edges(const std::tuple<int, int, int, int> &quartet) const {
+  std::set<int> edges;
+  auto [a, b, c, d] = quartet;
+  auto node_a_b = lca_query(a, b);
+  auto node_c_d = lca_query(c, d);
+  auto node_a = get_leaf(a);
+  auto node_b = get_leaf(b);
+  auto node_c = get_leaf(c);
+  auto node_d = get_leaf(d);
+  get_edges(node_a, node_a_b, edges);
+  get_edges(node_b, node_a_b, edges);
+  get_edges(node_c, node_c_d, edges);
+  get_edges(node_d, node_c_d, edges);
+  return edges;
+}
+
 bool Tree::has_disjoint_paths(int a, int b, int x, int y) const {
   bool result = lca_query(a, b) != lca_query(x, y);
   if (!result) {
@@ -220,9 +253,11 @@ void Input::compute_trios_quartets(
     std::vector<std::tuple<int, int, int>> &trios,
     std::vector<std::tuple<int, int, int, int>> &quartets, int limit,
     const std::vector<int> &components) {
+  std::vector<std::pair<int, int>> counters =
+      std::vector<std::pair<int, int>>(n_ + 1, std::make_pair(limit, limit));
   auto tree1 = trees_[0].get();
-  auto trio_count = 0;
-  auto quartet_count = 0;
+  // auto trio_count = 0;
+  // auto quartet_count = 0;
   for (auto a = 1; a <= get_leaf_count(); ++a) {
     if (excluded_leafs_.contains(a))
       continue;
@@ -232,26 +267,42 @@ void Input::compute_trios_quartets(
       for (auto c = 1; c <= get_leaf_count(); ++c) {
         if (excluded_leafs_.contains(c) || c == b || c == a)
           continue;
-        if (components[a] == components[c] && limit >= trio_count &&
+        bool limit = counters[a].first > 0 || counters[b].first > 0 ||
+                     counters[c].first > 0;
+        if (components[a] == components[c] && limit &&
             tree1->has_disjoint_trio(a, b, c)) {
           for (auto &&tree2 : get_trees()) {
             if (!tree2->has_disjoint_trio(a, b, c)) {
               trios.push_back(std::make_tuple(a, b, c));
-              ++trio_count;
+              counters[a].first =
+                  counters[a].first == 0 ? 0 : counters[a].first - 1;
+              counters[b].first =
+                  counters[b].first == 0 ? 0 : counters[b].first - 1;
+              counters[c].first =
+                  counters[c].first == 0 ? 0 : counters[c].first - 1;
               break;
             }
           }
         }
-        if (c >= a + 1 && limit >= quartet_count) {
+        if (c >= a + 1) {
           for (auto d = c + 1; d <= get_leaf_count(); ++d) {
+            limit = counters[a].second > 0 || counters[b].second > 0 ||
+                    counters[c].second > 0 || counters[d].second > 0;
             if (d == a || d == b || excluded_leafs_.contains(d) ||
-                components[d] != components[c])
+                components[d] != components[c] || !limit)
               continue;
             if (tree1->has_disjoint_paths(a, b, c, d)) {
               for (auto &&tree2 : get_trees()) {
                 if (!tree2->has_disjoint_paths(a, b, c, d)) {
                   quartets.push_back(std::make_tuple(a, b, c, d));
-                  ++quartet_count;
+                  counters[a].second =
+                      counters[a].second == 0 ? 0 : counters[a].second - 1;
+                  counters[b].second =
+                      counters[b].second == 0 ? 0 : counters[b].second - 1;
+                  counters[c].second =
+                      counters[c].second == 0 ? 0 : counters[c].second - 1;
+                  counters[d].second =
+                      counters[d].second == 0 ? 0 : counters[d].second - 1;
                   break;
                 }
               }

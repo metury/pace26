@@ -34,6 +34,7 @@ public:
   /// Compute both leaf pointers and lca values.
   /// @param number_of_leafs How many leafs does the tree have.
   void compute_lca_leafs(int number_of_nodes);
+  /// Delete LCA table to reduce memory consumption.
   void delete_lca_table();
   /// Add all edges between the nodes.
   /// @param below Pointer to the node below.
@@ -44,10 +45,21 @@ public:
   /// @param value Label of that leaf.
   /// @return Pointer to such leaf.
   inline Node *get_leaf(int value) const { return descendants_.at(value); }
+  /// Get set of all taxa in this tree.
+  /// @return Set of taxa present in this tree.
   std::set<int> get_leafs() const;
   /// Get pointer to the root node.
   /// @return Pointer to the root node.
   inline Node *get_root() const { return root_.get(); }
+  /// Get violated edges for a trio.
+  /// @param trio Which trio is violated.
+  /// @return Set of edges that has to be in a constraint.
+  std::set<int> get_trio_edges(const std::tuple<int, int, int> &trio) const;
+  /// Get violated edges for a quartet.
+  /// @param quartet Which quartet is violated.
+  /// @return Set of edges that has to be in a constraint.
+  std::set<int>
+  get_quartet_edges(const std::tuple<int, int, int, int> &quartet) const;
   /// Check if paths between a-b and x-y intersect or not.
   /// @param a Vertex a.
   /// @param b Vertex b.
@@ -151,6 +163,7 @@ public:
   compute_trios_quartets(std::vector<std::tuple<int, int, int>> &trios,
                          std::vector<std::tuple<int, int, int, int>> &quartets,
                          int limit, const std::vector<int> &components);
+  /// Delete lca tables for every tree.
   void delete_lca_tables();
   /// Get all contracted parts from the input tree.
   /// @return All contractions.

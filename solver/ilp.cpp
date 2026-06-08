@@ -38,35 +38,14 @@ ILP::ILP(Input &input) {
   std::vector<int> start = {0};
   std::vector<int> index;
 
-  auto counter = 0;
-  for (auto &&[a, b, c] : trios_) {
-    std::set<int> edges;
-    auto node_a_b = tree->lca_query(a, b);
-    auto node_ab_c = tree->lca_query(a, b, c);
-    auto node_a = tree->get_leaf(a);
-    auto node_b = tree->get_leaf(b);
-    auto node_c = tree->get_leaf(c);
-    tree->get_edges(node_a, node_a_b, edges);
-    tree->get_edges(node_b, node_a_b, edges);
-    tree->get_edges(node_c, node_ab_c, edges);
-    tree->get_edges(node_a_b, node_ab_c, edges);
+  for (auto &&trio : trios_) {
+    auto edges = tree->get_trio_edges(trio);
     index.insert(index.end(), edges.begin(), edges.end());
     start.push_back(index.size());
   }
 
-  counter = 0;
-  for (auto &&[a, b, c, d] : quartets_) {
-    std::set<int> edges;
-    auto node_a_b = tree->lca_query(a, b);
-    auto node_c_d = tree->lca_query(c, d);
-    auto node_a = tree->get_leaf(a);
-    auto node_b = tree->get_leaf(b);
-    auto node_c = tree->get_leaf(c);
-    auto node_d = tree->get_leaf(d);
-    tree->get_edges(node_a, node_a_b, edges);
-    tree->get_edges(node_b, node_a_b, edges);
-    tree->get_edges(node_c, node_c_d, edges);
-    tree->get_edges(node_d, node_c_d, edges);
+  for (auto &&quartet : quartets_) {
+    auto edges = tree->get_quartet_edges(quartet);
     index.insert(index.end(), edges.begin(), edges.end());
     start.push_back(index.size());
   }
@@ -103,9 +82,8 @@ std::set<int> ILP::run(Input &input) {
             << " variables." << std::endl;
 
   // Solve the model
-  HighsStatus return_status_;
-  return_status_ = highs_.run();
-  assert(return_status_ == HighsStatus::kOk);
+  HighsStatus return_status = highs_.run();
+  assert(return_status == HighsStatus::kOk);
 
   // Get the model status
   const HighsModelStatus &model_status = highs_.getModelStatus();
@@ -159,17 +137,7 @@ bool ILP::update(Input &input, std::vector<std::unique_ptr<Tree>> &output) {
   auto tree = input.get_trees().at(0).get();
 
   for (int i = trio_counter; i < trios_.size(); ++i) {
-    auto [a, b, c] = trios_[i];
-    std::set<int> edges;
-    auto node_a_b = tree->lca_query(a, b);
-    auto node_ab_c = tree->lca_query(a, b, c);
-    auto node_a = tree->get_leaf(a);
-    auto node_b = tree->get_leaf(b);
-    auto node_c = tree->get_leaf(c);
-    tree->get_edges(node_a, node_a_b, edges);
-    tree->get_edges(node_b, node_a_b, edges);
-    tree->get_edges(node_c, node_ab_c, edges);
-    tree->get_edges(node_a_b, node_ab_c, edges);
+    auto edges = tree->get_trio_edges(trios_[i]);
     std::vector<int> indices;
     indices.insert(indices.end(), edges.begin(), edges.end());
     auto values = std::vector<double>(indices.size(), 1);
@@ -178,18 +146,7 @@ bool ILP::update(Input &input, std::vector<std::unique_ptr<Tree>> &output) {
   }
 
   for (int i = quartet_counter; i < quartets_.size(); ++i) {
-    auto [a, b, c, d] = quartets_[i];
-    std::set<int> edges;
-    auto node_a_b = tree->lca_query(a, b);
-    auto node_c_d = tree->lca_query(c, d);
-    auto node_a = tree->get_leaf(a);
-    auto node_b = tree->get_leaf(b);
-    auto node_c = tree->get_leaf(c);
-    auto node_d = tree->get_leaf(d);
-    tree->get_edges(node_a, node_a_b, edges);
-    tree->get_edges(node_b, node_a_b, edges);
-    tree->get_edges(node_c, node_c_d, edges);
-    tree->get_edges(node_d, node_c_d, edges);
+    auto edges = tree->get_quartet_edges(quartets_[i]);
     std::vector<int> indices;
     indices.insert(indices.end(), edges.begin(), edges.end());
     auto values = std::vector<double>(indices.size(), 1);
