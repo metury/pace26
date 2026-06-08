@@ -32,7 +32,7 @@ public:
   /// @param second Label of the second leaf.
   void contract_cherry(int first, int second);
   /// Compute both leaf pointers and lca values.
-  /// @param number_of_leafs How many leafs does the tree have.
+  /// @param number_of_nodes How many nodes does the tree have.
   void compute_lca_leafs(int number_of_nodes);
   /// Delete LCA table to reduce memory consumption.
   void delete_lca_table();
@@ -160,6 +160,8 @@ public:
   /// Compute all incompatible trios and quartets
   /// @param trios List of all incompatible trios.
   /// @param quartets List of all incompatible quartets.
+  /// @param limit WHat is the limit of number of constraints.
+  /// @param components Connected components of taxa.
   void
   compute_trios_quartets(std::vector<std::tuple<int, int, int>> &trios,
                          std::vector<std::tuple<int, int, int, int>> &quartets,

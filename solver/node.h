@@ -63,8 +63,7 @@ public:
   /// Force iterative contraction of all 2 degree inner vertices.
   void consolidate();
   /// Compute both LCA tables and pointers to all leafs.
-  /// @param pairs LCA table for pair of leafs.
-  /// @param triples LCA table for triples of leafs.
+  /// @param lca_table LCA table for all pairs.
   /// @return A map of pointers to all leafs.
   std::unordered_map<int, Node *>
   compute_lca_leafs(std::vector<std::vector<int>> &lca_table);
@@ -83,6 +82,8 @@ public:
   /// Get the value stored in this node.
   /// @return Its stored value.
   inline int get_value() const { return value_; }
+  /// Get all leafs underneath this node.
+  /// @param taxa Where to store found leafs.
   void get_leafs(std::set<int> &taxa) const;
   /// Return whether a node is a leaf or not.
   /// @return If the node is leaf or not.
