@@ -24,7 +24,9 @@ public:
   /// Assign numbers to internal nodes.
   /// @param i Number of this tree.
   /// @param n Number of leafs.
-  void assign_numbers(int i, int n);
+  inline void assign_numbers(int i, int n) {
+    root_->assign_numbers(i * (n - 1) + 2);
+  }
   /// Force contractions and remove empty branches.
   void consolidate();
   /// Contract a cherry consisting of two nodes.
@@ -35,7 +37,7 @@ public:
   /// @param number_of_nodes How many nodes does the tree have.
   void compute_lca_leafs(int number_of_nodes);
   /// Delete LCA table to reduce memory consumption.
-  void delete_lca_table();
+  inline void delete_lca_table() { lca_table_ = {}; }
   /// Add all edges between the nodes.
   /// @param below Pointer to the node below.
   /// @param above Pointer to the node above.
@@ -80,7 +82,7 @@ public:
   bool is_cherry(int first, int second) const;
   /// Return whether a tree has (almost) no nodes.
   /// @return True if the root is empty.
-  bool is_empty() const;
+  inline bool is_empty() const { return root_ == std::nullptr_t(); }
   /// Return a LCA node for two leafs.
   /// @param first Label of the first leaf.
   /// @param second Label of the second leaf.

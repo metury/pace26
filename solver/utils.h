@@ -38,4 +38,12 @@ std::vector<std::string> split(const std::string &str);
 /// @param delimiter Given delimiter.
 /// @return Vector of all substrings.
 std::vector<std::string> split(const std::string &str, char delimiter);
+
+template <typename... Ints> void decrement_to_zero(Ints &...args) {
+  ((args = std::max(0, args - 1)), ...);
+}
+
+template <typename... Ints> bool has_positive(Ints &...args) {
+  return (... || (args > 0));
+}
 #endif

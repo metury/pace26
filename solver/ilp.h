@@ -10,6 +10,9 @@
 #include <tuple>
 #include <vector>
 
+// const int DELTA = 200;
+//  const int LIMIT = 2;
+
 /// Class containing ILP model that is solving MAF.
 class ILP {
 public:
@@ -29,17 +32,18 @@ public:
   bool update();
 
 private:
-  /// Limit for the number of constraint.
-  const int limit_ = 500;
   /// Which model it is using.
   Highs highs_;
   /// What input we are solving.
   Input &input_;
+  int LIMIT;
   /// All incompatible trios listed so far.
   std::vector<std::tuple<int, int, int>> trios_;
   /// All incompatible quartets listed so far.
   std::vector<std::tuple<int, int, int, int>> quartets_;
   /// Components of connected components.
   std::vector<int> components_;
+  /// How many updates how been done so far.
+  int update_counter_;
 };
 #endif

@@ -5,14 +5,15 @@
 #include <set>
 #include <vector>
 
-ILP::ILP(Input &input) : input_(input) {
+ILP::ILP(Input &input)
+    : input_(input), update_counter_(0), LIMIT(input.get_leaf_count()) {
   // Do not print useless lines.
   highs_.setOptionValue("output_flag", false);
   components_ = std::vector<int>(input_.get_leaf_count() + 1, 1);
 }
 
 void ILP::initialize() {
-  input_.compute_trios_quartets(trios_, quartets_, limit_, components_);
+  input_.compute_trios_quartets(trios_, quartets_, LIMIT, components_);
 
   auto number_of_edges = input_.get_node_count();
   auto number_of_rows = trios_.size() + quartets_.size() + 1;
@@ -102,7 +103,7 @@ std::set<int> ILP::run() {
     }
   }
   std::vector<int> indices;
-  for (int a = 0; a < input_.get_node_count(); ++a) {
+  for (int a = 1; a < input_.get_node_count() + 1; ++a) {
     indices.push_back(a);
   }
   std::vector<double> values = std::vector<double>(indices.size(), 1);
@@ -129,10 +130,32 @@ bool ILP::update() {
   auto trio_counter = trios_.size();
   auto quartet_counter = quartets_.size();
 
-  input_.compute_trios_quartets(trios_, quartets_, limit_, components_);
+  ++update_counter_;
+
+  input_.compute_trios_quartets(trios_, quartets_, LIMIT, components_);
   if (trio_counter == trios_.size() && quartet_counter == quartets_.size()) {
     return false;
   }
+
+  // if ((trios_.size() - trio_counter) + (quartets_.size() - quartet_counter) <
+  //     DELTA) {
+  //   auto new_limit = (1 + update_counter_) * LIMIT;
+  //   trios_.clear();
+  //   quartets_.clear();
+  //   components_ = std::vector<int>(input_.get_leaf_count() + 1, 1);
+  //   input_.compute_trios_quartets(trios_, quartets_, new_limit, components_);
+  //   trio_counter = 0;
+  //   quartet_counter = 0;
+  //   HighsStatus status = highs_.deleteRows(0, highs_.getNumRows() - 1);
+  //   const HighsInfo &info = highs_.getInfo();
+  //   std::vector<int> indices;
+  //   for (int a = 1; a < input_.get_node_count(); ++a) {
+  //     indices.push_back(a);
+  //   }
+  //   std::vector<double> values = std::vector<double>(indices.size(), 1);
+  //   status = highs_.addRow(opt, input_.get_leaf_count() - 2, indices.size(),
+  //                          indices.data(), values.data());
+  // }
 
   auto tree = input_.get_trees().at(0).get();
 

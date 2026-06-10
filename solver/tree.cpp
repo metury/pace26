@@ -18,10 +18,6 @@ Tree::Tree(std::unique_ptr<Node> root) : root_(std::move(root)) {
   root_->set_parent(nullptr);
 }
 
-void Tree::assign_numbers(int i, int n) {
-  root_->assign_numbers(i * (n - 1) + 2);
-}
-
 void Tree::consolidate() {
   root_->consolidate();
   while (root_ != std::nullptr_t() && !root_->is_leaf() &&
@@ -57,8 +53,6 @@ void Tree::compute_lca_leafs(int number_of_nodes) {
       number_of_nodes, std::vector<int>(number_of_nodes, 1));
   descendants_ = root_->compute_lca_leafs(lca_table_);
 }
-
-void Tree::delete_lca_table() { lca_table_ = {}; }
 
 void Tree::get_edges(Node *below, Node *above, std::set<int> &edges) const {
   auto current = below;
@@ -136,8 +130,6 @@ bool Tree::is_cherry(int first, int second) const {
   return node_a->get_parent() != nullptr &&
          *node_a->get_parent() == *node_b->get_parent();
 }
-
-bool Tree::is_empty() const { return root_ == std::nullptr_t(); }
 
 Node *Tree::lca_query(int first, int second) const {
   return descendants_.at(lca_table_[first][second]);
@@ -271,27 +263,23 @@ void Input::compute_trios_quartets(
       for (auto c = 1; c <= get_leaf_count(); ++c) {
         if (excluded_leafs_.contains(c) || c == b || c == a)
           continue;
-        bool limit = counters[a].first > 0 || counters[b].first > 0 ||
-                     counters[c].first > 0;
+        bool limit = has_positive(counters[a].first, counters[b].second,
+                                  counters[c].second);
         if (components[a] == components[c] && limit &&
             tree1->has_disjoint_trio(a, b, c)) {
           for (auto &&tree2 : get_trees()) {
             if (!tree2->has_disjoint_trio(a, b, c)) {
               trios.push_back(std::make_tuple(a, b, c));
-              counters[a].first =
-                  counters[a].first == 0 ? 0 : counters[a].first - 1;
-              counters[b].first =
-                  counters[b].first == 0 ? 0 : counters[b].first - 1;
-              counters[c].first =
-                  counters[c].first == 0 ? 0 : counters[c].first - 1;
+              decrement_to_zero(counters[a].first, counters[b].first,
+                                counters[c].first);
               break;
             }
           }
         }
         if (c >= a + 1) {
           for (auto d = c + 1; d <= get_leaf_count(); ++d) {
-            limit = counters[a].second > 0 || counters[b].second > 0 ||
-                    counters[c].second > 0 || counters[d].second > 0;
+            limit = has_positive(counters[a].second, counters[b].second,
+                                 counters[c].second, counters[d].second);
             if (d == a || d == b || excluded_leafs_.contains(d) ||
                 components[d] != components[c] || !limit)
               continue;
@@ -299,14 +287,8 @@ void Input::compute_trios_quartets(
               for (auto &&tree2 : get_trees()) {
                 if (!tree2->has_disjoint_paths(a, b, c, d)) {
                   quartets.push_back(std::make_tuple(a, b, c, d));
-                  counters[a].second =
-                      counters[a].second == 0 ? 0 : counters[a].second - 1;
-                  counters[b].second =
-                      counters[b].second == 0 ? 0 : counters[b].second - 1;
-                  counters[c].second =
-                      counters[c].second == 0 ? 0 : counters[c].second - 1;
-                  counters[d].second =
-                      counters[d].second == 0 ? 0 : counters[d].second - 1;
+                  decrement_to_zero(counters[a].second, counters[b].second,
+                                    counters[c].second, counters[d].second);
                   break;
                 }
               }
