@@ -178,6 +178,12 @@ public:
   /// Get the leaf count, which is same for all trees.
   /// @return Leaf count.
   inline int get_leaf_count() const { return n_; }
+  /// Get the recuded leaf count, this differs after some cherries were
+  /// contracted.
+  /// @return Number of leaf which were not excluded.
+  inline int get_reduced_leaf_count() const {
+    return n_ - excluded_leafs_.size();
+  }
   /// Get the node count.
   /// @return Node count.
   inline int get_node_count() const { return n_ + n_ - 1; }

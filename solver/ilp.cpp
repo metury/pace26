@@ -6,11 +6,12 @@
 #include <vector>
 
 ILP::ILP(Input &input)
-    : input_(input), update_counter_(0), limit_(input.get_leaf_count()) {
+    : input_(input), update_counter_(0),
+      limit_(input.get_reduced_leaf_count()) {
   // Do not print useless lines.
   highs_.setOptionValue("output_flag", false);
   components_ = std::vector<int>(input_.get_leaf_count() + 1, 1);
-  if (input.get_leaf_count() <= 25) {
+  if (input.get_reduced_leaf_count() <= 25) {
     limit_ = 5000000;
   }
 }
@@ -34,7 +35,7 @@ void ILP::initialize() {
   low.push_back(0);
   model.lp_.row_lower_ = low;
   auto high = std::vector<double>(number_of_rows - 1, 1.0e30);
-  high.push_back(input_.get_leaf_count() - 2);
+  high.push_back(input_.get_reduced_leaf_count() - 2);
   model.lp_.row_upper_ = high;
 
   model.lp_.sense_ = ObjSense::kMinimize;
@@ -114,7 +115,7 @@ std::set<int> ILP::run() {
   }
   std::vector<double> values = std::vector<double>(indices.size(), 1);
   HighsStatus status =
-      highs_.addRow(edges_to_erase.size(), input_.get_leaf_count() - 2,
+      highs_.addRow(edges_to_erase.size(), input_.get_reduced_leaf_count() - 2,
                     indices.size(), indices.data(), values.data());
   return edges_to_erase;
 }

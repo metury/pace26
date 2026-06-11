@@ -249,10 +249,10 @@ void Input::compute_trios_quartets(
     std::vector<std::tuple<int, int, int>> &trios,
     std::vector<std::tuple<int, int, int, int>> &quartets, int limit,
     const std::vector<int> &components) {
-  std::vector<std::pair<int, int>> counters =
-      std::vector<std::pair<int, int>>(n_ + 1, std::make_pair(limit, limit));
-  auto trio_count = 0;
-  auto quartet_count = 0;
+  std::vector<std::pair<int, int>> counters = std::vector<std::pair<int, int>>(
+      n_ + 1, std::make_pair(limit / 3, limit / 4));
+  auto trio_count = limit;
+  auto quartet_count = limit;
   auto tree1 = trees_[0].get();
   // auto trio_count = 0;
   // auto quartet_count = 0;
