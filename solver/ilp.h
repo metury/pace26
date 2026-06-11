@@ -36,7 +36,7 @@ private:
   Highs highs_;
   /// What input we are solving.
   Input &input_;
-  int LIMIT;
+  int limit_;
   /// All incompatible trios listed so far.
   std::vector<std::tuple<int, int, int>> trios_;
   /// All incompatible quartets listed so far.

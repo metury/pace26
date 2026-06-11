@@ -6,14 +6,17 @@
 #include <vector>
 
 ILP::ILP(Input &input)
-    : input_(input), update_counter_(0), LIMIT(input.get_leaf_count()) {
+    : input_(input), update_counter_(0), limit_(input.get_leaf_count()) {
   // Do not print useless lines.
   highs_.setOptionValue("output_flag", false);
   components_ = std::vector<int>(input_.get_leaf_count() + 1, 1);
+  if (input.get_leaf_count() <= 25) {
+    limit_ = 5000000;
+  }
 }
 
 void ILP::initialize() {
-  input_.compute_trios_quartets(trios_, quartets_, LIMIT, components_);
+  input_.compute_trios_quartets(trios_, quartets_, limit_, components_);
 
   auto number_of_edges = input_.get_node_count();
   auto number_of_rows = trios_.size() + quartets_.size() + 1;
@@ -51,6 +54,9 @@ void ILP::initialize() {
     index.insert(index.end(), edges.begin(), edges.end());
     start.push_back(index.size());
   }
+
+  quartets_ = {};
+  trios_ = {};
 
   for (int a = 0; a < number_of_edges; ++a) {
     index.push_back(a);
@@ -132,14 +138,14 @@ bool ILP::update() {
 
   ++update_counter_;
 
-  input_.compute_trios_quartets(trios_, quartets_, LIMIT, components_);
+  input_.compute_trios_quartets(trios_, quartets_, limit_, components_);
   if (trio_counter == trios_.size() && quartet_counter == quartets_.size()) {
     return false;
   }
 
   // if ((trios_.size() - trio_counter) + (quartets_.size() - quartet_counter) <
   //     DELTA) {
-  //   auto new_limit = (1 + update_counter_) * LIMIT;
+  //   auto new_limit = (1 + update_counter_) * limit_;
   //   trios_.clear();
   //   quartets_.clear();
   //   components_ = std::vector<int>(input_.get_leaf_count() + 1, 1);
@@ -178,6 +184,9 @@ bool ILP::update() {
         highs_.addRow(1, 1.0e30, indices.size(), indices.data(), values.data());
     assert(status == HighsStatus::kOk);
   }
+
+  quartets_ = {};
+  trios_ = {};
 
   return true;
 }

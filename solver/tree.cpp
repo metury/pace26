@@ -251,6 +251,8 @@ void Input::compute_trios_quartets(
     const std::vector<int> &components) {
   std::vector<std::pair<int, int>> counters =
       std::vector<std::pair<int, int>>(n_ + 1, std::make_pair(limit, limit));
+  auto trio_count = 0;
+  auto quartet_count = 0;
   auto tree1 = trees_[0].get();
   // auto trio_count = 0;
   // auto quartet_count = 0;
@@ -263,32 +265,42 @@ void Input::compute_trios_quartets(
       for (auto c = 1; c <= get_leaf_count(); ++c) {
         if (excluded_leafs_.contains(c) || c == b || c == a)
           continue;
-        bool limit = has_positive(counters[a].first, counters[b].second,
-                                  counters[c].second);
-        if (components[a] == components[c] && limit &&
+        bool my_limit = has_positive(counters[a].first, counters[b].second,
+                                     counters[c].second);
+        if (components[a] == components[c] &&
+            (my_limit || trio_count < limit) &&
             tree1->has_disjoint_trio(a, b, c)) {
           for (auto &&tree2 : get_trees()) {
             if (!tree2->has_disjoint_trio(a, b, c)) {
               trios.push_back(std::make_tuple(a, b, c));
-              decrement_to_zero(counters[a].first, counters[b].first,
-                                counters[c].first);
+              if (!my_limit) {
+                trio_count += 1;
+              } else {
+                decrement_to_zero(counters[a].first, counters[b].first,
+                                  counters[c].first);
+              }
               break;
             }
           }
         }
         if (c >= a + 1) {
           for (auto d = c + 1; d <= get_leaf_count(); ++d) {
-            limit = has_positive(counters[a].second, counters[b].second,
-                                 counters[c].second, counters[d].second);
+            my_limit = has_positive(counters[a].second, counters[b].second,
+                                    counters[c].second, counters[d].second);
             if (d == a || d == b || excluded_leafs_.contains(d) ||
-                components[d] != components[c] || !limit)
+                components[d] != components[c] ||
+                (!my_limit && quartet_count >= limit))
               continue;
             if (tree1->has_disjoint_paths(a, b, c, d)) {
               for (auto &&tree2 : get_trees()) {
                 if (!tree2->has_disjoint_paths(a, b, c, d)) {
                   quartets.push_back(std::make_tuple(a, b, c, d));
-                  decrement_to_zero(counters[a].second, counters[b].second,
-                                    counters[c].second, counters[d].second);
+                  if (!my_limit) {
+                    quartet_count += 1;
+                  } else {
+                    decrement_to_zero(counters[a].second, counters[b].second,
+                                      counters[c].second, counters[d].second);
+                  }
                   break;
                 }
               }
