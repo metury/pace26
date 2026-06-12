@@ -14,6 +14,9 @@ ILP::ILP(Input &input)
   if (input.get_reduced_leaf_count() <= 25) {
     limit_ = 5000000;
   }
+  // highs_.setOptionValue("solver", "pdlp");
+  // highs_.setOptionValue("presolve", "off");
+  // highs_.setOptionValue("mip_heuristic_effort", 0.1);
 }
 
 void ILP::initialize() {
