@@ -1,0 +1,11 @@
+2026-06-06 09:12:16 -- All trios and 5000 limit for first quartets.
+2026-06-06 21:07:44 -- All trios and 500 limit for first quartets.
+2026-06-07 15:54:47 -- Limit 500 for both trios and quartets.
+2026-06-08 11:19:51 -- Limit 500 for a leaf per trio and quartet separately.
+2026-06-08 21:29:44 -- Limit 400 for a leaf and no threshold-reset.
+2026-06-09 09:43:55 -- Limit 100 for a leaf and 500 threshold-reset.
+2026-06-09 20:15:44 -- Limit |TAXA| for a leaf.
+2026-06-10 16:17:32 -- Limit |TAXA|, whole ILP for <= 25 leafs, limit for trios, quartets and global as well.
+2026-06-11 14:36:38 -- Limit |TAXA|, whole ILP for <= 25 leafs, limit for trios/3, quartets/4, no global.
+2026-06-15 09:37:36 -- Limit |TAXA|, whole ILP for <= 25 leafs, limit for trios/3, quartets/2, no global.
+2026-06-16 09:54:08 -- Limit 4*2^run, whole ILP for <= 25 leafs, limit for trios, quartets, no global.
