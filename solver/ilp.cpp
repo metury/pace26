@@ -221,7 +221,7 @@ void SCIILP::initialize() {
   // integrality)
   vars_.resize(number_of_edges);
   for (int col = 0; col < number_of_edges; ++col) {
-    std::string name = "e_" + std::to_string(col);
+    std::string name = "e_" + std::to_string(col + 1);
     // SCIPcreateVarBasic(scip, var, name, lower_bound, upper_bound, obj_cost,
     // vartype)
     SCIPcreateVarBasic(scip_, &vars_[col], name.c_str(), 0.0, 1.0, 1.0,
@@ -260,7 +260,7 @@ void SCIILP::initialize() {
   double upper_bound = input_.get_reduced_leaf_count() - 2;
   SCIPcreateConsBasicLinear(scip_, &cons_all, "all_edges", 0, nullptr, nullptr,
                             0.0, upper_bound);
-  for (int a = 0; a < number_of_edges; ++a) {
+  for (int a = 0; a < vars_.size(); ++a) {
     SCIPaddCoefLinear(scip_, cons_all, vars_[a], 1.0);
   }
   SCIPaddCons(scip_, cons_all);
@@ -303,7 +303,7 @@ std::set<int> SCIILP::run() {
   std::set<int> edges_to_erase;
   for (int col = 0; col < vars_.size(); col++) {
     // Retrieve the value of the variable in the current solution
-    double val = SCIPgetSolVal(scip_, solution, vars_[col]);
+    auto val = SCIPgetSolVal(scip_, solution, vars_[col]);
     if (is_approx_one(val)) {
       edges_to_erase.insert(col + 1);
     }
@@ -349,8 +349,8 @@ bool SCIILP::update() {
   // Unlock problem to add constraints
   SCIPfreeTransform(scip_);
 
-  for (int i = 0; i < trios_.size(); ++i) {
-    auto edges = tree->get_trio_edges(trios_[i]);
+  for (auto &&trio : trios_) {
+    auto edges = tree->get_trio_edges(trio);
     SCIP_CONS *cons;
     SCIPcreateConsBasicLinear(scip_, &cons, "update_trio", 0, nullptr, nullptr,
                               1.0, SCIPinfinity(scip_));
@@ -362,8 +362,8 @@ bool SCIILP::update() {
     SCIPreleaseCons(scip_, &cons);
   }
 
-  for (int i = 0; i < quartets_.size(); ++i) {
-    auto edges = tree->get_quartet_edges(quartets_[i]);
+  for (auto &&quartet : quartets_) {
+    auto edges = tree->get_quartet_edges(quartet);
     SCIP_CONS *cons;
     SCIPcreateConsBasicLinear(scip_, &cons, "update_quartet", 0, nullptr,
                               nullptr, 1.0, SCIPinfinity(scip_));
