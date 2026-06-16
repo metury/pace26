@@ -18,7 +18,7 @@ void process(std::istream &is) {
     input.get_trees()[0]->write(input.get_contractions());
     result = 1;
   } else {
-    auto ilp = ILP(input);
+    auto ilp = SCIILP(input);
     ilp.initialize();
     std::set<int> edges_to_erase;
     std::vector<std::unique_ptr<Tree>> output;

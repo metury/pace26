@@ -178,3 +178,205 @@ bool ILP::update() {
 
   return true;
 }
+
+/// SCIILP
+
+SCIILP::SCIILP(Input &input)
+    : input_(input), update_counter_(4),
+      limit_(input.get_reduced_leaf_count()) {
+  // Initialize SCIP environment
+  SCIPcreate(&scip_);
+  SCIPincludeDefaultPlugins(scip_);
+  SCIPcreateProbBasic(scip_, "PACE2026 - MAF");
+
+  // Equivalent to highs_.setOptionValue("output_flag", false);
+  SCIPsetIntParam(scip_, "display/verblevel", 0);
+  components_ = std::vector<int>(input_.get_leaf_count() + 1, 1);
+}
+
+SCIILP::~SCIILP() {
+  if (scip_ != nullptr) {
+    // Release variables
+    for (auto var : vars_) {
+      SCIPreleaseVar(scip_, &var);
+    }
+    SCIPfree(&scip_);
+  }
+}
+
+void SCIILP::initialize() {
+  if (input_.get_reduced_leaf_count() <= 25) {
+    update_counter_ = 25 * 25 * 25 * 25;
+  }
+  input_.compute_trios_quartets(trios_, quartets_, update_counter_,
+                                components_);
+  auto number_of_edges = input_.get_node_count();
+  auto number_of_rows = trios_.size() + quartets_.size() + 1;
+  auto tree = input_.get_trees().at(0).get();
+
+  // Set minimization objective
+  SCIPsetObjsense(scip_, SCIP_OBJSENSE_MINIMIZE);
+
+  // 1. Create Variables (Equivalent to col_lower, col_upper, col_cost,
+  // integrality)
+  vars_.resize(number_of_edges);
+  for (int col = 0; col < number_of_edges; ++col) {
+    std::string name = "e_" + std::to_string(col);
+    // SCIPcreateVarBasic(scip, var, name, lower_bound, upper_bound, obj_cost,
+    // vartype)
+    SCIPcreateVarBasic(scip_, &vars_[col], name.c_str(), 0.0, 1.0, 1.0,
+                       SCIP_VARTYPE_BINARY);
+    SCIPaddVar(scip_, vars_[col]);
+  }
+
+  // 2. Constraints for Trios
+  for (auto &&trio : trios_) {
+    auto edges = tree->get_trio_edges(trio);
+    SCIP_CONS *cons;
+    SCIPcreateConsBasicLinear(scip_, &cons, "trio_cons", 0, nullptr, nullptr,
+                              1.0, SCIPinfinity(scip_));
+    for (int edge : edges) {
+      SCIPaddCoefLinear(scip_, cons, vars_[edge], 1.0);
+    }
+    SCIPaddCons(scip_, cons);
+    SCIPreleaseCons(scip_, &cons); // Release memory once added to SCIP
+  }
+
+  // 3. Constraints for Quartets
+  for (auto &&quartet : quartets_) {
+    auto edges = tree->get_quartet_edges(quartet);
+    SCIP_CONS *cons;
+    SCIPcreateConsBasicLinear(scip_, &cons, "quartet_cons", 0, nullptr, nullptr,
+                              1.0, SCIPinfinity(scip_));
+    for (int edge : edges) {
+      SCIPaddCoefLinear(scip_, cons, vars_[edge], 1.0);
+    }
+    SCIPaddCons(scip_, cons);
+    SCIPreleaseCons(scip_, &cons);
+  }
+
+  // 4. Global constraint (Sum of all edges)
+  SCIP_CONS *cons_all;
+  double upper_bound = input_.get_reduced_leaf_count() - 2;
+  SCIPcreateConsBasicLinear(scip_, &cons_all, "all_edges", 0, nullptr, nullptr,
+                            0.0, upper_bound);
+  for (int a = 0; a < number_of_edges; ++a) {
+    SCIPaddCoefLinear(scip_, cons_all, vars_[a], 1.0);
+  }
+  SCIPaddCons(scip_, cons_all);
+  SCIPreleaseCons(scip_, &cons_all);
+}
+
+void SCIILP::set_components(const std::vector<std::unique_ptr<Tree>> &output) {
+  auto tree_count = 0;
+  for (auto &&tree : output) {
+    if (!tree->is_empty()) {
+      ++tree_count;
+      auto leafs = tree->get_leafs();
+      for (auto &&taxa : leafs) {
+        components_[taxa] = tree_count;
+      }
+    }
+  }
+}
+
+std::set<int> SCIILP::run() {
+  std::cout << "# Solving ILP with " << YELLOW << SCIPgetNConss(scip_) << RESET
+            << " constraints and " << YELLOW << SCIPgetNVars(scip_) << RESET
+            << " variables." << std::endl;
+  // Run the solver
+  SCIP_RETCODE ret = SCIPsolve(scip_);
+  assert(ret == SCIP_OKAY);
+
+  // Check status
+  SCIP_STATUS status = SCIPgetStatus(scip_);
+  assert(status == SCIP_STATUS_OPTIMAL);
+
+  // Get the best solution
+  SCIP_SOL *solution = SCIPgetBestSol(scip_);
+
+  // Print Objective
+  double obj_val = SCIPgetSolOrigObj(scip_, solution);
+  std::cout << "# Objective function value: " << YELLOW << obj_val << RESET
+            << std::endl;
+
+  std::set<int> edges_to_erase;
+  for (int col = 0; col < vars_.size(); col++) {
+    // Retrieve the value of the variable in the current solution
+    double val = SCIPgetSolVal(scip_, solution, vars_[col]);
+    if (is_approx_one(val)) {
+      edges_to_erase.insert(col + 1);
+    }
+  }
+
+  // --- ADDING A NEW ROW AFTER SOLVING ---
+  // SCIP must be returned to the problem stage before adding new constraints
+  SCIPfreeTransform(scip_);
+
+  SCIP_CONS *new_cons;
+  SCIPcreateConsBasicLinear(scip_, &new_cons, "post_run_cons", 0, nullptr,
+                            nullptr, obj_val,
+                            input_.get_reduced_leaf_count() - 2);
+
+  for (int a = 0; a < vars_.size(); ++a) {
+    // Note: Ensure 'a' correctly maps to your vars_ indexing!
+    // In your HiGHS code, you passed 'a', so I am assuming vars_[a] is correct.
+    SCIPaddCoefLinear(scip_, new_cons, vars_[a], 1.0);
+  }
+
+  SCIPaddCons(scip_, new_cons);
+  SCIPreleaseCons(scip_, &new_cons);
+
+  return edges_to_erase;
+}
+
+bool SCIILP::update() {
+  auto trio_counter = trios_.size();
+  auto quartet_counter = quartets_.size();
+
+  update_counter_ = input_.get_reduced_leaf_count() < 2 * update_counter_
+                        ? input_.get_reduced_leaf_count()
+                        : 2 * update_counter_;
+
+  input_.compute_trios_quartets(trios_, quartets_, update_counter_,
+                                components_);
+  if (trio_counter == trios_.size() && quartet_counter == quartets_.size()) {
+    return false;
+  }
+
+  auto tree = input_.get_trees().at(0).get();
+
+  // Unlock problem to add constraints
+  SCIPfreeTransform(scip_);
+
+  for (int i = 0; i < trios_.size(); ++i) {
+    auto edges = tree->get_trio_edges(trios_[i]);
+    SCIP_CONS *cons;
+    SCIPcreateConsBasicLinear(scip_, &cons, "update_trio", 0, nullptr, nullptr,
+                              1.0, SCIPinfinity(scip_));
+    for (int idx : edges) {
+      SCIPaddCoefLinear(scip_, cons, vars_[idx], 1.0);
+    }
+    SCIP_RETCODE status = SCIPaddCons(scip_, cons);
+    assert(status == SCIP_OKAY);
+    SCIPreleaseCons(scip_, &cons);
+  }
+
+  for (int i = 0; i < quartets_.size(); ++i) {
+    auto edges = tree->get_quartet_edges(quartets_[i]);
+    SCIP_CONS *cons;
+    SCIPcreateConsBasicLinear(scip_, &cons, "update_quartet", 0, nullptr,
+                              nullptr, 1.0, SCIPinfinity(scip_));
+    for (int idx : edges) {
+      SCIPaddCoefLinear(scip_, cons, vars_[idx], 1.0);
+    }
+    SCIP_RETCODE status = SCIPaddCons(scip_, cons);
+    assert(status == SCIP_OKAY);
+    SCIPreleaseCons(scip_, &cons);
+  }
+
+  quartets_ = {};
+  trios_ = {};
+
+  return true;
+}
