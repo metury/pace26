@@ -249,8 +249,8 @@ void Input::compute_trios_quartets(
     std::vector<std::tuple<int, int, int>> &trios,
     std::vector<std::tuple<int, int, int, int>> &quartets, int limit,
     const std::vector<int> &components) {
-  std::vector<std::pair<int, int>> counters = std::vector<std::pair<int, int>>(
-      n_ + 1, std::make_pair(limit / 3, limit / 4));
+  std::vector<std::pair<int, int>> counters =
+      std::vector<std::pair<int, int>>(n_ + 1, std::make_pair(limit, limit));
   auto trio_count = limit;
   auto quartet_count = limit;
   auto tree1 = trees_[0].get();
@@ -267,8 +267,8 @@ void Input::compute_trios_quartets(
           continue;
         bool my_limit = has_positive(counters[a].first, counters[b].second,
                                      counters[c].second);
-        if (components[a] == components[c] &&
-            (my_limit || trio_count < limit) &&
+        auto random = std::rand() % limit == 0;
+        if (components[a] == components[c] && (my_limit) &&
             tree1->has_disjoint_trio(a, b, c)) {
           for (auto &&tree2 : get_trees()) {
             if (!tree2->has_disjoint_trio(a, b, c)) {
@@ -288,8 +288,7 @@ void Input::compute_trios_quartets(
             my_limit = has_positive(counters[a].second, counters[b].second,
                                     counters[c].second, counters[d].second);
             if (d == a || d == b || excluded_leafs_.contains(d) ||
-                components[d] != components[c] ||
-                (!my_limit && quartet_count >= limit))
+                components[d] != components[c] || (!my_limit))
               continue;
             if (tree1->has_disjoint_paths(a, b, c, d)) {
               for (auto &&tree2 : get_trees()) {

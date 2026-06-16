@@ -10,9 +10,6 @@
 #include <tuple>
 #include <vector>
 
-// const int DELTA = 200;
-//  const int LIMIT = 2;
-
 /// Class containing ILP model that is solving MAF.
 class ILP {
 public:
@@ -46,4 +43,5 @@ private:
   /// How many updates how been done so far.
   int update_counter_;
 };
+
 #endif

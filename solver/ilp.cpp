@@ -5,22 +5,21 @@
 #include <set>
 #include <vector>
 
+/// ILP
+
 ILP::ILP(Input &input)
-    : input_(input), update_counter_(0),
+    : input_(input), update_counter_(4),
       limit_(input.get_reduced_leaf_count()) {
-  // Do not print useless lines.
   highs_.setOptionValue("output_flag", false);
   components_ = std::vector<int>(input_.get_leaf_count() + 1, 1);
-  if (input.get_reduced_leaf_count() <= 25) {
-    limit_ = 5000000;
-  }
-  // highs_.setOptionValue("solver", "pdlp");
-  // highs_.setOptionValue("presolve", "off");
-  // highs_.setOptionValue("mip_heuristic_effort", 0.1);
 }
 
 void ILP::initialize() {
-  input_.compute_trios_quartets(trios_, quartets_, limit_, components_);
+  if (input_.get_reduced_leaf_count() <= 25) {
+    update_counter_ = 25 * 25 * 25 * 25;
+  }
+  input_.compute_trios_quartets(trios_, quartets_, update_counter_,
+                                components_);
 
   auto number_of_edges = input_.get_node_count();
   auto number_of_rows = trios_.size() + quartets_.size() + 1;
@@ -82,6 +81,7 @@ void ILP::initialize() {
     model.lp_.integrality_[col] = HighsVarType::kInteger;
 
   highs_.passModel(model);
+  highs_.writeModel("my_model.lp");
 }
 
 std::set<int> ILP::run() {
@@ -116,10 +116,11 @@ std::set<int> ILP::run() {
   for (int a = 1; a < input_.get_node_count() + 1; ++a) {
     indices.push_back(a);
   }
+  auto upper_bound = input_.get_reduced_leaf_count() - 2;
   std::vector<double> values = std::vector<double>(indices.size(), 1);
   HighsStatus status =
-      highs_.addRow(edges_to_erase.size(), input_.get_reduced_leaf_count() - 2,
-                    indices.size(), indices.data(), values.data());
+      highs_.addRow(edges_to_erase.size(), upper_bound, indices.size(),
+                    indices.data(), values.data());
   return edges_to_erase;
 }
 
@@ -140,32 +141,15 @@ bool ILP::update() {
   auto trio_counter = trios_.size();
   auto quartet_counter = quartets_.size();
 
-  ++update_counter_;
+  update_counter_ = input_.get_reduced_leaf_count() < 2 * update_counter_
+                        ? input_.get_reduced_leaf_count()
+                        : 2 * update_counter_;
 
-  input_.compute_trios_quartets(trios_, quartets_, limit_, components_);
+  input_.compute_trios_quartets(trios_, quartets_, update_counter_,
+                                components_);
   if (trio_counter == trios_.size() && quartet_counter == quartets_.size()) {
     return false;
   }
-
-  // if ((trios_.size() - trio_counter) + (quartets_.size() - quartet_counter) <
-  //     DELTA) {
-  //   auto new_limit = (1 + update_counter_) * limit_;
-  //   trios_.clear();
-  //   quartets_.clear();
-  //   components_ = std::vector<int>(input_.get_leaf_count() + 1, 1);
-  //   input_.compute_trios_quartets(trios_, quartets_, new_limit, components_);
-  //   trio_counter = 0;
-  //   quartet_counter = 0;
-  //   HighsStatus status = highs_.deleteRows(0, highs_.getNumRows() - 1);
-  //   const HighsInfo &info = highs_.getInfo();
-  //   std::vector<int> indices;
-  //   for (int a = 1; a < input_.get_node_count(); ++a) {
-  //     indices.push_back(a);
-  //   }
-  //   std::vector<double> values = std::vector<double>(indices.size(), 1);
-  //   status = highs_.addRow(opt, input_.get_leaf_count() - 2, indices.size(),
-  //                          indices.data(), values.data());
-  // }
 
   auto tree = input_.get_trees().at(0).get();
 
