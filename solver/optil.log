@@ -1,3 +1,4 @@
+2026-06-22 16:51:31 -- Limit for trios and quartets is based on |TAXA|, divided by 3 and 2 respectively. Moreover 4*2^run limit for path lengths (hence multiplied by 3 and 4 respectively).
 2026-06-16 17:16:52 -- Same as before. Change to SCIPopt suite instead of HiGHS.
 2026-06-16 09:54:08 -- Limit 4*2^run, whole ILP for <= 25 leafs, limit for trios, quartets, no global.
 2026-06-15 09:37:36 -- Limit |TAXA|, whole ILP for <= 25 leafs, limit for trios/3, quartets/2, no global.
