@@ -249,13 +249,10 @@ void Input::compute_trios_quartets(
     std::vector<std::tuple<int, int, int>> &trios,
     std::vector<std::tuple<int, int, int, int>> &quartets, int limit,
     const std::vector<int> &components) {
-  std::vector<std::pair<int, int>> counters =
-      std::vector<std::pair<int, int>>(n_ + 1, std::make_pair(limit, limit));
-  auto trio_count = limit;
-  auto quartet_count = limit;
+  std::vector<std::pair<int, int>> counters = std::vector<std::pair<int, int>>(
+      n_ + 1, std::make_pair(get_reduced_leaf_count() / 3,
+                             get_reduced_leaf_count() / 2));
   auto tree1 = trees_[0].get();
-  // auto trio_count = 0;
-  // auto quartet_count = 0;
   for (auto a = 1; a <= get_leaf_count(); ++a) {
     if (excluded_leafs_.contains(a))
       continue;
@@ -265,17 +262,16 @@ void Input::compute_trios_quartets(
       for (auto c = 1; c <= get_leaf_count(); ++c) {
         if (excluded_leafs_.contains(c) || c == b || c == a)
           continue;
-        bool my_limit = has_positive(counters[a].first, counters[b].second,
-                                     counters[c].second);
-        auto random = std::rand() % limit == 0;
+        bool my_limit = has_positive(counters[a].first, counters[b].first,
+                                     counters[c].first);
         if (components[a] == components[c] && (my_limit) &&
             tree1->has_disjoint_trio(a, b, c)) {
           for (auto &&tree2 : get_trees()) {
             if (!tree2->has_disjoint_trio(a, b, c)) {
-              trios.push_back(std::make_tuple(a, b, c));
-              if (!my_limit) {
-                trio_count += 1;
-              } else {
+              auto trio = std::make_tuple(a, b, c);
+              auto nr_of_edges = tree1->get_trio_edges(trio).size();
+              if (nr_of_edges <= 3 * limit) {
+                trios.push_back(trio);
                 decrement_to_zero(counters[a].first, counters[b].first,
                                   counters[c].first);
               }
@@ -293,10 +289,10 @@ void Input::compute_trios_quartets(
             if (tree1->has_disjoint_paths(a, b, c, d)) {
               for (auto &&tree2 : get_trees()) {
                 if (!tree2->has_disjoint_paths(a, b, c, d)) {
-                  quartets.push_back(std::make_tuple(a, b, c, d));
-                  if (!my_limit) {
-                    quartet_count += 1;
-                  } else {
+                  auto quartet = std::make_tuple(a, b, c, d);
+                  auto nr_of_edges = tree1->get_quartet_edges(quartet).size();
+                  if (nr_of_edges <= 4 * limit) {
+                    quartets.push_back(quartet);
                     decrement_to_zero(counters[a].second, counters[b].second,
                                       counters[c].second, counters[d].second);
                   }
