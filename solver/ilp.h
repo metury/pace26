@@ -7,7 +7,6 @@
 
 #include "Highs.h"
 #include "tree.h"
-#include <tuple>
 
 #include <scip/scip.h>
 #include <scip/scipdefplugins.h>
@@ -20,15 +19,10 @@ private:
   std::vector<SCIP_VAR *> vars_;
   /// What input we are solving.
   Input &input_;
+  /// Setting limit for constraints.
   int limit_;
-  /// All incompatible trios listed so far.
-  std::vector<std::tuple<int, int, int>> trios_;
-  /// All incompatible quartets listed so far.
-  std::vector<std::tuple<int, int, int, int>> quartets_;
   /// Components of connected components.
   std::vector<int> components_;
-  /// How many updates how been done so far.
-  int update_counter_;
 
 public:
   SCIILP(Input &input);
@@ -69,15 +63,10 @@ private:
   Highs highs_;
   /// What input we are solving.
   Input &input_;
+  /// Setting limit for constraints.
   int limit_;
-  /// All incompatible trios listed so far.
-  std::vector<std::tuple<int, int, int>> trios_;
-  /// All incompatible quartets listed so far.
-  std::vector<std::tuple<int, int, int, int>> quartets_;
   /// Components of connected components.
   std::vector<int> components_;
-  /// How many updates how been done so far.
-  int update_counter_;
 };
 
 #endif

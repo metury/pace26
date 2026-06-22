@@ -7,22 +7,21 @@
 
 /// ILP
 
-ILP::ILP(Input &input)
-    : input_(input), update_counter_(4),
-      limit_(input.get_reduced_leaf_count()) {
+ILP::ILP(Input &input) : input_(input), limit_(4) {
   highs_.setOptionValue("output_flag", false);
   components_ = std::vector<int>(input_.get_leaf_count() + 1, 1);
 }
 
 void ILP::initialize() {
   if (input_.get_reduced_leaf_count() <= 25) {
-    update_counter_ = 25 * 25 * 25 * 25;
+    limit_ = 25 * 25 * 25 * 25;
   }
-  input_.compute_trios_quartets(trios_, quartets_, update_counter_,
-                                components_);
+  auto trios = std::vector<std::tuple<int, int, int>>();
+  auto quartets = std::vector<std::tuple<int, int, int, int>>();
+  input_.compute_trios_quartets(trios, quartets, limit_, components_);
 
   auto number_of_edges = input_.get_node_count();
-  auto number_of_rows = trios_.size() + quartets_.size() + 1;
+  auto number_of_rows = trios.size() + quartets.size() + 1;
   auto tree = input_.get_trees().at(0).get();
 
   HighsModel model;
@@ -46,20 +45,17 @@ void ILP::initialize() {
   std::vector<int> start = {0};
   std::vector<int> index;
 
-  for (auto &&trio : trios_) {
+  for (auto &&trio : trios) {
     auto edges = tree->get_trio_edges(trio);
     index.insert(index.end(), edges.begin(), edges.end());
     start.push_back(index.size());
   }
 
-  for (auto &&quartet : quartets_) {
+  for (auto &&quartet : quartets) {
     auto edges = tree->get_quartet_edges(quartet);
     index.insert(index.end(), edges.begin(), edges.end());
     start.push_back(index.size());
   }
-
-  quartets_ = {};
-  trios_ = {};
 
   for (int a = 0; a < number_of_edges; ++a) {
     index.push_back(a);
@@ -138,23 +134,21 @@ void ILP::set_components(const std::vector<std::unique_ptr<Tree>> &output) {
 }
 
 bool ILP::update() {
-  auto trio_counter = trios_.size();
-  auto quartet_counter = quartets_.size();
+  limit_ = input_.get_reduced_leaf_count() < 2 * limit_
+               ? input_.get_reduced_leaf_count()
+               : 2 * limit_;
 
-  update_counter_ = input_.get_reduced_leaf_count() < 2 * update_counter_
-                        ? input_.get_reduced_leaf_count()
-                        : 2 * update_counter_;
-
-  input_.compute_trios_quartets(trios_, quartets_, update_counter_,
-                                components_);
-  if (trio_counter == trios_.size() && quartet_counter == quartets_.size()) {
+  auto trios = std::vector<std::tuple<int, int, int>>();
+  auto quartets = std::vector<std::tuple<int, int, int, int>>();
+  input_.compute_trios_quartets(trios, quartets, limit_, components_);
+  if (trios.empty() && quartets.empty()) {
     return false;
   }
 
   auto tree = input_.get_trees().at(0).get();
 
-  for (int i = trio_counter; i < trios_.size(); ++i) {
-    auto edges = tree->get_trio_edges(trios_[i]);
+  for (auto &&trio : trios) {
+    auto edges = tree->get_trio_edges(trio);
     std::vector<int> indices;
     indices.insert(indices.end(), edges.begin(), edges.end());
     auto values = std::vector<double>(indices.size(), 1);
@@ -163,8 +157,8 @@ bool ILP::update() {
     assert(status == HighsStatus::kOk);
   }
 
-  for (int i = quartet_counter; i < quartets_.size(); ++i) {
-    auto edges = tree->get_quartet_edges(quartets_[i]);
+  for (auto &&quartet : quartets) {
+    auto edges = tree->get_quartet_edges(quartet);
     std::vector<int> indices;
     indices.insert(indices.end(), edges.begin(), edges.end());
     auto values = std::vector<double>(indices.size(), 1);
@@ -172,31 +166,22 @@ bool ILP::update() {
         highs_.addRow(1, 1.0e30, indices.size(), indices.data(), values.data());
     assert(status == HighsStatus::kOk);
   }
-
-  quartets_ = {};
-  trios_ = {};
 
   return true;
 }
 
 /// SCIILP
 
-SCIILP::SCIILP(Input &input)
-    : input_(input), update_counter_(4),
-      limit_(input.get_reduced_leaf_count()) {
-  // Initialize SCIP environment
+SCIILP::SCIILP(Input &input) : input_(input), limit_(4) {
   SCIPcreate(&scip_);
   SCIPincludeDefaultPlugins(scip_);
   SCIPcreateProbBasic(scip_, "PACE2026 - MAF");
-
-  // Equivalent to highs_.setOptionValue("output_flag", false);
   SCIPsetIntParam(scip_, "display/verblevel", 0);
   components_ = std::vector<int>(input_.get_leaf_count() + 1, 1);
 }
 
 SCIILP::~SCIILP() {
   if (scip_ != nullptr) {
-    // Release variables
     for (auto var : vars_) {
       SCIPreleaseVar(scip_, &var);
     }
@@ -205,20 +190,15 @@ SCIILP::~SCIILP() {
 }
 
 void SCIILP::initialize() {
-  if (input_.get_reduced_leaf_count() <= 25) {
-    update_counter_ = 25 * 25 * 25 * 25;
-  }
-  input_.compute_trios_quartets(trios_, quartets_, update_counter_,
-                                components_);
+  auto trios = std::vector<std::tuple<int, int, int>>();
+  auto quartets = std::vector<std::tuple<int, int, int, int>>();
+  input_.compute_trios_quartets(trios, quartets, limit_, components_);
   auto number_of_edges = input_.get_node_count();
-  auto number_of_rows = trios_.size() + quartets_.size() + 1;
+  auto number_of_rows = trios.size() + quartets.size() + 1;
   auto tree = input_.get_trees().at(0).get();
 
-  // Set minimization objective
   SCIPsetObjsense(scip_, SCIP_OBJSENSE_MINIMIZE);
 
-  // 1. Create Variables (Equivalent to col_lower, col_upper, col_cost,
-  // integrality)
   vars_.resize(number_of_edges);
   for (int col = 0; col < number_of_edges; ++col) {
     std::string name = "e_" + std::to_string(col + 1);
@@ -229,8 +209,7 @@ void SCIILP::initialize() {
     SCIPaddVar(scip_, vars_[col]);
   }
 
-  // 2. Constraints for Trios
-  for (auto &&trio : trios_) {
+  for (auto &&trio : trios) {
     auto edges = tree->get_trio_edges(trio);
     SCIP_CONS *cons;
     SCIPcreateConsBasicLinear(scip_, &cons, "trio_cons", 0, nullptr, nullptr,
@@ -242,8 +221,7 @@ void SCIILP::initialize() {
     SCIPreleaseCons(scip_, &cons); // Release memory once added to SCIP
   }
 
-  // 3. Constraints for Quartets
-  for (auto &&quartet : quartets_) {
+  for (auto &&quartet : quartets) {
     auto edges = tree->get_quartet_edges(quartet);
     SCIP_CONS *cons;
     SCIPcreateConsBasicLinear(scip_, &cons, "quartet_cons", 0, nullptr, nullptr,
@@ -255,7 +233,6 @@ void SCIILP::initialize() {
     SCIPreleaseCons(scip_, &cons);
   }
 
-  // 4. Global constraint (Sum of all edges)
   SCIP_CONS *cons_all;
   double upper_bound = input_.get_reduced_leaf_count() - 2;
   SCIPcreateConsBasicLinear(scip_, &cons_all, "all_edges", 0, nullptr, nullptr,
@@ -284,33 +261,26 @@ std::set<int> SCIILP::run() {
   std::cout << "# Solving ILP with " << YELLOW << SCIPgetNConss(scip_) << RESET
             << " constraints and " << YELLOW << SCIPgetNVars(scip_) << RESET
             << " variables." << std::endl;
-  // Run the solver
   SCIP_RETCODE ret = SCIPsolve(scip_);
   assert(ret == SCIP_OKAY);
 
-  // Check status
   SCIP_STATUS status = SCIPgetStatus(scip_);
   assert(status == SCIP_STATUS_OPTIMAL);
 
-  // Get the best solution
   SCIP_SOL *solution = SCIPgetBestSol(scip_);
 
-  // Print Objective
   double obj_val = SCIPgetSolOrigObj(scip_, solution);
   std::cout << "# Objective function value: " << YELLOW << obj_val << RESET
             << std::endl;
 
   std::set<int> edges_to_erase;
   for (int col = 0; col < vars_.size(); col++) {
-    // Retrieve the value of the variable in the current solution
     auto val = SCIPgetSolVal(scip_, solution, vars_[col]);
     if (is_approx_one(val)) {
       edges_to_erase.insert(col + 1);
     }
   }
 
-  // --- ADDING A NEW ROW AFTER SOLVING ---
-  // SCIP must be returned to the problem stage before adding new constraints
   SCIPfreeTransform(scip_);
 
   SCIP_CONS *new_cons;
@@ -319,8 +289,6 @@ std::set<int> SCIILP::run() {
                             input_.get_reduced_leaf_count() - 2);
 
   for (int a = 0; a < vars_.size(); ++a) {
-    // Note: Ensure 'a' correctly maps to your vars_ indexing!
-    // In your HiGHS code, you passed 'a', so I am assuming vars_[a] is correct.
     SCIPaddCoefLinear(scip_, new_cons, vars_[a], 1.0);
   }
 
@@ -331,25 +299,22 @@ std::set<int> SCIILP::run() {
 }
 
 bool SCIILP::update() {
-  auto trio_counter = trios_.size();
-  auto quartet_counter = quartets_.size();
+  auto trios = std::vector<std::tuple<int, int, int>>();
+  auto quartets = std::vector<std::tuple<int, int, int, int>>();
 
-  update_counter_ = input_.get_reduced_leaf_count() < 2 * update_counter_
-                        ? input_.get_reduced_leaf_count()
-                        : 2 * update_counter_;
-
-  input_.compute_trios_quartets(trios_, quartets_, update_counter_,
-                                components_);
-  if (trio_counter == trios_.size() && quartet_counter == quartets_.size()) {
+  limit_ = limit_ > input_.get_reduced_leaf_count()
+               ? input_.get_reduced_leaf_count()
+               : 2 * limit_;
+  input_.compute_trios_quartets(trios, quartets, limit_, components_);
+  if (trios.empty() && quartets.empty()) {
     return false;
   }
 
   auto tree = input_.get_trees().at(0).get();
 
-  // Unlock problem to add constraints
   SCIPfreeTransform(scip_);
 
-  for (auto &&trio : trios_) {
+  for (auto &&trio : trios) {
     auto edges = tree->get_trio_edges(trio);
     SCIP_CONS *cons;
     SCIPcreateConsBasicLinear(scip_, &cons, "update_trio", 0, nullptr, nullptr,
@@ -362,7 +327,7 @@ bool SCIILP::update() {
     SCIPreleaseCons(scip_, &cons);
   }
 
-  for (auto &&quartet : quartets_) {
+  for (auto &&quartet : quartets) {
     auto edges = tree->get_quartet_edges(quartet);
     SCIP_CONS *cons;
     SCIPcreateConsBasicLinear(scip_, &cons, "update_quartet", 0, nullptr,
@@ -374,9 +339,6 @@ bool SCIILP::update() {
     assert(status == SCIP_OKAY);
     SCIPreleaseCons(scip_, &cons);
   }
-
-  quartets_ = {};
-  trios_ = {};
 
   return true;
 }
