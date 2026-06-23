@@ -1,3 +1,4 @@
+2026-06-23 11:34:52 -- Added priorities in branching. Limit for lengths of trios and quartets as 2*log_2(|TAXA|) for the first. Then take all.
 2026-06-22 16:51:31 -- Limit for trios and quartets is based on |TAXA|, divided by 3 and 2 respectively. Moreover 4*2^run limit for path lengths (hence multiplied by 3 and 4 respectively).
 2026-06-16 17:16:52 -- Same as before. Change to SCIPopt suite instead of HiGHS.
 2026-06-16 09:54:08 -- Limit 4*2^run, whole ILP for <= 25 leafs, limit for trios, quartets, no global.

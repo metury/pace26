@@ -35,6 +35,7 @@ public:
   /// update components based on the last result.
   /// @param output what is the forest created by the last solution.
   void set_components(const std::vector<std::unique_ptr<Tree>> &output);
+  void set_priorities() const;
   /// update ilp based on unsatisfied constraints.
   /// @return true if ilp has new rows.
   bool update();

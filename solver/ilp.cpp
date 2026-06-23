@@ -172,7 +172,8 @@ bool ILP::update() {
 
 /// SCIILP
 
-SCIILP::SCIILP(Input &input) : input_(input), limit_(4) {
+SCIILP::SCIILP(Input &input)
+    : input_(input), limit_(std::log2(input.get_reduced_leaf_count())) {
   SCIPcreate(&scip_);
   SCIPincludeDefaultPlugins(scip_);
   SCIPcreateProbBasic(scip_, "PACE2026 - MAF");
@@ -257,6 +258,19 @@ void SCIILP::set_components(const std::vector<std::unique_ptr<Tree>> &output) {
   }
 }
 
+void SCIILP::set_priorities() const {
+  for (int i = 0; i < vars_.size(); ++i) {
+    SCIP_VAR *var = vars_[i];
+
+    int nlocks_down = SCIPvarGetNLocksDown(var);
+    int nlocks_up = SCIPvarGetNLocksUp(var);
+
+    int total_occurrences = nlocks_down + nlocks_up;
+
+    SCIPchgVarBranchPriority(scip_, var, total_occurrences);
+  }
+}
+
 std::set<int> SCIILP::run() {
   std::cout << "# Solving ILP with " << YELLOW << SCIPgetNConss(scip_) << RESET
             << " constraints and " << YELLOW << SCIPgetNVars(scip_) << RESET
@@ -305,7 +319,8 @@ bool SCIILP::update() {
   limit_ = limit_ > input_.get_reduced_leaf_count()
                ? input_.get_reduced_leaf_count()
                : 2 * limit_;
-  input_.compute_trios_quartets(trios, quartets, limit_, components_);
+  input_.compute_trios_quartets(
+      trios, quartets, 4 * input_.get_reduced_leaf_count(), components_);
   if (trios.empty() && quartets.empty()) {
     return false;
   }
