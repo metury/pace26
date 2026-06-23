@@ -29,7 +29,8 @@ public:
   SCIILP(Input &input);
   ~SCIILP(); // Important: SCIP requires manual memory cleanup
   /// initialize the ilp with first constraints.
-  void initialize();
+  /// @param all_constraints If we want to add all_constraints.
+  void initialize(bool all_constraints);
   /// run the current ilp.
   /// @return set of edges that should be deleted.
   std::set<int> run();
@@ -42,33 +43,33 @@ public:
   bool update();
 };
 
-/// Class containing ILP model that is solving MAF.
-class ILP {
-public:
-  /// Create empty ILP.
-  /// @param input Which input to use.
-  ILP(Input &input);
-  /// initialize the ilp with first constraints.
-  void initialize();
-  /// run the current ilp.
-  /// @return set of edges that should be deleted.
-  std::set<int> run();
-  /// update components based on the last result.
-  /// @param output what is the forest created by the last solution.
-  void set_components(const std::vector<std::unique_ptr<Tree>> &output);
-  /// update ilp based on unsatisfied constraints.
-  /// @return true if ilp has new rows.
-  bool update();
-
-private:
-  /// Which model it is using.
-  Highs highs_;
-  /// What input we are solving.
-  Input &input_;
-  /// Setting limit for constraints.
-  int limit_;
-  /// Components of connected components.
-  std::vector<int> components_;
-};
+////// Class containing ILP model that is solving MAF.
+/// class ILP {
+/// public:
+///  /// Create empty ILP.
+///  /// @param input Which input to use.
+///  ILP(Input &input);
+///  /// initialize the ilp with first constraints.
+///  void initialize();
+///  /// run the current ilp.
+///  /// @return set of edges that should be deleted.
+///  std::set<int> run();
+///  /// update components based on the last result.
+///  /// @param output what is the forest created by the last solution.
+///  void set_components(const std::vector<std::unique_ptr<Tree>> &output);
+///  /// update ilp based on unsatisfied constraints.
+///  /// @return true if ilp has new rows.
+///  bool update();
+///
+/// private:
+///  /// Which model it is using.
+///  Highs highs_;
+///  /// What input we are solving.
+///  Input &input_;
+///  /// Setting limit for constraints.
+///  int limit_;
+///  /// Components of connected components.
+///  std::vector<int> components_;
+///};
 
 #endif

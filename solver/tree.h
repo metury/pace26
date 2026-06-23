@@ -164,10 +164,12 @@ public:
   /// @param quartets List of all incompatible quartets.
   /// @param limit WHat is the limit of number of constraints.
   /// @param components Connected components of taxa.
+  /// @param all_constraints Whether we want to add all constraints.
   void
   compute_trios_quartets(std::vector<std::tuple<int, int, int>> &trios,
                          std::vector<std::tuple<int, int, int, int>> &quartets,
-                         int limit, const std::vector<int> &components);
+                         int limit, const std::vector<int> &components,
+                         bool all_constraints);
   void compute_breakable_forks(
       std::vector<std::tuple<int, int, int>> &forks,
       std::vector<std::array<int, 7>> &extended_forks) const;

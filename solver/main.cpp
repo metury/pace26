@@ -36,7 +36,7 @@
 //   } else {
 //     auto ilp = SCIILP(input);
 //     global_ilp = &ilp;
-//     // ilp.initialize(); All constraints.
+//     ilp.initialize(true);
 //     ilp.set_priorities();
 //     auto edges_to_erase = ilp.run();
 //     auto output = input.remove_edges(edges_to_erase);
@@ -68,7 +68,7 @@ void process(std::istream &is) {
     result = 1;
   } else {
     auto ilp = SCIILP(input);
-    ilp.initialize();
+    ilp.initialize(false);
     std::set<int> edges_to_erase;
     std::vector<std::unique_ptr<Tree>> output;
     do {
