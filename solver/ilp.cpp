@@ -173,7 +173,8 @@ bool ILP::update() {
 /// SCIILP
 
 SCIILP::SCIILP(Input &input)
-    : input_(input), limit_(std::log2(input.get_reduced_leaf_count())) {
+    : input_(input), limit_(std::log2(input.get_reduced_leaf_count())),
+      upper_limit_(input_.get_reduced_leaf_count() - 2) {
   SCIPcreate(&scip_);
   SCIPincludeDefaultPlugins(scip_);
   SCIPcreateProbBasic(scip_, "PACE2026 - MAF");
@@ -194,8 +195,11 @@ void SCIILP::initialize() {
   auto trios = std::vector<std::tuple<int, int, int>>();
   auto quartets = std::vector<std::tuple<int, int, int, int>>();
   input_.compute_trios_quartets(trios, quartets, limit_, components_);
+  auto forks = std::vector<std::tuple<int, int, int>>();
+  auto extended_forks = std::vector<std::array<int, 7>>();
+  input_.compute_breakable_forks(forks, extended_forks);
   auto number_of_edges = input_.get_node_count();
-  auto number_of_rows = trios.size() + quartets.size() + 1;
+  auto number_of_rows = trios.size() + quartets.size() + 1 + forks.size();
   auto tree = input_.get_trees().at(0).get();
 
   SCIPsetObjsense(scip_, SCIP_OBJSENSE_MINIMIZE);
@@ -210,11 +214,39 @@ void SCIILP::initialize() {
     SCIPaddVar(scip_, vars_[col]);
   }
 
+  for (auto &&[a, b, c] : forks) {
+    SCIP_CONS *cons;
+    SCIPcreateConsBasicLinear(scip_, &cons, "fork_cons", 0, nullptr, nullptr,
+                              0.0, 2.0);
+    SCIPaddCoefLinear(scip_, cons, vars_[a - 1], 2.0);
+    SCIPaddCoefLinear(scip_, cons, vars_[b - 1], 1.0);
+    SCIPaddCoefLinear(scip_, cons, vars_[c - 1], 1.0);
+    SCIPaddCons(scip_, cons);
+    SCIPreleaseCons(scip_, &cons); // Release memory once added to SCIP
+  }
+
+  for (auto &&fork : extended_forks) {
+    SCIP_CONS *cons;
+    SCIPcreateConsBasicLinear(scip_, &cons, "extended_fork_cons", 0, nullptr,
+                              nullptr, 0.0, 4.0);
+    SCIPaddCoefLinear(scip_, cons, vars_[fork[0] - 1], 2.0);
+    SCIPaddCoefLinear(scip_, cons, vars_[fork[1] - 1], 2.0);
+    SCIPaddCoefLinear(scip_, cons, vars_[fork[2] - 1], 2.0);
+    SCIPaddCoefLinear(scip_, cons, vars_[fork[3] - 1], 1.0);
+    SCIPaddCoefLinear(scip_, cons, vars_[fork[4] - 1], 1.0);
+    SCIPaddCoefLinear(scip_, cons, vars_[fork[5] - 1], 1.0);
+    SCIPaddCoefLinear(scip_, cons, vars_[fork[6] - 1], 1.0);
+    SCIPaddCons(scip_, cons);
+    SCIPreleaseCons(scip_, &cons); // Release memory once added to SCIP
+  }
+
   for (auto &&trio : trios) {
     auto edges = tree->get_trio_edges(trio);
+    auto local_bound =
+        edges.size() - 1 < upper_limit_ ? edges.size() - 1 : upper_limit_;
     SCIP_CONS *cons;
     SCIPcreateConsBasicLinear(scip_, &cons, "trio_cons", 0, nullptr, nullptr,
-                              1.0, SCIPinfinity(scip_));
+                              1.0, local_bound);
     for (int edge : edges) {
       SCIPaddCoefLinear(scip_, cons, vars_[edge], 1.0);
     }
@@ -224,9 +256,11 @@ void SCIILP::initialize() {
 
   for (auto &&quartet : quartets) {
     auto edges = tree->get_quartet_edges(quartet);
+    auto local_bound =
+        edges.size() - 1 < upper_limit_ ? edges.size() - 1 : upper_limit_;
     SCIP_CONS *cons;
     SCIPcreateConsBasicLinear(scip_, &cons, "quartet_cons", 0, nullptr, nullptr,
-                              1.0, SCIPinfinity(scip_));
+                              1.0, local_bound);
     for (int edge : edges) {
       SCIPaddCoefLinear(scip_, cons, vars_[edge], 1.0);
     }
@@ -235,9 +269,8 @@ void SCIILP::initialize() {
   }
 
   SCIP_CONS *cons_all;
-  double upper_bound = input_.get_reduced_leaf_count() - 2;
   SCIPcreateConsBasicLinear(scip_, &cons_all, "all_edges", 0, nullptr, nullptr,
-                            0.0, upper_bound);
+                            0.0, upper_limit_);
   for (int a = 0; a < vars_.size(); ++a) {
     SCIPaddCoefLinear(scip_, cons_all, vars_[a], 1.0);
   }
@@ -299,8 +332,7 @@ std::set<int> SCIILP::run() {
 
   SCIP_CONS *new_cons;
   SCIPcreateConsBasicLinear(scip_, &new_cons, "post_run_cons", 0, nullptr,
-                            nullptr, obj_val,
-                            input_.get_reduced_leaf_count() - 2);
+                            nullptr, obj_val, upper_limit_);
 
   for (int a = 0; a < vars_.size(); ++a) {
     SCIPaddCoefLinear(scip_, new_cons, vars_[a], 1.0);
@@ -331,9 +363,11 @@ bool SCIILP::update() {
 
   for (auto &&trio : trios) {
     auto edges = tree->get_trio_edges(trio);
+    auto local_bound =
+        edges.size() - 1 < upper_limit_ ? edges.size() - 1 : upper_limit_;
     SCIP_CONS *cons;
     SCIPcreateConsBasicLinear(scip_, &cons, "update_trio", 0, nullptr, nullptr,
-                              1.0, SCIPinfinity(scip_));
+                              1.0, local_bound);
     for (int idx : edges) {
       SCIPaddCoefLinear(scip_, cons, vars_[idx], 1.0);
     }
@@ -344,9 +378,11 @@ bool SCIILP::update() {
 
   for (auto &&quartet : quartets) {
     auto edges = tree->get_quartet_edges(quartet);
+    auto local_bound =
+        edges.size() - 1 < upper_limit_ ? edges.size() - 1 : upper_limit_;
     SCIP_CONS *cons;
     SCIPcreateConsBasicLinear(scip_, &cons, "update_quartet", 0, nullptr,
-                              nullptr, 1.0, SCIPinfinity(scip_));
+                              nullptr, 1.0, local_bound);
     for (int idx : edges) {
       SCIPaddCoefLinear(scip_, cons, vars_[idx], 1.0);
     }

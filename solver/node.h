@@ -62,6 +62,9 @@ public:
   int assign_numbers(int counter);
   /// Force iterative contraction of all 2 degree inner vertices.
   void consolidate();
+  std::array<int, 3>
+  compute_forks(std::vector<std::tuple<int, int, int>> &forks,
+                std::vector<std::array<int, 7>> &extended_forks) const;
   /// Compute both LCA tables and pointers to all leafs.
   /// @param lca_table LCA table for all pairs.
   /// @return A map of pointers to all leafs.

@@ -23,6 +23,7 @@ private:
   int limit_;
   /// Components of connected components.
   std::vector<int> components_;
+  int upper_limit_;
 
 public:
   SCIILP(Input &input);

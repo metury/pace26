@@ -168,6 +168,9 @@ public:
   compute_trios_quartets(std::vector<std::tuple<int, int, int>> &trios,
                          std::vector<std::tuple<int, int, int, int>> &quartets,
                          int limit, const std::vector<int> &components);
+  void compute_breakable_forks(
+      std::vector<std::tuple<int, int, int>> &forks,
+      std::vector<std::array<int, 7>> &extended_forks) const;
   /// Delete lca tables for every tree.
   void delete_lca_tables();
   /// Get all contracted parts from the input tree.

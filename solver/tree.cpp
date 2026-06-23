@@ -272,7 +272,7 @@ void Input::compute_trios_quartets(
             if (!tree2->has_disjoint_trio(a, b, c)) {
               auto trio = std::make_tuple(a, b, c);
               auto nr_of_edges = tree1->get_trio_edges(trio).size();
-              if (nr_of_edges <= 2 * limit) {
+              if (nr_of_edges <= 3 * limit) {
                 trios.push_back(trio);
                 //     decrement_to_zero(counters[a].first, counters[b].first,
                 //                       counters[c].first);
@@ -309,6 +309,12 @@ void Input::compute_trios_quartets(
       }
     }
   }
+}
+
+void Input::compute_breakable_forks(
+    std::vector<std::tuple<int, int, int>> &forks,
+    std::vector<std::array<int, 7>> &extended_forks) const {
+  trees_[0]->get_root()->compute_forks(forks, extended_forks);
 }
 
 bool Input::contract_cherries() {
