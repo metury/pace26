@@ -27,87 +27,47 @@
 \newcommand{\trios}{\mathcal{R}}
 \newcommand{\quartets}{\mathcal{Q}}
 
-\title{LCA properties of MAF}
+\title{Solving MAF Using ILP With Trios and Quartets}
 \author{}
 \date{}
 
 \begin{document}
   \maketitle
-	\tableofcontents
 
-  \section{Introduction to LCA}
+  \section{Preliminaries}
 
   By LCA we mean \emph{lowest common ancestor}. For now assume we have a rooted tree $T = (V,E)$, where
   $\rho$ denotes the root vertex. For two vertices $u, v \in V$ we say that $u < v$, $u$ \emph{lies below} $v$,
-  if $v$ lies on the $\rho-u$ path. Next, equality $u = v$ is that both $u < v$ and $v < u$ hold.
-  Lastly we say that $u \lessgtr v$ if neither $u < v$ nor $v < u$, we say that $u$ and $v$ are
-  \emph{incomparable}.
+  if $v$ lies on the unique $\rho-u$ path.
 
   More precisely we define for any subset $S \subseteq V$ their lca as a vertex $v \in V$, for which
   $\forall s \in S: s \leq v$ and it is smallest one, i.e. no other such $u \in V, u < v$ exsits.
   We denote this as $\lca(S)$. When we talk about sets of specific elements, for example
   $S = \{u,v\}$ then we abreviate our notation to $\lca(a,b)$ only.
 
-  \section{Necessary and Sufficient Conditions for MAF}
-
   Let us denote the trees on input as $\mathcal{T} = \{T_1, T_2, \dots, T_t\}$. Each tree has set $X$
   as its leafs of size $|X| = n$. Now the goal is to find an agreement forest
   $\mathcal{F} = \{F_1, F_2, \dots, F_r\}$ for minimum value of $r$.
 
-  \subsection{Inner Forest Conditions}
+  \section{Integer Linear Program}
 
-  For now fix single tree $F$ in the forest $\mathcal{F}$. For an internal vertex $v \in V(F)$
-  we denote $X_L(v)$ leafs below left child of $v$ and $X_R(v)$ leafs below right
-  child. Furthermore we denote $\lca_i(S)$ to be lca in the input tree $T_i$ on set
-  $S$. Now the condition is following:
+  We use the ILP defined by Wu \cite{wuPracticalMethodExact2009}. We reuse the notation of \emph{trios} from
+  \cite{ilp-maf}, because they use similar constraints, and also add the term \emph{quartets}.
 
-  \begin{equation}
-    \lca_i(X_L(v)) \lessgtr \lca_i(X_R(v)) \quad \forall i \in [t]
-  \end{equation}
-
-  \subsection{Pairwise Trees in the Forest Condition}
-
-  Fix two different trees in the forest $F_1, F_2 \in \mathcal{F}$. By $X(F_i)$
-  we denote the set of leafs in forest $F_i$, for $i = 1,2$. Now the condition is
-  that either
-
-  \begin{equation}
-    \lca_i(X(F_1)) \lessgtr \lca_i(X(F_2))
-  \end{equation}
-
-  \noindent or if $\lca_i(X(F_j)) < \lca_i(X(F_{j +_2 1}))$ then $\forall x \in X(F_{j +_2 1})$
-  are not underneath $\lca_i (X_F{j})$, for all $i \in [t]$. Note that the
-  second case also matches in the first one.
-
-  We claim that these conditions are sufficient. Therefore one can develop a constraint programm
-  which can solve MAF.
-
-  \section{ILP Based on LCA}
-
-  Already in \cite{ilp-maf} the authors presented a very simple ILP to solve
-  MAF on unrooted and undirected trees. Notably it can be more than just one
-  tree. We reuse some of their notation and furthermore, we define incompatible
-  trios and quartets and also ILP to solve MAF on rooted and directed trees.
-
-  We use the following notation for tree $T$ and set $Y \subseteq X$ we define
+  We use the following notation for tree $T$ and set $Y \subseteq X$. We define
   $T[Y]$ to be the smallest subtree of $T$ having all leafs $Y$.
   Next, $T|_Y$ stands for $T[Y]$ with forced contractions.
 
   To speed up the implementation we use LCA to classify all cases
-  in a constant time if we precompute the LCA table for all pairs and
-  triples of leafs.
+  in a constant time if we precompute the LCA table for all pairs of nodes.
 
   We look at trios denoted as $a,b|c$ such that it looks like on the picture \ref{fig:trio}.
   Observe that this is the only constelation in which three leafs $R = \{a,b,c\}$ can encounter
   in $T|_R$, unless the labels are switched. Also see that $a,b|c$ and $b,a|c$ has the
   same properties hence we do not distinquish them.
 
-  Next look at quartets, here we can have up to two cases, first we call ``fork'', denote as
-  $a,b|c,d$ and is depicted on \ref{fig:quartet-fork}. The second
-  case we call ``line'', denote as $a,b|c|d$ and is shown on \ref{fig:quartet-line}.
-  Now, observe that there is no difference in the structure if we switch $a,b$ or $c,d$ in fork or
-  $a,b$ in line. Therefore we do not distinquish between these cases. You may imagine that
-  comma represents a set and line the distinguishing point. This also hold for trios.
+  Next look at quartets, here we have more options because we only care if the paths intersect or not.
+  We will denote them as $a,b|c,d$. We may see two examples of such occurance on Figure \ref{fig:quartet-fork} and Figure \ref{fig:quartet-line}.
 
   \begin{figure}[!ht]\centering
     \begin{subfigure}{.3\textwidth}\centering
@@ -140,7 +100,7 @@
         \draw (mid2) -- (c);
         \draw (mid2) -- (d);
       \end{tikzpicture}
-      \caption{Quartet ``fork''.}\label{fig:quartet-fork}
+      \caption{Quartet with incomparable LCAs.}\label{fig:quartet-fork}
     \end{subfigure}
     \begin{subfigure}{.3\textwidth}\centering
       \begin{tikzpicture}[main/.style = {draw, circle, inner sep=1.5pt}, scale =.6]
@@ -158,7 +118,7 @@
         \draw (mid2) -- (a);
         \draw (mid2) -- (b);
       \end{tikzpicture}
-      \caption{Quartet ``line''.}\label{fig:quartet-line}
+      \caption{Quartet with comparable LCAs.}\label{fig:quartet-line}
     \end{subfigure}
   \end{figure}
 
@@ -168,10 +128,9 @@
   we have either $a,c|b$ or $b,c|a$. See that cutting one of the edges in $T_1[\{a,b,c\}]$ is enough
   to resolve this incompatible trio. This is due to the fact that one edge will
   remove one of $a,b$ or $c$ from the rest. Then the trio on itself would be fine
-  with the definition of MAF. We must note that this is not yet sufficient, see
-  an example of two trees in a ``fork'' structure $a,b|c,d$ and $a,c|b,d$.
+  with the definition of MAF. 
 
-  It is easily to find such occurance of incompatible trios in our input. First, we go
+  It is easy to find such occurance of incompatible trios in our input. First, we go
   over all triples of leafs $a,b,c$, in $\bigO(n^3)$ time, and find such triple that
   suffices the following inequality. $\lca_1(a,b) \neq \lca_1(a,b,c)$. Since
   easily seen it must be $\lca_1(a,b) \leq \lca_1(a,b,c)$, then when inequality
@@ -179,42 +138,37 @@
   there is trio for which $\lca_j(a,b) = \lca_j(a,b,c)$ we have found incompatible
   trio.
 
-  So we gather all trios into the set of $\trios$ and we define $\mathcal{L}(R)$,
-  for $R \in \trios$, to be $T_1[R]$.
+  So we gather all trios into the set of $\trios$ and we define $\mathcal{L}(R)$
+  to be $T_1[R]$, for $R \in \trios$.
 
   \subsection{Incompatible Quartets}
 
-  As we have said trios are not sufficient. Therefore, we look at quartest, but now there
-  are more options. Let us first observe how specific quartets could be found. First,
-  quartet ``fork'' can be found by sufficing all following (in)equalities in \eqref{eq:fork}.
+  Now, we look at quartest. It is a bit harder to find such quartet by using LCAs only. The
+  definition is based on the intersection of $a-b$ and $c-d$ paths.
 
-  \begin{equation}\label{eq:fork}
-    \begin{aligned}
-      \lca_1(a,b) \neq \lca_1(a,b,c)\\
-      \lca_1(a,b) \neq \lca_1(a,b,d)\\
-      \lca_1(a,b,c) = \lca_1(a,b,d)\\
-    \end{aligned}
-  \end{equation}
+  Firstly, it must be true that $\lca_1(a,b) \neq \lca_2(c,d)$. Otherwise their paths intersect.
+  Next we split into two cases.
 
-  On the other hand for quartet ``line'' we use these inequalities in \eqref{eq:line}.
+  \begin{enumerate}
+    \item First, if $\lca_1(a,b,c) = \lca_1(a,b)$ then we check that $\lca_1(c,d)$ is not the same
+      as $\lca_1(x,y)$ for $x \in \{a,b\}$ and $y \in \{c,d\}$.
+    \item Second, that the equality does not hold. Then we check that $\lca_1(a,b)$ is not the
+      same as $\lca_1(x,y)$ for $x,y$ same as before.
+  \end{enumerate}
 
-  \begin{equation}\label{eq:line}
-    \begin{aligned}
-      \lca_1(a,b) \neq \lca_1(a,b,c)\\
-      \lca_1(a,b) \neq \lca_1(a,b,d)\\
-      \lca_1(a,b,c) \neq \lca_1(a,b,d)\\
-    \end{aligned}
-  \end{equation}
+  Proof sketch. The very first check is clear. Next in the first branch we get that $c$ is below $a,b$ tree
+  and then $d$ must be also below $a,b$ tree and then the further checks satsify this condition. In the
+  other case we have that $a$ is below $c,d$ tree or they are completely disjoint. In the former
+  case it is enough to check the values and in the latter case we actually do not need any further
+  checks.
 
-  Due to the pattern arrising from the below table we do the following.
-  Whenever we find either $a,b|c,d$ or $a,b|c|d$ or $a,b|d|c$. We check if
-  there is another tree having these not only swapped, but completely mixed up.
-  For example $a,c|b,d$ or $a,c|b|d$. Meaning that for example $c,d|a|b$ is
-  just swapped simply and trios suffice to resolve this quartet. We record
-  all such quartets into $\quartets$ and for each $Q \in \quartets$ we
+  Therefore we find quartets that satisfy this for the first tree and whenever we find a different tree
+  for which this does not hold we say it is incompatible quartet.
+  We collect all such quartets into $\quartets$ and for each $Q \in \quartets$ we
   define $\mathcal{L}(Q)$ as $T[\{a,b\}] \cup T[\{c,d\}]$.
 
-  By using these definitions we create our ILP.
+  By using these definitions we create our ILP. And from \cite{wuPracticalMethodExact2009} we get
+  that the optimal integer solution is actually a Maximum Agreement Forest as desired.
 
   \begin{align*}
     \text{Minimize: } & \sum_{e \in E(T_1)} x_e \\
@@ -223,20 +177,15 @@
             & x_e \in \{0, 1\} & \forall e \in E(T_1)
   \end{align*}
 
-  \section{Reductions}
+  \section{Reductions and Speed-Ups}
 
-  We implement some simple and known reductions to reduce the size of the input trees.
-  First one is regarding \emph{cherries}. We call $a,b \in X$ a \emph{cherry} (fig. \ref{fig:cherry}) if
-  it $a$ and $b$ shares the same parent. Then we can reduce this by substituting their parent
-  with $a$ and remember that $b$ is also included. Notably one cherry could lead to creating another cherry.
-
-  Second reduction rule is regarding \emph{chains} (fig. \ref{fig:chain}). Once
-  we find such $a,b,c,d$ chain that is the same in all trees we can reduce such chain to
-  $a,c,d$ only. Generally we can choose arbitrary, but to determinise and simplifly it
-  we get rid of $b$.
+  We implement simple and known reduction to reduce the size of the input trees.
+  We call $a,b \in X$ a \emph{cherry} (fig. \ref{fig:cherry}) if
+  it $a$ and $b$ shares the same parent and this is in every tree from the input. Then we can reduce this
+  by substituting their parent with $a$ and remember that $b$ is also included. Notably one
+  cherry could lead to creating another cherry. But this can be done in linear time.
 
   \begin{figure}[!ht]\centering
-    \begin{subfigure}{.45\textwidth}\centering
       \begin{tikzpicture}[main/.style = {draw, circle, inner sep=1.5pt}, scale =.6]
         \node[main] (root) at (4,5) {};
         \node (a) at (3,4) {$a$};
@@ -245,97 +194,63 @@
         \draw (root) -- (b);
       \end{tikzpicture}
       \caption{A cherry.}\label{fig:cherry}
+  \end{figure}
+
+  Moreover, we add additional constraints to help the ILP solver to solve it faster. We add two types of
+  constraints. One is called \emph{fork} and the other \emph{extended fork}, see Figure \ref{fig:fork} and Figure \ref{fig:extended-fork}
+  respectively. For fork we first observe that deleting two edges is always enough because the third is implicitly contracted.
+  Moreover it is safe to say that if we remove exactly two edges then it is always the bottom two. In ILP formulation we may say
+  that $2a + b + c \leq 2$. In the similar fashion we also introduce an extended fork, where we add constraint saying that
+  $2a + 2b + 2c + d + e + f + g \leq 4$.
+
+  \begin{figure}[!ht]\centering
+    \begin{subfigure}{.45\textwidth}\centering
+      \begin{tikzpicture}[main/.style = {draw, circle, inner sep=1.5pt}, scale =.6]
+        \node[main] (root) at (4,5) {};
+        \node (a) at (3,4) {};
+        \node (b) at (5,4) {};
+        \draw (root) -- (a) node[near end, left, above] {$b$};
+        \draw (root) -- (b) node[near end, right, above] {$c$};
+        \draw (4,6) -- (root) node[midway, left] {$a$};
+      \end{tikzpicture}
+      \caption{A simple fork.}\label{fig:fork}
     \end{subfigure}
     \begin{subfigure}{.45\textwidth}\centering
       \begin{tikzpicture}[main/.style = {draw, circle, inner sep=1.5pt}, scale =.6]
-        \node[main] (root) at (5,5) {};
-        \node[main] (mid) at (4,4) {};
-        \node[main] (mid2) at (3,3) {};
-        \node[main] (mid3) at (2,2) {};
-        \node[main] (mid4) at (1,1) {};
-        \node (a) at (6,4) {$a$};
-        \node (b) at (5,3) {$b$};
-        \node (c) at (4,2) {$c$};
-        \node (d) at (3,1) {$d$};
-        \node (e) at (2,0) {};
-        \node (f) at (0,0) {};
-        \draw (mid) -- (mid2);
-        \draw (root) -- (mid);
-        \draw (mid2) -- (mid3);
-        \draw (mid3) -- (mid4);
-        \draw (mid4) -- (e);
-        \draw (mid4) -- (f);
-        \draw (root) -- (a);
-        \draw (mid) -- (b);
-        \draw (mid2) -- (c);
-        \draw (mid3) -- (d);
+        \node[main] (root) at (4,5) {};
+        \node[main] (a) at (2,4) {};
+        \node[main] (b) at (6,4) {};
+        \draw (root) -- (a) node[near end, left, above] {$b$};
+        \draw (root) -- (b) node[near end, right, above] {$c$};
+        \draw (4,6) -- (root) node[midway, left] {$a$};
+        \node (c) at (1,3) {};
+        \node (d) at (3,3) {};
+        \node (e) at (5,3) {};
+        \node (f) at (7,3) {};
+        \draw (a) -- (c) node[near end, left, above] {$d$};
+        \draw (a) -- (d) node[near end, right, above] {$e$};
+        \draw (b) -- (e) node[near end, left, above] {$f$};
+        \draw (b) -- (f) node[near end, right, above] {$g$};
       \end{tikzpicture}
-      \caption{A chain.}\label{fig:chain}
+      \caption{An extended fork.}\label{fig:extended-fork}
     \end{subfigure}
   \end{figure}
 
-  \section*{Appendix With Table}
+  Another very straigthforward constraint is that the sum of all edges in $T_1$ is at most $n-2$. That is
+  due to the fact that there is always a simple solution where every tree in MAF is a node except for
+  one simple two-leaf tree. Moreover, we can have a lower bound for this as well if we have some, possibly
+  infeasible, MAF.
 
-  Now we must look at all possible combinations of quartets appearing in two trees and
-  whether included trios are enough or not, for that see the table \ref{tab:quartets}.
-  For forks we have $\binom{4}{2}$ options, but due to the symmetry we only have $\binom{4}{2} / 2 = 3$.
-  For lines we have $4 \cdot 3 = 12$ options and here we cannot get rid of any cases.
-
-  By adding these quartets we mean that in our trees we must do more cuts than just one based on
-  trios only. It seems there is a nice pattern, therefore some cells have been filled by a gut-feeling.
-
-  Before finishing the table there is very easily observable pattern. If we have a fork with at least
-  three trios we just add this quartet. Whereas for line it is exactly three. Alternatively one of
-  the quartets must be a fork and they need to have at least some number of collisions.
-
-  \begin{table}[!ht]
-    \begin{center}
-      \begin{tabular}[c]{l|l|l|l}
-        \hline
-        Start & End & Trios & We must add it? \\
-        \hline
-        $a,b|c,d$ & $a,b|c,d$ & $\emptyset$ & No. It is the same. \\
-                  & $a,c|b,d$ & $a,b|c;a,b|d;c,d|a;c,d|b$ & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
-                  & $a,d|b,c$ & $a,b|c;a,b|d;c,d|a;c,d|b$ & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
-        \hline
-                  & $c,d|a|b$ & $a,b|c;a,b|d$ & No, trios are sufficient. \\
-                  & $b,d|a|c$ & $a,b|d;c,d|a;c,d|b$ & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
-                  & $c,b|a|d$ & $a,b|c;c,d|a,c,d|b$ & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
-        \hline
-                  & $c,d|b|a$ & $a,b|c;a,b|d$ & No, trios are sufficient. \\
-                  & $a,d|b|c$ & $a,b|d;c,d|b;c,d|a$ & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
-                  & $c,a|b|d$ &  & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
-        \hline
-                  & $b,d|c|a$ &  & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
-                  & $a,d|c|b$ &  & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
-                  & $b,a|c|d$ &  & No, trios are sufficient. \\
-        \hline
-                  & $b,c|d|a$ &  & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
-                  & $a,c|d|b$ &  & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
-                  & $b,a|d|c$ &  & No, trios are sufficient. \\
-        \hline
-        $a,b|c|d$ & $a,b|c,d$ & $b,c|d;a,c|d$ & No, trios are sufficient. \\
-                  & $a,c|b,d$ & $a,b|c;a,b|d;b,c|d$ & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
-                  & $a,d|b,c$ & $a,b|c;a,c|d;a,b|d$ & Yes, we must add $T_1[\{a,b\}] \cup T_1[\{c,d\}]$. \\
-        \hline
-                  & $c,d|a|b$ &  &  \\
-                  & $b,d|a|c$ &  &  \\
-                  & $c,b|a|d$ &  &  \\
-                  & $c,d|b|a$ &  &  \\
-                  & $a,d|b|c$ &  &  \\
-                  & $c,a|b|d$ &  &  \\
-                  & $b,d|c|a$ &  &  \\
-                  & $a,d|c|b$ &  &  \\
-                  & $b,a|c|d$ &  &  \\
-                  & $b,c|d|a$ &  &  \\
-                  & $a,c|d|b$ &  &  \\
-                  & $b,a|d|c$ &  &  \\
-        \hline
-      \end{tabular}
-    \end{center}
-    \caption{All possible combinations of quartets.}\label{tab:quartets}
-  \end{table}
-
+  We have added at most $\O(n)$ additional constraints, which is not much. On the other hand we can have
+  upto $\O(n^3 + n^4)$ constraints for trios and quartets, which is still polynomial, but not really nice.
+  As it turns out it is rarely the case. But we can still do better by choosing only some constraints
+  and then iteratively add new ones and solve the new ILP. Therefore we sort all trios and quartets based
+  the number of edges in it in an increasing way. Then we choose all constraints which are of length
+  at most $2 \log_2(n)$. If there is not enough of them then we always add at least $n$ constraints.
+  In the next iterations we always have some forrest and possibly unsatisfied constraints. We go through
+  all the constraints and if (1) there is no unsatisfied constraint then we are done, otherwise (2) we
+  add at most $n$ new constraints of each type, i.e., trios and qaurtets. This serves as a lower bound
+  for the very last constraint summing all edges.
 
   \bibliographystyle{alpha}
   \bibliography{ref}
