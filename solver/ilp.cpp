@@ -1,8 +1,4 @@
 #include "ilp.h"
-#include "scip/scip_sol.h"
-#include "tree.h"
-#include "utils.h"
-#include <vector>
 
 /// ILP
 
@@ -13,7 +9,9 @@ ILP::ILP(Input &input)
   SCIPincludeDefaultPlugins(scip_);
   SCIPcreateProbBasic(scip_, "PACE2026 - MAF");
   SCIPsetIntParam(scip_, "display/verblevel", 0);
+
   components_ = std::vector<int>(input_.get_leaf_count() + 1, 1);
+
   trios_ = std::vector<Trio>();
   quartets_ = std::vector<Quartet>();
   input_.compute_trios_quartets(trios_, quartets_);
@@ -36,6 +34,7 @@ void ILP::initialize() {
   auto forks = std::vector<Fork>();
   auto extended_forks = std::vector<ExtendedFork>();
   input_.compute_breakable_forks(forks, extended_forks);
+
   auto number_of_edges = input_.get_node_count();
   auto number_of_rows = trios_.size() + quartets_.size() + 1 + forks.size();
   auto tree = input_.get_trees().at(0).get();
@@ -78,11 +77,12 @@ void ILP::initialize() {
 
   for (int i = 0; i < trios_.size(); ++i) {
     if (i > input_.get_reduced_leaf_count() && trios_[i].size > limit_) {
-      break;
+      break; // Take at least N of them. Take all constraints of length at most
+             // limit_.
     }
     auto edges = tree->get_trio_edges(trios_[i]);
-    auto local_bound =
-        edges.size() - 1 < upper_limit_ ? edges.size() - 1 : upper_limit_;
+    int edges_size = edges.size() - 1;
+    auto local_bound = std::min(edges_size, upper_limit_);
     SCIP_CONS *cons;
     SCIPcreateConsBasicLinear(scip_, &cons, "trio_cons", 0, nullptr, nullptr,
                               1.0, local_bound);
@@ -95,11 +95,12 @@ void ILP::initialize() {
 
   for (int i = 0; i < quartets_.size(); ++i) {
     if (i > input_.get_reduced_leaf_count() && quartets_[i].size > limit_) {
-      break;
+      break; // Take at least N of them. Take all constraints of length at most
+             // limit_.
     }
     auto edges = tree->get_quartet_edges(quartets_[i]);
-    auto local_bound =
-        edges.size() < upper_limit_ ? edges.size() : upper_limit_;
+    int edges_size = edges.size() - 1;
+    auto local_bound = std::min(edges_size, upper_limit_);
     SCIP_CONS *cons;
     SCIPcreateConsBasicLinear(scip_, &cons, "quartet_cons", 0, nullptr, nullptr,
                               1.0, local_bound);
@@ -150,11 +151,12 @@ std::set<int> ILP::run() {
   std::cout << "# Solving ILP with " << YELLOW << SCIPgetNConss(scip_) << RESET
             << " constraints and " << YELLOW << SCIPgetNVars(scip_) << RESET
             << " variables." << std::endl;
+
   SCIP_RETCODE ret = SCIPsolve(scip_);
   assert(ret == SCIP_OKAY);
 
-  // SCIP_STATUS status = SCIPgetStatus(scip_);
-  // assert(status == SCIP_STATUS_OPTIMAL);
+  SCIP_STATUS status = SCIPgetStatus(scip_);
+  assert(status == SCIP_STATUS_OPTIMAL);
 
   SCIP_SOL *solution = SCIPgetBestSol(scip_);
 
@@ -192,54 +194,52 @@ bool ILP::update() {
   SCIPfreeTransform(scip_);
 
   bool end = true;
-  int i = 0;
   int counter = 0;
-  for (int i = 0; i < trios_.size(); ++i) {
+
+  for (auto &&trio : trios_) {
     if (counter > input_.get_reduced_leaf_count()) {
-      break;
+      break; // At most N constraints.
     }
-    if (components_[trios_[i].a] != components_[trios_[i].b] ||
-        components_[trios_[i].a] != components_[trios_[i].c]) {
-      continue;
+    if (components_[trio.a] != components_[trio.b] ||
+        components_[trio.a] != components_[trio.c]) {
+      continue; // Must be unsatisfied.
     }
     end = false;
-    counter += 1;
-    auto edges = tree->get_trio_edges(trios_[i]);
-    auto local_bound =
-        edges.size() - 1 < upper_limit_ ? edges.size() - 1 : upper_limit_;
+    ++counter;
+    auto edges = tree->get_trio_edges(trio);
+    int edges_size = edges.size() - 1;
+    auto local_bound = std::min(edges_size, upper_limit_);
     SCIP_CONS *cons;
     SCIPcreateConsBasicLinear(scip_, &cons, "update_trio", 0, nullptr, nullptr,
                               1.0, local_bound);
-    for (int idx : edges) {
-      SCIPaddCoefLinear(scip_, cons, vars_[idx], 1.0);
+    for (int edge : edges) {
+      SCIPaddCoefLinear(scip_, cons, vars_[edge], 1.0);
     }
     SCIP_RETCODE status = SCIPaddCons(scip_, cons);
     assert(status == SCIP_OKAY);
     SCIPreleaseCons(scip_, &cons);
   }
 
-  i = 0;
   counter = 0;
 
-  // for (auto &&quartet : quartets) {
-  for (; i < quartets_.size(); ++i) {
+  for (auto &&quartet : quartets_) {
     if (counter > input_.get_reduced_leaf_count()) {
-      break;
+      break; // At most N constraints.
     }
-    if (components_[quartets_[i].a] != components_[quartets_[i].b] ||
-        components_[quartets_[i].x] != components_[quartets_[i].y]) {
-      continue;
+    if (components_[quartet.a] != components_[quartet.b] ||
+        components_[quartet.x] != components_[quartet.y]) {
+      continue; // Must be unsatisfied.
     }
     end = false;
-    counter += 1;
-    auto edges = tree->get_quartet_edges(quartets_[i]);
-    auto local_bound =
-        edges.size() - 1 < upper_limit_ ? edges.size() - 1 : upper_limit_;
+    ++counter;
+    auto edges = tree->get_quartet_edges(quartet);
+    int edges_size = edges.size() - 1;
+    auto local_bound = std::min(edges_size, upper_limit_);
     SCIP_CONS *cons;
     SCIPcreateConsBasicLinear(scip_, &cons, "update_quartet", 0, nullptr,
                               nullptr, 1.0, local_bound);
-    for (int idx : edges) {
-      SCIPaddCoefLinear(scip_, cons, vars_[idx], 1.0);
+    for (int edge : edges) {
+      SCIPaddCoefLinear(scip_, cons, vars_[edge], 1.0);
     }
     SCIP_RETCODE status = SCIPaddCons(scip_, cons);
     assert(status == SCIP_OKAY);

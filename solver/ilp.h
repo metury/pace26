@@ -8,10 +8,8 @@
 #include "tree.h"
 #include <scip/scip.h>
 #include <scip/scipdefplugins.h>
-#include <set>
-#include <vector>
 
-/// Class to comunicate with SCIP ilp solver.
+/// Class to communicate with SCIP ilp solver.
 class ILP {
 public:
   /// Default constructor based on the input.
@@ -29,8 +27,8 @@ public:
   void set_components(const std::vector<std::unique_ptr<Tree>> &output);
   /// Change the priorities of all variables based on their appearance.
   void set_priorities() const;
-  /// update ilp based on unsatisfied constraints.
-  /// @return true if ilp has new rows.
+  /// Update ilp based on unsatisfied constraints.
+  /// @return True if ilp has new constraints.
   bool update();
 
 private:
