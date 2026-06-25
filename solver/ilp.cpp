@@ -99,7 +99,7 @@ void ILP::initialize() {
              // limit_.
     }
     auto edges = tree->get_quartet_edges(quartets_[i]);
-    int edges_size = edges.size() - 1;
+    int edges_size = edges.size();
     auto local_bound = std::min(edges_size, upper_limit_);
     SCIP_CONS *cons;
     SCIPcreateConsBasicLinear(scip_, &cons, "quartet_cons", 0, nullptr, nullptr,
@@ -197,9 +197,9 @@ bool ILP::update() {
   int counter = 0;
 
   for (auto &&trio : trios_) {
-    if (counter > input_.get_reduced_leaf_count()) {
-      break; // At most N constraints.
-    }
+    // if (counter > input_.get_reduced_leaf_count()) {
+    //   break; // At most N constraints.
+    // }
     if (components_[trio.a] != components_[trio.b] ||
         components_[trio.a] != components_[trio.c]) {
       continue; // Must be unsatisfied.
@@ -223,9 +223,9 @@ bool ILP::update() {
   counter = 0;
 
   for (auto &&quartet : quartets_) {
-    if (counter > input_.get_reduced_leaf_count()) {
-      break; // At most N constraints.
-    }
+    // if (counter > input_.get_reduced_leaf_count()) {
+    //   break; // At most N constraints.
+    // }
     if (components_[quartet.a] != components_[quartet.b] ||
         components_[quartet.x] != components_[quartet.y]) {
       continue; // Must be unsatisfied.
@@ -233,7 +233,7 @@ bool ILP::update() {
     end = false;
     ++counter;
     auto edges = tree->get_quartet_edges(quartet);
-    int edges_size = edges.size() - 1;
+    int edges_size = edges.size();
     auto local_bound = std::min(edges_size, upper_limit_);
     SCIP_CONS *cons;
     SCIPcreateConsBasicLinear(scip_, &cons, "update_quartet", 0, nullptr,
