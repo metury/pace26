@@ -245,10 +245,11 @@ void Input::compute_all_lca() {
   }
 }
 
-void Input::compute_trios_quartets(
-    std::vector<std::tuple<int, int, int>> &trios,
-    std::vector<std::tuple<int, int, int, int>> &quartets, int limit,
-    const std::vector<int> &components, bool all_constraints) {
+void Input::compute_trios_quartets(std::vector<std::array<int, 4>> &trios,
+                                   std::vector<std::array<int, 5>> &quartets,
+                                   int limit,
+                                   const std::vector<int> &components,
+                                   bool all_constraints) {
   // std::vector<std::pair<int, int>> counters = std::vector<std::pair<int,
   // int>>(
   //     n_ + 1, std::make_pair(get_reduced_leaf_count() / 3,
@@ -271,9 +272,9 @@ void Input::compute_trios_quartets(
           for (auto &&tree2 : get_trees()) {
             if (!tree2->has_disjoint_trio(a, b, c)) {
               auto trio = std::make_tuple(a, b, c);
-              auto nr_of_edges = tree1->get_trio_edges(trio).size();
-              if (all_constraints || nr_of_edges <= 3 * limit) {
-                trios.push_back(trio);
+              int nr_of_edges = tree1->get_trio_edges(trio).size();
+              if (all_constraints || nr_of_edges <= 2 * limit) {
+                trios.push_back({a, b, c, nr_of_edges});
                 //     decrement_to_zero(counters[a].first, counters[b].first,
                 //                       counters[c].first);
               }
@@ -292,9 +293,9 @@ void Input::compute_trios_quartets(
               for (auto &&tree2 : get_trees()) {
                 if (!tree2->has_disjoint_paths(a, b, c, d)) {
                   auto quartet = std::make_tuple(a, b, c, d);
-                  auto nr_of_edges = tree1->get_quartet_edges(quartet).size();
+                  int nr_of_edges = tree1->get_quartet_edges(quartet).size();
                   if (all_constraints || nr_of_edges <= 2 * limit) {
-                    quartets.push_back(quartet);
+                    quartets.push_back({a, b, c, d, nr_of_edges});
                     //        decrement_to_zero(counters[a].second,
                     //        counters[b].second,
                     //                          counters[c].second,

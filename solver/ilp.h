@@ -24,6 +24,8 @@ private:
   /// Components of connected components.
   std::vector<int> components_;
   int upper_limit_;
+  std::vector<std::array<int, 4>> trios_;
+  std::vector<std::array<int, 5>> quartets_;
 
 public:
   SCIILP(Input &input);
