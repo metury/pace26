@@ -95,7 +95,7 @@ void SCIILP::initialize() {
   }
 
   for (int i = 0; i < trios_.size(); ++i) {
-    if (i > input_.get_reduced_leaf_count() / 2 || trios_[i][3] > limit_) {
+    if (i > input_.get_reduced_leaf_count() && trios_[i][3] > limit_) {
       break;
     }
     auto trio = std::make_tuple(trios_[i][0], trios_[i][1], trios_[i][2]);
@@ -114,7 +114,7 @@ void SCIILP::initialize() {
   }
 
   for (int i = 0; i < quartets_.size(); ++i) {
-    if (i > input_.get_reduced_leaf_count() / 2 || quartets_[i][3] > limit_) {
+    if (i > input_.get_reduced_leaf_count() && quartets_[i][3] > limit_) {
       break;
     }
     auto quartet = std::make_tuple(quartets_[i][0], quartets_[i][1],
@@ -206,16 +206,6 @@ std::set<int> SCIILP::run() {
   SCIPaddCons(scip_, new_cons);
   SCIPreleaseCons(scip_, &new_cons);
 
-  // Heuristics only!!
-  SCIP_CONS *cons_all_solved;
-  SCIPcreateConsBasicLinear(scip_, &cons_all_solved, "all_solved_edges", 0,
-                            nullptr, nullptr, obj_val, obj_val);
-  for (auto &&e : edges_to_erase) {
-    SCIPaddCoefLinear(scip_, cons_all_solved, vars_[e - 1], 1.0);
-  }
-  SCIPaddCons(scip_, cons_all_solved);
-  SCIPreleaseCons(scip_, &cons_all_solved);
-
   return edges_to_erase;
 }
 
@@ -229,7 +219,7 @@ bool SCIILP::update() {
   int counter = 0;
   // for (auto &&trio : trios) {
   for (int i = 0; i < trios_.size(); ++i) {
-    if (counter > input_.get_reduced_leaf_count() / 2) {
+    if (counter > input_.get_reduced_leaf_count()) {
       break;
     }
     if (components_[trios_[i][0]] != components_[trios_[i][1]] ||
@@ -258,7 +248,7 @@ bool SCIILP::update() {
 
   // for (auto &&quartet : quartets) {
   for (; i < quartets_.size(); ++i) {
-    if (counter > input_.get_reduced_leaf_count() / 2) {
+    if (counter > input_.get_reduced_leaf_count()) {
       break;
     }
     if (components_[quartets_[i][0]] != components_[quartets_[i][1]] ||
