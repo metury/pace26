@@ -1,3 +1,4 @@
+2026-06-25 14:12:20 -- Instead of looking for trios and quartets every time, find all and sort them. Then proceed similarly as in previous submission.
 2026-06-23 21:25:32 -- Added symmetry breaking constrais. Otherwise same as before.
 2026-06-23 11:34:52 -- Added priorities in branching. Limit for lengths of trios and quartets as 2*log_2(|TAXA|) for the first. Then take all.
 2026-06-22 16:51:31 -- Limit for trios and quartets is based on |TAXA|, divided by 3 and 2 respectively. Moreover 4*2^run limit for path lengths (hence multiplied by 3 and 4 respectively).
