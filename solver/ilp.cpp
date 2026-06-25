@@ -2,7 +2,6 @@
 #include "scip/scip_sol.h"
 #include "tree.h"
 #include "utils.h"
-#include <set>
 #include <vector>
 
 /// SCIILP
@@ -15,24 +14,13 @@ SCIILP::SCIILP(Input &input)
   SCIPcreateProbBasic(scip_, "PACE2026 - MAF");
   SCIPsetIntParam(scip_, "display/verblevel", 0);
   components_ = std::vector<int>(input_.get_leaf_count() + 1, 1);
-  trios_ = std::vector<std::array<int, 4>>();
-  quartets_ = std::vector<std::array<int, 5>>();
-  input_.compute_trios_quartets(trios_, quartets_, limit_, components_, true);
+  trios_ = std::vector<Trio>();
+  quartets_ = std::vector<Quartet>();
+  input_.compute_trios_quartets(trios_, quartets_);
   std::sort(trios_.begin(), trios_.end(),
-            [](const auto &a, const auto &b) { return a[3] < b[3]; });
+            [](const auto &a, const auto &b) { return a.size < b.size; });
   std::sort(quartets_.begin(), quartets_.end(),
-            [](const auto &a, const auto &b) { return a[4] < b[4]; });
-  // trios_ = std::vector<std::array<int, 3>>();
-  // quartets_ = std::vector<std::array<int, 4>>();
-  // std::transform(trios.begin(), trios.end(), std::back_inserter(trios_),
-  //                [](const std::array<int, 4> &arr4) {
-  //                  return std::array<int, 3>{arr4[0], arr4[1], arr4[2]};
-  //                });
-  // std::transform(
-  //     quartets.begin(), quartets.end(), std::back_inserter(quartets_),
-  //     [](const std::array<int, 5> &arr4) {
-  //       return std::array<int, 4>{arr4[0], arr4[1], arr4[2], arr4[3]};
-  //     });
+            [](const auto &a, const auto &b) { return a.size < b.size; });
 }
 
 SCIILP::~SCIILP() {
@@ -45,12 +33,8 @@ SCIILP::~SCIILP() {
 }
 
 void SCIILP::initialize() {
-  // auto trios = std::vector<std::tuple<int, int, int>>();
-  // auto quartets = std::vector<std::tuple<int, int, int, int>>();
-  // input_.compute_trios_quartets(trios, quartets, limit_, components_,
-  //                               all_constraints);
-  auto forks = std::vector<std::tuple<int, int, int>>();
-  auto extended_forks = std::vector<std::array<int, 7>>();
+  auto forks = std::vector<Fork>();
+  auto extended_forks = std::vector<ExtendedFork>();
   input_.compute_breakable_forks(forks, extended_forks);
   auto number_of_edges = input_.get_node_count();
   auto number_of_rows = trios_.size() + quartets_.size() + 1 + forks.size();
@@ -61,8 +45,6 @@ void SCIILP::initialize() {
   vars_.resize(number_of_edges);
   for (int col = 0; col < number_of_edges; ++col) {
     std::string name = "e_" + std::to_string(col + 1);
-    // SCIPcreateVarBasic(scip, var, name, lower_bound, upper_bound, obj_cost,
-    // vartype)
     SCIPcreateVarBasic(scip_, &vars_[col], name.c_str(), 0.0, 1.0, 1.0,
                        SCIP_VARTYPE_BINARY);
     SCIPaddVar(scip_, vars_[col]);
@@ -79,28 +61,26 @@ void SCIILP::initialize() {
     SCIPreleaseCons(scip_, &cons);
   }
 
-  for (auto &&fork : extended_forks) {
+  for (auto &&[a, b, c, d, e, f, g] : extended_forks) {
     SCIP_CONS *cons;
     SCIPcreateConsBasicLinear(scip_, &cons, "extended_fork_cons", 0, nullptr,
                               nullptr, 0.0, 4.0);
-    SCIPaddCoefLinear(scip_, cons, vars_[fork[0] - 1], 2.0);
-    SCIPaddCoefLinear(scip_, cons, vars_[fork[1] - 1], 2.0);
-    SCIPaddCoefLinear(scip_, cons, vars_[fork[2] - 1], 2.0);
-    SCIPaddCoefLinear(scip_, cons, vars_[fork[3] - 1], 1.0);
-    SCIPaddCoefLinear(scip_, cons, vars_[fork[4] - 1], 1.0);
-    SCIPaddCoefLinear(scip_, cons, vars_[fork[5] - 1], 1.0);
-    SCIPaddCoefLinear(scip_, cons, vars_[fork[6] - 1], 1.0);
+    SCIPaddCoefLinear(scip_, cons, vars_[a - 1], 2.0);
+    SCIPaddCoefLinear(scip_, cons, vars_[b - 1], 2.0);
+    SCIPaddCoefLinear(scip_, cons, vars_[c - 1], 2.0);
+    SCIPaddCoefLinear(scip_, cons, vars_[d - 1], 1.0);
+    SCIPaddCoefLinear(scip_, cons, vars_[e - 1], 1.0);
+    SCIPaddCoefLinear(scip_, cons, vars_[f - 1], 1.0);
+    SCIPaddCoefLinear(scip_, cons, vars_[g - 1], 1.0);
     SCIPaddCons(scip_, cons);
     SCIPreleaseCons(scip_, &cons);
   }
 
   for (int i = 0; i < trios_.size(); ++i) {
-    if (i > input_.get_reduced_leaf_count() && trios_[i][3] > limit_) {
+    if (i > input_.get_reduced_leaf_count() && trios_[i].size > limit_) {
       break;
     }
-    auto trio = std::make_tuple(trios_[i][0], trios_[i][1], trios_[i][2]);
-    // for (auto &&trio : trios) {
-    auto edges = tree->get_trio_edges(trio);
+    auto edges = tree->get_trio_edges(trios_[i]);
     auto local_bound =
         edges.size() - 1 < upper_limit_ ? edges.size() - 1 : upper_limit_;
     SCIP_CONS *cons;
@@ -114,13 +94,10 @@ void SCIILP::initialize() {
   }
 
   for (int i = 0; i < quartets_.size(); ++i) {
-    if (i > input_.get_reduced_leaf_count() && quartets_[i][3] > limit_) {
+    if (i > input_.get_reduced_leaf_count() && quartets_[i].size > limit_) {
       break;
     }
-    auto quartet = std::make_tuple(quartets_[i][0], quartets_[i][1],
-                                   quartets_[i][2], quartets_[i][3]);
-    // for (auto &&quartet : quartets) {
-    auto edges = tree->get_quartet_edges(quartet);
+    auto edges = tree->get_quartet_edges(quartets_[i]);
     auto local_bound =
         edges.size() < upper_limit_ ? edges.size() : upper_limit_;
     SCIP_CONS *cons;
@@ -217,19 +194,17 @@ bool SCIILP::update() {
   bool end = true;
   int i = 0;
   int counter = 0;
-  // for (auto &&trio : trios) {
   for (int i = 0; i < trios_.size(); ++i) {
     if (counter > input_.get_reduced_leaf_count()) {
       break;
     }
-    if (components_[trios_[i][0]] != components_[trios_[i][1]] ||
-        components_[trios_[i][0]] != components_[trios_[i][2]]) {
+    if (components_[trios_[i].a] != components_[trios_[i].b] ||
+        components_[trios_[i].a] != components_[trios_[i].c]) {
       continue;
     }
     end = false;
     counter += 1;
-    auto trio = std::make_tuple(trios_[i][0], trios_[i][1], trios_[i][2]);
-    auto edges = tree->get_trio_edges(trio);
+    auto edges = tree->get_trio_edges(trios_[i]);
     auto local_bound =
         edges.size() - 1 < upper_limit_ ? edges.size() - 1 : upper_limit_;
     SCIP_CONS *cons;
@@ -251,15 +226,13 @@ bool SCIILP::update() {
     if (counter > input_.get_reduced_leaf_count()) {
       break;
     }
-    if (components_[quartets_[i][0]] != components_[quartets_[i][1]] ||
-        components_[quartets_[i][2]] != components_[quartets_[i][3]]) {
+    if (components_[quartets_[i].a] != components_[quartets_[i].b] ||
+        components_[quartets_[i].x] != components_[quartets_[i].y]) {
       continue;
     }
     end = false;
     counter += 1;
-    auto quartet = std::make_tuple(quartets_[i][0], quartets_[i][1],
-                                   quartets_[i][2], quartets_[i][3]);
-    auto edges = tree->get_quartet_edges(quartet);
+    auto edges = tree->get_quartet_edges(quartets_[i]);
     auto local_bound =
         edges.size() - 1 < upper_limit_ ? edges.size() - 1 : upper_limit_;
     SCIP_CONS *cons;

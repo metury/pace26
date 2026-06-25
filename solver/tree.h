@@ -6,6 +6,7 @@
 #define tree_h_
 
 #include "node.h"
+#include "utils.h"
 #include <iostream>
 #include <memory>
 #include <ostream>
@@ -56,12 +57,11 @@ public:
   /// Get violated edges for a trio.
   /// @param trio Which trio is violated.
   /// @return Set of edges that has to be in a constraint.
-  std::set<int> get_trio_edges(const std::tuple<int, int, int> &trio) const;
+  std::set<int> get_trio_edges(const Trio &trio) const;
   /// Get violated edges for a quartet.
   /// @param quartet Which quartet is violated.
   /// @return Set of edges that has to be in a constraint.
-  std::set<int>
-  get_quartet_edges(const std::tuple<int, int, int, int> &quartet) const;
+  std::set<int> get_quartet_edges(const Quartet &quartet) const;
   /// Check if paths between a-b and x-y intersect or not.
   /// @param a Vertex a.
   /// @param b Vertex b.
@@ -162,16 +162,10 @@ public:
   /// Compute all incompatible trios and quartets
   /// @param trios List of all incompatible trios.
   /// @param quartets List of all incompatible quartets.
-  /// @param limit WHat is the limit of number of constraints.
-  /// @param components Connected components of taxa.
-  /// @param all_constraints Whether we want to add all constraints.
-  void compute_trios_quartets(std::vector<std::array<int, 4>> &trios,
-                              std::vector<std::array<int, 5>> &quartets,
-                              int limit, const std::vector<int> &components,
-                              bool all_constraints);
-  void compute_breakable_forks(
-      std::vector<std::tuple<int, int, int>> &forks,
-      std::vector<std::array<int, 7>> &extended_forks) const;
+  void compute_trios_quartets(std::vector<Trio> &trios,
+                              std::vector<Quartet> &quartets);
+  void compute_breakable_forks(std::vector<Fork> &forks,
+                               std::vector<ExtendedFork> &extended_forks) const;
   /// Delete lca tables for every tree.
   void delete_lca_tables();
   /// Get all contracted parts from the input tree.

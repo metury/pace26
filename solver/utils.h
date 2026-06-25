@@ -46,4 +46,22 @@ template <typename... Ints> void decrement_to_zero(Ints &...args) {
 template <typename... Ints> bool has_positive(Ints &...args) {
   return (... || (args > 0));
 }
+
+struct Trio {
+  int a, b, c;
+  int size;
+};
+
+struct Quartet {
+  int a, b, x, y;
+  int size;
+};
+
+struct Fork {
+  int a, b, c;
+};
+
+struct ExtendedFork {
+  int a, b, c, d, e, f, g;
+};
 #endif

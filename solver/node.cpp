@@ -2,7 +2,6 @@
 #include <iostream>
 #include <memory>
 #include <string>
-#include <tuple>
 #include <unordered_map>
 #include <utility>
 
@@ -89,11 +88,10 @@ void Node::consolidate() {
 }
 
 std::array<int, 3>
-Node::compute_forks(std::vector<std::tuple<int, int, int>> &forks,
-                    std::vector<std::array<int, 7>> &extended_forks) const {
+Node::compute_forks(std::vector<Fork> &forks,
+                    std::vector<ExtendedFork> &extended_forks) const {
   if (type_ == INTERNAL) {
-    forks.push_back(
-        std::make_tuple(value_, left_->get_value(), right_->get_value()));
+    forks.push_back({value_, left_->get_value(), right_->get_value()});
     auto left_fork = left_->compute_forks(forks, extended_forks);
     auto right_fork = right_->compute_forks(forks, extended_forks);
     if (left_fork[0] != 0 && right_fork[0] != 0) {

@@ -69,10 +69,9 @@ std::set<int> Tree::get_leafs() const {
   return leafs;
 }
 
-std::set<int>
-Tree::get_trio_edges(const std::tuple<int, int, int> &trio) const {
+std::set<int> Tree::get_trio_edges(const Trio &trio) const {
   std::set<int> edges;
-  auto [a, b, c] = trio;
+  auto [a, b, c, size] = trio;
   auto node_a_b = lca_query(a, b);
   auto node_ab_c = lca_query(a, b, c);
   auto node_a = get_leaf(a);
@@ -85,10 +84,9 @@ Tree::get_trio_edges(const std::tuple<int, int, int> &trio) const {
   return edges;
 }
 
-std::set<int>
-Tree::get_quartet_edges(const std::tuple<int, int, int, int> &quartet) const {
+std::set<int> Tree::get_quartet_edges(const Quartet &quartet) const {
   std::set<int> edges;
-  auto [a, b, c, d] = quartet;
+  auto [a, b, c, d, size] = quartet;
   auto node_a_b = lca_query(a, b);
   auto node_c_d = lca_query(c, d);
   auto node_a = get_leaf(a);
@@ -245,62 +243,38 @@ void Input::compute_all_lca() {
   }
 }
 
-void Input::compute_trios_quartets(std::vector<std::array<int, 4>> &trios,
-                                   std::vector<std::array<int, 5>> &quartets,
-                                   int limit,
-                                   const std::vector<int> &components,
-                                   bool all_constraints) {
-  // std::vector<std::pair<int, int>> counters = std::vector<std::pair<int,
-  // int>>(
-  //     n_ + 1, std::make_pair(get_reduced_leaf_count() / 3,
-  //                            get_reduced_leaf_count() / 2));
+void Input::compute_trios_quartets(std::vector<Trio> &trios,
+                                   std::vector<Quartet> &quartets) {
   auto tree1 = trees_[0].get();
   for (auto a = 1; a <= get_leaf_count(); ++a) {
     if (excluded_leafs_.contains(a))
       continue;
     for (auto b = a + 1; b <= get_leaf_count(); ++b) {
-      if (excluded_leafs_.contains(b) || components[a] != components[b])
+      if (excluded_leafs_.contains(b))
         continue;
       for (auto c = 1; c <= get_leaf_count(); ++c) {
         if (excluded_leafs_.contains(c) || c == b || c == a)
           continue;
-        bool my_limit = true;
-        // has_positive(counters[a].first, counters[b].first,
-        //                            counters[c].first);
-        if (components[a] == components[c] && (my_limit) &&
-            tree1->has_disjoint_trio(a, b, c)) {
+        if (tree1->has_disjoint_trio(a, b, c)) {
           for (auto &&tree2 : get_trees()) {
             if (!tree2->has_disjoint_trio(a, b, c)) {
-              auto trio = std::make_tuple(a, b, c);
-              int nr_of_edges = tree1->get_trio_edges(trio).size();
-              if (all_constraints || nr_of_edges <= 2 * limit) {
-                trios.push_back({a, b, c, nr_of_edges});
-                //     decrement_to_zero(counters[a].first, counters[b].first,
-                //                       counters[c].first);
-              }
+              Trio trio = {a, b, c, 0};
+              trio.size = tree1->get_trio_edges(trio).size();
+              trios.push_back(trio);
               break;
             }
           }
         }
         if (c >= a + 1) {
           for (auto d = c + 1; d <= get_leaf_count(); ++d) {
-            // my_limit = has_positive(counters[a].second, counters[b].second,
-            //                         counters[c].second, counters[d].second);
-            if (d == a || d == b || excluded_leafs_.contains(d) ||
-                components[d] != components[c] || (!my_limit))
+            if (d == a || d == b || excluded_leafs_.contains(d))
               continue;
             if (tree1->has_disjoint_paths(a, b, c, d)) {
               for (auto &&tree2 : get_trees()) {
                 if (!tree2->has_disjoint_paths(a, b, c, d)) {
-                  auto quartet = std::make_tuple(a, b, c, d);
-                  int nr_of_edges = tree1->get_quartet_edges(quartet).size();
-                  if (all_constraints || nr_of_edges <= 2 * limit) {
-                    quartets.push_back({a, b, c, d, nr_of_edges});
-                    //        decrement_to_zero(counters[a].second,
-                    //        counters[b].second,
-                    //                          counters[c].second,
-                    //                          counters[d].second);
-                  }
+                  Quartet quartet = {a, b, c, d, 0};
+                  quartet.size = tree1->get_quartet_edges(quartet).size();
+                  quartets.push_back(quartet);
                   break;
                 }
               }
@@ -313,8 +287,7 @@ void Input::compute_trios_quartets(std::vector<std::array<int, 4>> &trios,
 }
 
 void Input::compute_breakable_forks(
-    std::vector<std::tuple<int, int, int>> &forks,
-    std::vector<std::array<int, 7>> &extended_forks) const {
+    std::vector<Fork> &forks, std::vector<ExtendedFork> &extended_forks) const {
   trees_[0]->get_root()->compute_forks(forks, extended_forks);
 }
 
