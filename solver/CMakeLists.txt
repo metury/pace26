@@ -17,13 +17,11 @@ target_compile_options(pace PUBLIC -O3)
 
 target_include_directories(pace PRIVATE
     $ENV{HOME}/.musl/include
-    $ENV{HOME}/.musl/highs
 )
 
 target_link_directories(pace PRIVATE
     $ENV{HOME}/.musl/lib
     $ENV{HOME}/.musl/zlib
-    $ENV{HOME}/.musl/highs/lib
 )
 
 target_link_options(pace PRIVATE -static -march=haswell)
@@ -36,6 +34,5 @@ target_link_libraries(pace PRIVATE
     gmp
     z
     zimpl
-    highs
     -Wl,--end-group
 )
