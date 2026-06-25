@@ -4,9 +4,9 @@
 #include "utils.h"
 #include <vector>
 
-/// SCIILP
+/// ILP
 
-SCIILP::SCIILP(Input &input)
+ILP::ILP(Input &input)
     : input_(input), limit_(2 * std::log2(input.get_reduced_leaf_count())),
       upper_limit_(input_.get_reduced_leaf_count() - 2) {
   SCIPcreate(&scip_);
@@ -23,7 +23,7 @@ SCIILP::SCIILP(Input &input)
             [](const auto &a, const auto &b) { return a.size < b.size; });
 }
 
-SCIILP::~SCIILP() {
+ILP::~ILP() {
   if (scip_ != nullptr) {
     for (auto var : vars_) {
       SCIPreleaseVar(scip_, &var);
@@ -32,7 +32,7 @@ SCIILP::~SCIILP() {
   }
 }
 
-void SCIILP::initialize() {
+void ILP::initialize() {
   auto forks = std::vector<Fork>();
   auto extended_forks = std::vector<ExtendedFork>();
   input_.compute_breakable_forks(forks, extended_forks);
@@ -120,7 +120,7 @@ void SCIILP::initialize() {
   SCIPreleaseCons(scip_, &cons_all);
 }
 
-void SCIILP::set_components(const std::vector<std::unique_ptr<Tree>> &output) {
+void ILP::set_components(const std::vector<std::unique_ptr<Tree>> &output) {
   auto tree_count = 0;
   for (auto &&tree : output) {
     if (!tree->is_empty()) {
@@ -133,7 +133,7 @@ void SCIILP::set_components(const std::vector<std::unique_ptr<Tree>> &output) {
   }
 }
 
-void SCIILP::set_priorities() const {
+void ILP::set_priorities() const {
   for (int i = 0; i < vars_.size(); ++i) {
     SCIP_VAR *var = vars_[i];
 
@@ -146,7 +146,7 @@ void SCIILP::set_priorities() const {
   }
 }
 
-std::set<int> SCIILP::run() {
+std::set<int> ILP::run() {
   std::cout << "# Solving ILP with " << YELLOW << SCIPgetNConss(scip_) << RESET
             << " constraints and " << YELLOW << SCIPgetNVars(scip_) << RESET
             << " variables." << std::endl;
@@ -186,7 +186,7 @@ std::set<int> SCIILP::run() {
   return edges_to_erase;
 }
 
-bool SCIILP::update() {
+bool ILP::update() {
   auto tree = input_.get_trees().at(0).get();
 
   SCIPfreeTransform(scip_);

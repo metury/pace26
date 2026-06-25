@@ -12,7 +12,7 @@
 #include <set>
 #include <vector>
 
-class SCIILP {
+class ILP {
 private:
   SCIP *scip_ = nullptr;
   std::vector<SCIP_VAR *> vars_;
@@ -27,8 +27,8 @@ private:
   std::vector<Quartet> quartets_;
 
 public:
-  SCIILP(Input &input);
-  ~SCIILP(); // Important: SCIP requires manual memory cleanup
+  ILP(Input &input);
+  ~ILP(); // Important: SCIP requires manual memory cleanup
   /// initialize the ilp with first constraints.
   void initialize();
   /// run the current ilp.
