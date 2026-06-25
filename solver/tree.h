@@ -155,8 +155,7 @@ public:
   /// Assign numbers to all trees.
   void assign_numbers();
   /// Contract all cherries.
-  /// @return True if everything was contracted to single leaf only.
-  bool contract_cherries();
+  void contract_cherries();
   /// Compute all LCA values for all trees.
   void compute_all_lca();
   /// Compute all incompatible trios and quartets

@@ -8,7 +8,7 @@
 
 ILP::ILP(Input &input)
     : input_(input), limit_(2 * std::log2(input.get_reduced_leaf_count())),
-      upper_limit_(input_.get_reduced_leaf_count() - 2) {
+      upper_limit_(std::max(input_.get_reduced_leaf_count() - 2, 0)) {
   SCIPcreate(&scip_);
   SCIPincludeDefaultPlugins(scip_);
   SCIPcreateProbBasic(scip_, "PACE2026 - MAF");

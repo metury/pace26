@@ -291,7 +291,7 @@ void Input::compute_breakable_forks(
   trees_[0]->get_root()->compute_forks(forks, extended_forks);
 }
 
-bool Input::contract_cherries() {
+void Input::contract_cherries() {
   contract_cherries_(trees_[0]->get_root());
   compute_all_lca();
   for (auto &&[key, val] : contracted_) {
@@ -303,7 +303,6 @@ bool Input::contract_cherries() {
   }
   std::cout << "# Number of leafs reduced by " << RED << excluded_leafs_.size()
             << RESET << std::endl;
-  return excluded_leafs_.size() + 1 == get_leaf_count();
 }
 
 void Input::contract_cherries_(Node *n) {
