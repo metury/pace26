@@ -406,7 +406,8 @@ bool SCIILP::update() {
   int counter = 0;
   // for (auto &&trio : trios) {
   for (int i = 0; i < trios_.size(); ++i) {
-    if (counter > input_.get_reduced_leaf_count()) {
+    if (counter > input_.get_reduced_leaf_count() &&
+        trios_[i][3] > 2 * limit_) {
       break;
     }
     if (components_[trios_[i][0]] != components_[trios_[i][1]] ||
@@ -435,7 +436,8 @@ bool SCIILP::update() {
 
   // for (auto &&quartet : quartets) {
   for (; i < quartets_.size(); ++i) {
-    if (counter > input_.get_reduced_leaf_count()) {
+    if (counter > input_.get_reduced_leaf_count() &&
+        quartets_[i][4] > 2 * limit_) {
       break;
     }
     if (components_[quartets_[i][0]] != components_[quartets_[i][1]] ||
