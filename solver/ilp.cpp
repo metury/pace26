@@ -3,9 +3,8 @@
 /// ILP
 
 ILP::ILP(Input &input)
-    : input_(input), limit_(std::log2(input.get_reduced_leaf_count())),
-      upper_limit_(std::max(input_.get_reduced_leaf_count() - 2, 0)),
-      counter_(1) {
+    : input_(input), limit_(2 * std::log2(input.get_reduced_leaf_count())),
+      upper_limit_(std::max(input_.get_reduced_leaf_count() - 2, 0)) {
   SCIPcreate(&scip_);
   SCIPincludeDefaultPlugins(scip_);
   SCIPcreateProbBasic(scip_, "PACE2026 - MAF");
@@ -83,9 +82,9 @@ void ILP::initialize() {
       std::exp2(std::log2(trios_.size() + quartets_.size()) / 2);
 
   for (int i = 0; i < trios_.size(); ++i) {
-    if (i > number_of_constraints) {
-      break; // Take at least N of them. Take all constraints of length at most
-             // limit_.
+    if (i > number_of_constraints && trios_[i].size > limit_) {
+      break; // Take at least N of them. Take all constraints of length at
+      // most limit_.
     }
     auto edges = tree->get_trio_edges(trios_[i]);
     int edges_size = edges.size() - 1;
@@ -101,7 +100,7 @@ void ILP::initialize() {
   }
 
   for (int i = 0; i < quartets_.size(); ++i) {
-    if (i > number_of_constraints) {
+    if (i > number_of_constraints && quartets_[i].size > limit_) {
       break; // Take at least N of them. Take all constraints of length at most
              // limit_.
     }
@@ -202,7 +201,6 @@ bool ILP::update() {
 
   bool end = true;
   int counter = 0;
-  ++counter_;
 
   for (auto &&trio : trios_) {
     // if (counter > input_.get_reduced_leaf_count() &&

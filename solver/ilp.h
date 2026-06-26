@@ -48,7 +48,6 @@ private:
   std::vector<Trio> trios_;
   /// List of all incomaptible quartets.
   std::vector<Quartet> quartets_;
-  unsigned counter_;
 };
 
 #endif
