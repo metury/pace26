@@ -3,8 +3,9 @@
 /// ILP
 
 ILP::ILP(Input &input)
-    : input_(input), limit_(2 * std::log2(input.get_reduced_leaf_count())),
-      upper_limit_(std::max(input_.get_reduced_leaf_count() - 2, 0)) {
+    : input_(input), limit_(std::log2(input.get_reduced_leaf_count())),
+      upper_limit_(std::max(input_.get_reduced_leaf_count() - 2, 0)),
+      counter_(1) {
   SCIPcreate(&scip_);
   SCIPincludeDefaultPlugins(scip_);
   SCIPcreateProbBasic(scip_, "PACE2026 - MAF");
@@ -19,6 +20,9 @@ ILP::ILP(Input &input)
             [](const auto &a, const auto &b) { return a.size < b.size; });
   std::sort(quartets_.begin(), quartets_.end(),
             [](const auto &a, const auto &b) { return a.size < b.size; });
+  std::cout << "# Number of trios: " << trios_.size()
+            << " and quartets: " << quartets_.size()
+            << " together: " << trios_.size() + quartets_.size() << std::endl;
 }
 
 ILP::~ILP() {
@@ -75,8 +79,11 @@ void ILP::initialize() {
     SCIPreleaseCons(scip_, &cons);
   }
 
+  auto number_of_constraints =
+      std::exp2(std::log2(trios_.size() + quartets_.size()) / 2);
+
   for (int i = 0; i < trios_.size(); ++i) {
-    if (i > input_.get_reduced_leaf_count() && trios_[i].size > limit_) {
+    if (i > number_of_constraints) {
       break; // Take at least N of them. Take all constraints of length at most
              // limit_.
     }
@@ -94,7 +101,7 @@ void ILP::initialize() {
   }
 
   for (int i = 0; i < quartets_.size(); ++i) {
-    if (i > input_.get_reduced_leaf_count() && quartets_[i].size > limit_) {
+    if (i > number_of_constraints) {
       break; // Take at least N of them. Take all constraints of length at most
              // limit_.
     }
@@ -195,9 +202,11 @@ bool ILP::update() {
 
   bool end = true;
   int counter = 0;
+  ++counter_;
 
   for (auto &&trio : trios_) {
-    // if (counter > input_.get_reduced_leaf_count()) {
+    // if (counter > input_.get_reduced_leaf_count() &&
+    //     trio.size > counter_ * limit_) {
     //   break; // At most N constraints.
     // }
     if (components_[trio.a] != components_[trio.b] ||
@@ -223,7 +232,8 @@ bool ILP::update() {
   counter = 0;
 
   for (auto &&quartet : quartets_) {
-    // if (counter > input_.get_reduced_leaf_count()) {
+    // if (counter > input_.get_reduced_leaf_count() &&
+    //     quartet.size > counter_ * limit_) {
     //   break; // At most N constraints.
     // }
     if (components_[quartet.a] != components_[quartet.b] ||

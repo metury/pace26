@@ -4,13 +4,13 @@ So far only few things were done... More will follow.
 
 ## Compilation and other staff
 
-To compile use cmake and then make. Afterwards you may run the program. Inputs are assumed to be in files presented as arguments.
+To compile use cmake. Afterwards you may run the program.
 
 ```bash
 mkdir build
 cmake -B build
 cmake --build build
-./build/pace input1 input2 ...
+cat input_file | ./build/pace
 ```
 
 To keep consistency of the code you could use the following.

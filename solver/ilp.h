@@ -1,7 +1,7 @@
 /// @file ilp.h
 /// @brief Creating and running ILP.
 /// Definition and computation of the ILP. Also solving the ILP itself.
-/// Used solver: highs.dev
+/// Used solver: https://www.scipopt.org/
 #ifndef ilp_h_
 #define ilp_h_
 
@@ -48,6 +48,7 @@ private:
   std::vector<Trio> trios_;
   /// List of all incomaptible quartets.
   std::vector<Quartet> quartets_;
+  unsigned counter_;
 };
 
 #endif
