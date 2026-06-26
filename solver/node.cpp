@@ -1,4 +1,5 @@
 #include "node.h"
+#include <ios>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -102,6 +103,19 @@ Node::compute_forks(std::vector<Fork> &forks,
     return {value_, left_->get_value(), right_->get_value()};
   }
   return {0, 0, 0};
+}
+
+void Node::compute_fake_cherries(
+    std::vector<std::pair<int, int>> &cherries) const {
+  if (type_ == INTERNAL) {
+    if (left_->is_leaf() && right_->is_leaf()) {
+      cherries.push_back(
+          std::make_pair(left_->get_value(), right_->get_value()));
+    } else {
+      left_->compute_fake_cherries(cherries);
+      right_->compute_fake_cherries(cherries);
+    }
+  }
 }
 
 std::unordered_map<int, Node *>

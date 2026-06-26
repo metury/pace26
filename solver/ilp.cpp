@@ -38,8 +38,10 @@ void ILP::initialize() {
   auto extended_forks = std::vector<ExtendedFork>();
   input_.compute_breakable_forks(forks, extended_forks);
 
+  // auto cherries = std::vector<Fork>();
+  // input_.compute_fake_cherries(cherries);
+
   auto number_of_edges = input_.get_node_count();
-  auto number_of_rows = trios_.size() + quartets_.size() + 1 + forks.size();
   auto tree = input_.get_trees().at(0).get();
 
   SCIPsetObjsense(scip_, SCIP_OBJSENSE_MINIMIZE);
@@ -78,14 +80,26 @@ void ILP::initialize() {
     SCIPreleaseCons(scip_, &cons);
   }
 
+  // for (auto &&[a, b, c] : cherries) {
+  //   SCIP_CONS *cons;
+  //   std::cout << a << ">" << b << ">" << c << std::endl;
+  //   SCIPcreateConsBasicLinear(scip_, &cons, "fake_cherry_cons", 0, nullptr,
+  //                             nullptr, 1.0, 3.0);
+  //   SCIPaddCoefLinear(scip_, cons, vars_[a - 1], 1.0);
+  //   SCIPaddCoefLinear(scip_, cons, vars_[b - 1], 1.0);
+  //   SCIPaddCoefLinear(scip_, cons, vars_[c - 1], 1.0);
+  //   SCIPaddCons(scip_, cons);
+  //   SCIPreleaseCons(scip_, &cons);
+  // }
+
   auto number_of_constraints =
       std::exp2(std::log2(trios_.size() + quartets_.size()) / 2);
 
   for (int i = 0; i < trios_.size(); ++i) {
-    if (i > number_of_constraints && trios_[i].size > limit_) {
-      break; // Take at least N of them. Take all constraints of length at
-      // most limit_.
-    }
+    // if (i > number_of_constraints && trios_[i].size > limit_) {
+    //   break; // Take at least N of them. Take all constraints of length at
+    //   // most limit_.
+    // }
     auto edges = tree->get_trio_edges(trios_[i]);
     int edges_size = edges.size() - 1;
     auto local_bound = std::min(edges_size, upper_limit_);
@@ -202,30 +216,31 @@ bool ILP::update() {
   bool end = true;
   int counter = 0;
 
-  for (auto &&trio : trios_) {
-    // if (counter > input_.get_reduced_leaf_count() &&
-    //     trio.size > counter_ * limit_) {
-    //   break; // At most N constraints.
-    // }
-    if (components_[trio.a] != components_[trio.b] ||
-        components_[trio.a] != components_[trio.c]) {
-      continue; // Must be unsatisfied.
-    }
-    end = false;
-    ++counter;
-    auto edges = tree->get_trio_edges(trio);
-    int edges_size = edges.size() - 1;
-    auto local_bound = std::min(edges_size, upper_limit_);
-    SCIP_CONS *cons;
-    SCIPcreateConsBasicLinear(scip_, &cons, "update_trio", 0, nullptr, nullptr,
-                              1.0, local_bound);
-    for (int edge : edges) {
-      SCIPaddCoefLinear(scip_, cons, vars_[edge], 1.0);
-    }
-    SCIP_RETCODE status = SCIPaddCons(scip_, cons);
-    assert(status == SCIP_OKAY);
-    SCIPreleaseCons(scip_, &cons);
-  }
+  // for (auto &&trio : trios_) {
+  //   // if (counter > input_.get_reduced_leaf_count() &&
+  //   //     trio.size > counter_ * limit_) {
+  //   //   break; // At most N constraints.
+  //   // }
+  //   if (components_[trio.a] != components_[trio.b] ||
+  //       components_[trio.a] != components_[trio.c]) {
+  //     continue; // Must be unsatisfied.
+  //   }
+  //   end = false;
+  //   ++counter;
+  //   auto edges = tree->get_trio_edges(trio);
+  //   int edges_size = edges.size() - 1;
+  //   auto local_bound = std::min(edges_size, upper_limit_);
+  //   SCIP_CONS *cons;
+  //   SCIPcreateConsBasicLinear(scip_, &cons, "update_trio", 0, nullptr,
+  //   nullptr,
+  //                             1.0, local_bound);
+  //   for (int edge : edges) {
+  //     SCIPaddCoefLinear(scip_, cons, vars_[edge], 1.0);
+  //   }
+  //   SCIP_RETCODE status = SCIPaddCons(scip_, cons);
+  //   assert(status == SCIP_OKAY);
+  //   SCIPreleaseCons(scip_, &cons);
+  // }
 
   counter = 0;
 

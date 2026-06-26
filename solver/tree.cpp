@@ -100,6 +100,28 @@ std::set<int> Tree::get_quartet_edges(const Quartet &quartet) const {
   return edges;
 }
 
+Fork Tree::get_cherry_edges(int a, int b) const {
+  auto node_a = get_leaf(a);
+  auto node_b = get_leaf(b);
+  auto lca = lca_query(a, b);
+  auto parent = node_a->get_parent();
+  auto third = parent->get_left();
+  if (third == node_a) {
+    third = parent->get_right();
+  }
+  if (parent == lca) {
+    parent = node_b->get_parent();
+    third = parent->get_left();
+    if (third == node_b) {
+      third = parent->get_right();
+    }
+  }
+  if (third == node_a) {
+    third = node_a->get_parent();
+  }
+  return {a, b, third->get_value()};
+}
+
 bool Tree::has_disjoint_paths(int a, int b, int x, int y) const {
   bool result = lca_query(a, b) != lca_query(x, y);
   if (!result) {
@@ -289,6 +311,17 @@ void Input::compute_trios_quartets(std::vector<Trio> &trios,
 void Input::compute_breakable_forks(
     std::vector<Fork> &forks, std::vector<ExtendedFork> &extended_forks) const {
   trees_[0]->get_root()->compute_forks(forks, extended_forks);
+}
+
+void Input::compute_fake_cherries(std::vector<Fork> &edges) const {
+  auto tree = trees_[0].get();
+  for (int i = 1; i < trees_.size(); ++i) {
+    std::vector<std::pair<int, int>> cherries;
+    trees_[i]->compute_fake_cherries(cherries);
+    for (auto &&[a, b] : cherries) {
+      edges.push_back(tree->get_cherry_edges(a, b));
+    }
+  }
 }
 
 void Input::contract_cherries() {

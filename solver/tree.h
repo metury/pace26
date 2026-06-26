@@ -37,6 +37,10 @@ public:
   /// Compute both leaf pointers and lca values.
   /// @param number_of_nodes How many nodes does the tree have.
   void compute_lca_leafs(int number_of_nodes);
+  inline void
+  compute_fake_cherries(std::vector<std::pair<int, int>> &cherries) const {
+    root_->compute_fake_cherries(cherries);
+  }
   /// Delete LCA table to reduce memory consumption.
   inline void delete_lca_table() { lca_table_ = {}; }
   /// Add all edges between the nodes.
@@ -62,6 +66,7 @@ public:
   /// @param quartet Which quartet is violated.
   /// @return Set of edges that has to be in a constraint.
   std::set<int> get_quartet_edges(const Quartet &quartet) const;
+  Fork get_cherry_edges(int a, int b) const;
   /// Check if paths between a-b and x-y intersect or not.
   /// @param a Vertex a.
   /// @param b Vertex b.
@@ -165,6 +170,7 @@ public:
                               std::vector<Quartet> &quartets);
   void compute_breakable_forks(std::vector<Fork> &forks,
                                std::vector<ExtendedFork> &extended_forks) const;
+  void compute_fake_cherries(std::vector<Fork> &cherries) const;
   /// Delete lca tables for every tree.
   void delete_lca_tables();
   /// Get all contracted parts from the input tree.

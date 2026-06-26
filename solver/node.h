@@ -66,6 +66,7 @@ public:
   std::array<int, 3>
   compute_forks(std::vector<Fork> &forks,
                 std::vector<ExtendedFork> &extended_forks) const;
+  void compute_fake_cherries(std::vector<std::pair<int, int>> &cherries) const;
   /// Compute both LCA tables and pointers to all leafs.
   /// @param lca_table LCA table for all pairs.
   /// @return A map of pointers to all leafs.
