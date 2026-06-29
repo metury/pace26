@@ -114,7 +114,7 @@ void ILP::initialize() {
   }
 
   for (int i = 0; i < quartets_.size(); ++i) {
-    if (i > number_of_constraints && quartets_[i].size > limit_) {
+    if (i > number_of_constraints || quartets_[i].size > limit_) {
       break; // Take at least N of them. Take all constraints of length at most
              // limit_.
     }
