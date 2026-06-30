@@ -19,9 +19,6 @@ ILP::ILP(Input &input)
             [](const auto &a, const auto &b) { return a.size < b.size; });
   std::sort(quartets_.begin(), quartets_.end(),
             [](const auto &a, const auto &b) { return a.size < b.size; });
-  std::cout << "# Number of trios: " << trios_.size()
-            << " and quartets: " << quartets_.size()
-            << " together: " << trios_.size() + quartets_.size() << std::endl;
 }
 
 ILP::~ILP() {
@@ -37,9 +34,6 @@ void ILP::initialize() {
   auto forks = std::vector<Fork>();
   auto extended_forks = std::vector<ExtendedFork>();
   input_.compute_breakable_forks(forks, extended_forks);
-
-  // auto cherries = std::vector<Fork>();
-  // input_.compute_fake_cherries(cherries);
 
   auto number_of_edges = input_.get_node_count();
   auto tree = input_.get_trees().at(0).get();
@@ -80,26 +74,15 @@ void ILP::initialize() {
     SCIPreleaseCons(scip_, &cons);
   }
 
-  // for (auto &&[a, b, c] : cherries) {
-  //   SCIP_CONS *cons;
-  //   std::cout << a << ">" << b << ">" << c << std::endl;
-  //   SCIPcreateConsBasicLinear(scip_, &cons, "fake_cherry_cons", 0, nullptr,
-  //                             nullptr, 1.0, 3.0);
-  //   SCIPaddCoefLinear(scip_, cons, vars_[a - 1], 1.0);
-  //   SCIPaddCoefLinear(scip_, cons, vars_[b - 1], 1.0);
-  //   SCIPaddCoefLinear(scip_, cons, vars_[c - 1], 1.0);
-  //   SCIPaddCons(scip_, cons);
-  //   SCIPreleaseCons(scip_, &cons);
-  // }
-
   auto number_of_constraints =
       std::exp2(std::log2(trios_.size() + quartets_.size()) / 2);
 
   for (int i = 0; i < trios_.size(); ++i) {
-    // if (i > number_of_constraints && trios_[i].size > limit_) {
-    //   break; // Take at least N of them. Take all constraints of length at
-    //   // most limit_.
-    // }
+    if (/*i > number_of_constraints ||*/ trios_[i].size > limit_) {
+      break; // Take at least N of them. Take all constraints of length at
+      //  most limit_.
+    }
+    trios_[i].used = true;
     auto edges = tree->get_trio_edges(trios_[i]);
     int edges_size = edges.size() - 1;
     auto local_bound = std::min(edges_size, upper_limit_);
@@ -114,10 +97,11 @@ void ILP::initialize() {
   }
 
   for (int i = 0; i < quartets_.size(); ++i) {
-    if (i > number_of_constraints || quartets_[i].size > limit_) {
-      break; // Take at least N of them. Take all constraints of length at most
-             // limit_.
+    if (/*i > number_of_constraints ||*/ quartets_[i].size > limit_) {
+      break; // Take at least N of them. Take all constraints of length at
+      // most limit_.
     }
+    quartets_[i].used = true;
     auto edges = tree->get_quartet_edges(quartets_[i]);
     int edges_size = edges.size();
     auto local_bound = std::min(edges_size, upper_limit_);
@@ -155,13 +139,35 @@ void ILP::set_components(const std::vector<std::unique_ptr<Tree>> &output) {
 }
 
 void ILP::set_priorities() const {
+  auto counters = std::vector<unsigned>(input_.get_node_count(), 0);
+  auto tree = input_.get_trees().at(0).get();
+  for (auto &&trio : trios_) {
+    if (trio.used) {
+      auto edges = tree->get_trio_edges(trio);
+      for (auto &&edge : edges) {
+        ++counters[edge];
+      }
+    }
+  }
+  for (auto &&quartet : quartets_) {
+    if (quartet.used) {
+      auto edges = tree->get_quartet_edges(quartet);
+      for (auto &&edge : edges) {
+        ++counters[edge];
+      }
+    }
+  }
   for (int i = 0; i < vars_.size(); ++i) {
     SCIP_VAR *var = vars_[i];
 
-    int nlocks_down = SCIPvarGetNLocksDown(var);
-    int nlocks_up = SCIPvarGetNLocksUp(var);
+    int total_occurrences = counters[i];
 
-    int total_occurrences = nlocks_down + nlocks_up;
+    std::cout << "# Counter for " << i + 1 << " is " << counters[i]
+              << ", which "
+              << (counters[i] > input_.get_reduced_leaf_count() - 2 ? "is"
+                                                                    : "is not")
+              << " larger than n-2. And occurances: " << total_occurrences
+              << std::endl;
 
     SCIPchgVarBranchPriority(scip_, var, total_occurrences);
   }
@@ -216,44 +222,37 @@ bool ILP::update() {
   bool end = true;
   int counter = 0;
 
-  // for (auto &&trio : trios_) {
-  //   // if (counter > input_.get_reduced_leaf_count() &&
-  //   //     trio.size > counter_ * limit_) {
-  //   //   break; // At most N constraints.
-  //   // }
-  //   if (components_[trio.a] != components_[trio.b] ||
-  //       components_[trio.a] != components_[trio.c]) {
-  //     continue; // Must be unsatisfied.
-  //   }
-  //   end = false;
-  //   ++counter;
-  //   auto edges = tree->get_trio_edges(trio);
-  //   int edges_size = edges.size() - 1;
-  //   auto local_bound = std::min(edges_size, upper_limit_);
-  //   SCIP_CONS *cons;
-  //   SCIPcreateConsBasicLinear(scip_, &cons, "update_trio", 0, nullptr,
-  //   nullptr,
-  //                             1.0, local_bound);
-  //   for (int edge : edges) {
-  //     SCIPaddCoefLinear(scip_, cons, vars_[edge], 1.0);
-  //   }
-  //   SCIP_RETCODE status = SCIPaddCons(scip_, cons);
-  //   assert(status == SCIP_OKAY);
-  //   SCIPreleaseCons(scip_, &cons);
-  // }
+  for (auto &&trio : trios_) {
+    if (components_[trio.a] != components_[trio.b] ||
+        components_[trio.a] != components_[trio.c]) {
+      continue; // Must be unsatisfied.
+    }
+    end = false;
+    trio.used = true;
+    ++counter;
+    auto edges = tree->get_trio_edges(trio);
+    int edges_size = edges.size() - 1;
+    auto local_bound = std::min(edges_size, upper_limit_);
+    SCIP_CONS *cons;
+    SCIPcreateConsBasicLinear(scip_, &cons, "update_trio", 0, nullptr, nullptr,
+                              1.0, local_bound);
+    for (int edge : edges) {
+      SCIPaddCoefLinear(scip_, cons, vars_[edge], 1.0);
+    }
+    SCIP_RETCODE status = SCIPaddCons(scip_, cons);
+    assert(status == SCIP_OKAY);
+    SCIPreleaseCons(scip_, &cons);
+  }
 
   counter = 0;
 
   for (auto &&quartet : quartets_) {
-    // if (counter > input_.get_reduced_leaf_count() &&
-    //     quartet.size > counter_ * limit_) {
-    //   break; // At most N constraints.
-    // }
     if (components_[quartet.a] != components_[quartet.b] ||
         components_[quartet.x] != components_[quartet.y]) {
       continue; // Must be unsatisfied.
     }
     end = false;
+    quartet.used = true;
     ++counter;
     auto edges = tree->get_quartet_edges(quartet);
     int edges_size = edges.size();
