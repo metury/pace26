@@ -71,7 +71,7 @@ std::set<int> Tree::get_leafs() const {
 
 std::set<int> Tree::get_trio_edges(const Trio &trio) const {
   std::set<int> edges;
-  auto [a, b, c, size] = trio;
+  auto [a, b, c, size, used] = trio;
   auto node_a_b = lca_query(a, b);
   auto node_ab_c = lca_query(a, b, c);
   auto node_a = get_leaf(a);
@@ -86,7 +86,7 @@ std::set<int> Tree::get_trio_edges(const Trio &trio) const {
 
 std::set<int> Tree::get_quartet_edges(const Quartet &quartet) const {
   std::set<int> edges;
-  auto [a, b, c, d, size] = quartet;
+  auto [a, b, c, d, size, used] = quartet;
   auto node_a_b = lca_query(a, b);
   auto node_c_d = lca_query(c, d);
   auto node_a = get_leaf(a);

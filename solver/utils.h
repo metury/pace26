@@ -50,11 +50,13 @@ template <typename... Ints> bool has_positive(Ints &...args) {
 struct Trio {
   int a, b, c;
   int size;
+  bool used = false;
 };
 
 struct Quartet {
   int a, b, x, y;
   int size;
+  bool used = false;
 };
 
 struct Fork {
