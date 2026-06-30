@@ -1,3 +1,5 @@
+2026-06-30 09:44:05 -- Now adding proper priorities and returned break statements.
+2026-06-29 17:35:29 -- Actually changed priorities. **Forget to choose only constraints with length at most limit.**
 2026-06-29 10:23:42 -- All trios and 2 log_2(n)sized quartets *OR* at most 2^(log_2(#constr)/2) of them. Then take all unsatisfied quartets.
 2026-06-26 16:51:08 -- All trios and 2 log_2(n)sized quartets and at most 2^(log_2(#constr)/2) of them. Then take all unsatisfied quartets.
 2026-06-26 10:39:17 -- Changed number of constraints to be 2^(log_2(#constr)/2). Then take all unsatisfied.
