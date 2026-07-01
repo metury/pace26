@@ -168,6 +168,9 @@ public:
   /// @param quartets List of all incompatible quartets.
   void compute_trios_quartets(std::vector<Trio> &trios,
                               std::vector<Quartet> &quartets);
+  void compute_trios_quartets_h(std::vector<Trio> &trios,
+                                std::vector<Quartet> &quartets,
+                                std::vector<int> &components);
   void compute_breakable_forks(std::vector<Fork> &forks,
                                std::vector<ExtendedFork> &extended_forks) const;
   void compute_fake_cherries(std::vector<Fork> &cherries) const;

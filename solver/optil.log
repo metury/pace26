@@ -1,3 +1,4 @@
+-- Prioritization based on previous solutions. Initial trios and quartets of length at most 2log_2(n). Moreover counters per leafs, log(#constr). Remove used constr. Fork constr included.
 2026-06-30 09:44:05 -- Now adding proper priorities and returned break statements.
 2026-06-29 17:35:29 -- Actually changed priorities. **Forget to choose only constraints with length at most limit.**
 2026-06-29 10:23:42 -- All trios and 2 log_2(n)sized quartets *OR* at most 2^(log_2(#constr)/2) of them. Then take all unsatisfied quartets.

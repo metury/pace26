@@ -1,5 +1,6 @@
 #include "tree.h"
 #include "utils.h"
+#include <cmath>
 #include <cstddef>
 #include <iostream>
 #include <memory>
@@ -24,8 +25,7 @@ void Tree::consolidate() {
          (root_->get_left() == nullptr || root_->get_right() == nullptr)) {
     if (root_->get_left() == nullptr && root_->get_right() == nullptr) {
       root_ = std::nullptr_t();
-    }
-    if (root_->get_left() == nullptr) {
+    } else if (root_->get_left() == nullptr) {
       root_ = std::make_unique<Node>(std::move(*root_->remove_right()));
     } else {
       root_ = std::make_unique<Node>(std::move(*root_->remove_left()));
@@ -299,6 +299,51 @@ void Input::compute_trios_quartets(std::vector<Trio> &trios,
                   quartets.push_back(quartet);
                   break;
                 }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+void Input::compute_trios_quartets_h(std::vector<Trio> &trios,
+                                     std::vector<Quartet> &quartets,
+                                     std::vector<int> &components) {
+  auto tree1 = trees_[0].get();
+  auto tree2 = trees_[1].get();
+  for (auto a = 1; a <= get_leaf_count(); ++a) {
+    if (excluded_leafs_.contains(a))
+      continue;
+    for (auto b = a + 1; b <= get_leaf_count(); ++b) {
+      if (excluded_leafs_.contains(b) || b <= a)
+        continue;
+      for (auto c = 1; c <= get_leaf_count(); ++c) {
+        bool satisfied =
+            components[a] != components[b] || components[b] != components[c];
+        if (excluded_leafs_.contains(c) || c == b || c == a) {
+          continue;
+        }
+        if (tree1->has_disjoint_trio(a, b, c)) {
+          if (!tree2->has_disjoint_trio(a, b, c) && !satisfied) {
+            Trio trio = {a, b, c};
+            trios.push_back(trio);
+            break;
+          }
+        }
+        if (c >= a + 1) {
+          for (auto d = c + 1; d <= get_leaf_count(); ++d) {
+            bool satisfied = components[a] != components[b] ||
+                             components[d] != components[c];
+            if (d == a || d == b || excluded_leafs_.contains(d) || satisfied) {
+              continue;
+            }
+            if (tree1->has_disjoint_paths(a, b, c, d)) {
+              if (!tree2->has_disjoint_paths(a, b, c, d)) {
+                Quartet quartet = {a, b, c, d};
+                quartets.push_back(quartet);
+                break;
               }
             }
           }

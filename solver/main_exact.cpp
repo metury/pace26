@@ -6,14 +6,14 @@ int main(int argc, char **argv) {
     input.compute_all_lca();
     input.contract_cherries();
 
-    auto ilp = ILP(input);
+    auto ilp = ILP(input, false);
     ilp.initialize();
 
     std::set<int> edges_to_erase;
     std::vector<std::unique_ptr<Tree>> output;
 
     do {
-      // ilp.set_priorities();
+      ilp.set_priorities();
       edges_to_erase = ilp.run();
       output = input.remove_edges(edges_to_erase);
       ilp.set_components(output);

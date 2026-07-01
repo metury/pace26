@@ -6,7 +6,7 @@ int main(int argc, char **argv) {
     input.compute_all_lca();
     input.contract_cherries();
 
-    auto ilp = ILP(input);
+    auto ilp = ILP(input, true);
     ilp.initialize();
 
     std::set<int> edges_to_erase;
@@ -19,14 +19,17 @@ int main(int argc, char **argv) {
       ilp.set_components(output);
     } while (ilp.update());
 
+    auto result = 0;
+
     for (auto &&tree : output) {
       if (!tree->is_empty()) {
+        ++result;
         tree->write(input.get_contractions());
       }
     }
 
-    std::cout << "# Size of the solution: " << VIOLET
-              << edges_to_erase.size() + 1 << RESET << "." << std::endl;
+    std::cout << "# Size of the solution: " << VIOLET << result << RESET << "."
+              << std::endl;
     return 0;
   } catch (...) {
     std::cerr << "# Something went wrong." << std::endl;

@@ -6,6 +6,7 @@
 #define ilp_h_
 
 #include "tree.h"
+#include "utils.h"
 #include <scip/scip.h>
 #include <scip/scipdefplugins.h>
 
@@ -14,9 +15,11 @@ class ILP {
 public:
   /// Default constructor based on the input.
   /// @param input Which input to use.
-  ILP(Input &input);
+  ILP(Input &input, bool heuristics);
   /// Destructor for the SCIP environment.
   ~ILP();
+  void add_trio_constr(Trio &t);
+  void add_quartet_constr(Quartet &q);
   /// Initialize the ilp with first constraints.
   void initialize();
   /// Run the current ilp.
@@ -48,6 +51,8 @@ private:
   std::vector<Trio> trios_;
   /// List of all incomaptible quartets.
   std::vector<Quartet> quartets_;
+  bool heuristics_;
+  std::vector<int> priorities_;
 };
 
 #endif

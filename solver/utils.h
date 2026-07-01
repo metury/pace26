@@ -49,13 +49,13 @@ template <typename... Ints> bool has_positive(Ints &...args) {
 
 struct Trio {
   int a, b, c;
-  int size;
+  int size = 0;
   bool used = false;
 };
 
 struct Quartet {
   int a, b, x, y;
-  int size;
+  int size = 0;
   bool used = false;
 };
 
