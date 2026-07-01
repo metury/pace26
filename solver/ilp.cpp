@@ -1,4 +1,5 @@
 #include "ilp.h"
+#include <random>
 
 /// ILP
 
@@ -74,11 +75,10 @@ void ILP::initialize() {
     SCIPreleaseCons(scip_, &cons);
   }
 
-  auto number_of_constraints =
-      std::exp2(std::log2(trios_.size() + quartets_.size()) / 2);
+  auto number_of_constraints = std::exp2(std::log2(trios_.size()) / 2);
 
   for (int i = 0; i < trios_.size(); ++i) {
-    if (/*i > number_of_constraints ||*/ trios_[i].size > limit_) {
+    if (i > number_of_constraints && trios_[i].size > limit_) {
       break; // Take at least N of them. Take all constraints of length at
       //  most limit_.
     }
@@ -96,8 +96,10 @@ void ILP::initialize() {
     SCIPreleaseCons(scip_, &cons);
   }
 
+  number_of_constraints = std::exp2(std::log2(quartets_.size()) / 2);
+
   for (int i = 0; i < quartets_.size(); ++i) {
-    if (/*i > number_of_constraints ||*/ quartets_[i].size > limit_) {
+    if (i > number_of_constraints && quartets_[i].size > limit_) {
       break; // Take at least N of them. Take all constraints of length at
       // most limit_.
     }
@@ -157,19 +159,12 @@ void ILP::set_priorities() const {
       }
     }
   }
-  for (int i = 0; i < vars_.size(); ++i) {
+  for (int i = 1; i < input_.get_leaf_count() + 1; ++i) {
     SCIP_VAR *var = vars_[i];
 
     int total_occurrences = counters[i];
 
-    std::cout << "# Counter for " << i + 1 << " is " << counters[i]
-              << ", which "
-              << (counters[i] > input_.get_reduced_leaf_count() - 2 ? "is"
-                                                                    : "is not")
-              << " larger than n-2. And occurances: " << total_occurrences
-              << std::endl;
-
-    SCIPchgVarBranchPriority(scip_, var, total_occurrences);
+    SCIPchgVarBranchPriority(scip_, var, std::min(1, total_occurrences));
   }
 }
 
@@ -218,16 +213,24 @@ bool ILP::update() {
   auto tree = input_.get_trees().at(0).get();
 
   SCIPfreeTransform(scip_);
-
   bool end = true;
   int counter = 0;
 
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  double n = input_.get_reduced_leaf_count();
+  double p = n / trios_.size();
+  std::bernoulli_distribution d(p);
+
   for (auto &&trio : trios_) {
-    if (components_[trio.a] != components_[trio.b] ||
-        components_[trio.a] != components_[trio.c]) {
-      continue; // Must be unsatisfied.
+    bool pass = d(gen);
+    bool satisfied = components_[trio.a] != components_[trio.b] ||
+                     components_[trio.a] != components_[trio.c];
+    if (trio.used || (satisfied && !pass)) {
+      continue;
     }
-    end = false;
+
+    end = end && satisfied;
     trio.used = true;
     ++counter;
     auto edges = tree->get_trio_edges(trio);
@@ -245,13 +248,17 @@ bool ILP::update() {
   }
 
   counter = 0;
+  p = n / quartets_.size();
+  d = std::bernoulli_distribution(p);
 
   for (auto &&quartet : quartets_) {
-    if (components_[quartet.a] != components_[quartet.b] ||
-        components_[quartet.x] != components_[quartet.y]) {
-      continue; // Must be unsatisfied.
+    bool pass = d(gen);
+    bool satisfied = components_[quartet.a] != components_[quartet.b] ||
+                     components_[quartet.x] != components_[quartet.y];
+    if (quartet.used || (satisfied && !pass)) {
+      continue;
     }
-    end = false;
+    end = end && satisfied;
     quartet.used = true;
     ++counter;
     auto edges = tree->get_quartet_edges(quartet);
