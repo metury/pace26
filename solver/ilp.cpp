@@ -2,31 +2,20 @@
 #include "scip/scip_numerics.h"
 #include "scip/type_var.h"
 #include "utils.h"
-#include <ios>
-#include <utility>
 
 /// ILP
 
-ILP::ILP(Input &input, bool heuristics)
+ILP::ILP(Input &input)
     : input_(input), limit_(2 * std::log2(input.get_reduced_leaf_count())),
-      upper_limit_(std::max(input_.get_reduced_leaf_count() - 2, 0)),
-      heuristics_(heuristics), priorities_(input_.get_node_count(), 0) {
-  SCIPcreate(&scip_);
-  SCIPincludeDefaultPlugins(scip_);
-  SCIPcreateProbBasic(scip_, "PACE2026 - MAF");
-  SCIPsetIntParam(scip_, "display/verblevel", 0);
+      priorities_(input_.get_node_count(), 0) {
 
-  components_ = std::vector<int>(input_.get_leaf_count() + 1, 1);
-
-  if (!heuristics) {
-    trios_ = std::vector<Trio>();
-    quartets_ = std::vector<Quartet>();
-    input_.compute_trios_quartets(trios_, quartets_);
-    std::sort(trios_.begin(), trios_.end(),
-              [](const auto &a, const auto &b) { return a.size < b.size; });
-    std::sort(quartets_.begin(), quartets_.end(),
-              [](const auto &a, const auto &b) { return a.size < b.size; });
-  }
+  trios_ = std::vector<Trio>();
+  quartets_ = std::vector<Quartet>();
+  input_.compute_trios_quartets(trios_, quartets_);
+  std::sort(trios_.begin(), trios_.end(),
+            [](const auto &a, const auto &b) { return a.size < b.size; });
+  std::sort(quartets_.begin(), quartets_.end(),
+            [](const auto &a, const auto &b) { return a.size < b.size; });
 }
 
 ILP::~ILP() {
@@ -36,6 +25,43 @@ ILP::~ILP() {
     }
     SCIPfree(&scip_);
   }
+}
+
+void ILP::drop_ilp() {
+  if (scip_ != nullptr) {
+    for (auto var : vars_) {
+      SCIPreleaseVar(scip_, &var);
+    }
+    SCIPfree(&scip_);
+  }
+}
+
+void ILP::warm_start(std::set<int> &edges_to_erase) {
+  auto forks = std::vector<Fork>();
+  auto extended_forks = std::vector<ExtendedFork>();
+  input_.compute_breakable_forks(forks, extended_forks);
+  for (auto &&[a, b, c] : forks) {
+    if (edges_to_erase.contains(a) &&
+        (edges_to_erase.contains(b) || edges_to_erase.contains(c))) {
+      edges_to_erase.erase(a);
+      edges_to_erase.insert(b);
+      edges_to_erase.insert(c);
+    }
+  }
+  SCIP_SOL *sol;
+  SCIP_Bool stored;
+
+  SCIPcreateSol(scip_, &sol, NULL);
+
+  for (size_t i = 0; i < vars_.size(); ++i) {
+    SCIP_VAR *var = vars_[i];
+
+    double val = edges_to_erase.contains(i + 1) ? 1.0 : 0.0;
+
+    SCIPsetSolVal(scip_, sol, var, val);
+  }
+
+  SCIPaddSolFree(scip_, &sol, &stored);
 }
 
 void ILP::add_trio_constr(Trio &t) {
@@ -76,10 +102,14 @@ void ILP::add_quartet_constr(Quartet &q) {
   SCIPreleaseCons(scip_, &cons);
 }
 
-void ILP::initialize() {
-  auto forks = std::vector<Fork>();
-  auto extended_forks = std::vector<ExtendedFork>();
-  input_.compute_breakable_forks(forks, extended_forks);
+void ILP::initialize(int lb, int ub, bool h) {
+  heuristics_ = h;
+  upper_limit_ = ub;
+  SCIPcreate(&scip_);
+  SCIPincludeDefaultPlugins(scip_);
+  SCIPcreateProbBasic(scip_, "PACE2026 - MAF");
+  SCIPsetIntParam(scip_, "display/verblevel", 0);
+  components_ = std::vector<int>(input_.get_leaf_count() + 1, 1);
 
   auto number_of_edges = input_.get_node_count();
   auto tree = input_.get_trees().at(0).get();
@@ -89,17 +119,15 @@ void ILP::initialize() {
   vars_.resize(number_of_edges);
   for (int col = 0; col < number_of_edges; ++col) {
     std::string name = "e_" + std::to_string(col + 1);
-    if (heuristics_) {
-      SCIPcreateVarBasic(scip_, &vars_[col], name.c_str(), 0.0, 1.0, 1.0,
-                         SCIP_VARTYPE_CONTINUOUS);
-    } else {
-      SCIPcreateVarBasic(scip_, &vars_[col], name.c_str(), 0.0, 1.0, 1.0,
-                         SCIP_VARTYPE_BINARY);
-    }
+    SCIPcreateVarBasic(scip_, &vars_[col], name.c_str(), 0.0, 1.0, 1.0,
+                       SCIP_VARTYPE_BINARY);
     SCIPaddVar(scip_, vars_[col]);
   }
 
   if (!heuristics_) {
+    auto forks = std::vector<Fork>();
+    auto extended_forks = std::vector<ExtendedFork>();
+    input_.compute_breakable_forks(forks, extended_forks);
     for (auto &&[a, b, c] : forks) {
       SCIP_CONS *cons;
       SCIPcreateConsBasicLinear(scip_, &cons, "fork_cons", 0, nullptr, nullptr,
@@ -111,22 +139,17 @@ void ILP::initialize() {
       SCIPreleaseCons(scip_, &cons);
     }
 
-    // for (auto &&[a, b, c, d, e, f, g] : extended_forks) {
-    //   SCIP_CONS *cons;
-    //   SCIPcreateConsBasicLinear(scip_, &cons, "extended_fork_cons", 0,
-    //   nullptr,
-    //                             nullptr, 0.0, 4.0);
-    //   SCIPaddCoefLinear(scip_, cons, vars_[a - 1], 2.0);
-    //   SCIPaddCoefLinear(scip_, cons, vars_[b - 1], 2.0);
-    //   SCIPaddCoefLinear(scip_, cons, vars_[c - 1], 2.0);
-    //   SCIPaddCoefLinear(scip_, cons, vars_[d - 1], 1.0);
-    //   SCIPaddCoefLinear(scip_, cons, vars_[e - 1], 1.0);
-    //   SCIPaddCoefLinear(scip_, cons, vars_[f - 1], 1.0);
-    //   SCIPaddCoefLinear(scip_, cons, vars_[g - 1], 1.0);
-    //   SCIPaddCons(scip_, cons);
-    //   SCIPreleaseCons(scip_, &cons);
-    // }
-
+    for (auto &&trio : trios_) {
+      if (trio.used) {
+        add_trio_constr(trio);
+      }
+    }
+    for (auto &&quartet : quartets_) {
+      if (quartet.used) {
+        add_quartet_constr(quartet);
+      }
+    }
+  } else {
     auto number_of_constraints = std::max(2.0, std::log2(trios_.size()));
     std::vector<int> counters(input_.get_leaf_count() + 1,
                               number_of_constraints);
@@ -161,21 +184,27 @@ void ILP::initialize() {
                           counters[quartets_[i].x], counters[quartets_[i].y]);
       }
     }
-  } else {
-    trios_ = {};
-    quartets_ = {};
-    input_.compute_trios_quartets_h(trios_, quartets_, components_);
-    for (auto &&trio : trios_) {
-      add_trio_constr(trio);
-    }
-    for (auto &&quartet : quartets_) {
-      add_quartet_constr(quartet);
-    }
   }
+
+  // for (auto &&[a, b, c, d, e, f, g] : extended_forks) {
+  //   SCIP_CONS *cons;
+  //   SCIPcreateConsBasicLinear(scip_, &cons, "extended_fork_cons", 0,
+  //   nullptr,
+  //                             nullptr, 0.0, 4.0);
+  //   SCIPaddCoefLinear(scip_, cons, vars_[a - 1], 2.0);
+  //   SCIPaddCoefLinear(scip_, cons, vars_[b - 1], 2.0);
+  //   SCIPaddCoefLinear(scip_, cons, vars_[c - 1], 2.0);
+  //   SCIPaddCoefLinear(scip_, cons, vars_[d - 1], 1.0);
+  //   SCIPaddCoefLinear(scip_, cons, vars_[e - 1], 1.0);
+  //   SCIPaddCoefLinear(scip_, cons, vars_[f - 1], 1.0);
+  //   SCIPaddCoefLinear(scip_, cons, vars_[g - 1], 1.0);
+  //   SCIPaddCons(scip_, cons);
+  //   SCIPreleaseCons(scip_, &cons);
+  // }
 
   SCIP_CONS *cons_all;
   SCIPcreateConsBasicLinear(scip_, &cons_all, "all_edges", 0, nullptr, nullptr,
-                            0.0, upper_limit_);
+                            lb, upper_limit_);
   for (int a = 0; a < vars_.size(); ++a) {
     SCIPaddCoefLinear(scip_, cons_all, vars_[a], 1.0);
   }
@@ -242,25 +271,11 @@ std::set<int> ILP::run() {
             << std::endl;
 
   std::set<int> edges_to_erase;
-  if (heuristics_) {
-    std::vector<std::pair<int, double>> values;
-    for (int col = 0; col < vars_.size(); col++) {
-      values.push_back(
-          std::make_pair(SCIPgetSolVal(scip_, solution, vars_[col]), col + 1));
-    }
-    std::sort(values.begin(), values.end(),
-              [](const auto &a, const auto &b) { return a.first > b.first; });
-    obj_val = std::ceil(obj_val);
-    for (int i = 0; i < obj_val; ++i) {
-      edges_to_erase.insert(values[i].second);
-    }
-  } else {
-    for (int col = 0; col < vars_.size(); col++) {
-      auto val = SCIPgetSolVal(scip_, solution, vars_[col]);
-      if (is_approx_one(val)) {
-        edges_to_erase.insert(col + 1);
-        priorities_[col] += 1;
-      }
+  for (int col = 0; col < vars_.size(); col++) {
+    auto val = SCIPgetSolVal(scip_, solution, vars_[col]);
+    if (is_approx_one(val)) {
+      edges_to_erase.insert(col + 1);
+      priorities_[col] += 1;
     }
   }
 
@@ -298,18 +313,6 @@ bool ILP::update() {
   auto tree = input_.get_trees().at(0).get();
 
   SCIPfreeTransform(scip_);
-  if (heuristics_) {
-    trios_ = {};
-    quartets_ = {};
-    input_.compute_trios_quartets_h(trios_, quartets_, components_);
-    for (auto &&trio : trios_) {
-      add_trio_constr(trio);
-    }
-    for (auto &&quartet : quartets_) {
-      add_quartet_constr(quartet);
-    }
-    return !(trios_.empty() && quartets_.empty());
-  }
 
   bool end = true;
 
@@ -342,8 +345,10 @@ bool ILP::update() {
     }
   }
 
-  std::erase_if(trios_, [](const auto &a) { return a.used; });
-  std::erase_if(quartets_, [](const auto &a) { return a.used; });
+  if (!heuristics_) {
+    std::erase_if(trios_, [](const auto &a) { return a.used; });
+    std::erase_if(quartets_, [](const auto &a) { return a.used; });
+  }
 
   return !end;
 }

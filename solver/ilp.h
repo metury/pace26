@@ -15,13 +15,15 @@ class ILP {
 public:
   /// Default constructor based on the input.
   /// @param input Which input to use.
-  ILP(Input &input, bool heuristics);
+  ILP(Input &input);
   /// Destructor for the SCIP environment.
   ~ILP();
+  void drop_ilp();
+  void warm_start(std::set<int> &edges_to_erase);
   void add_trio_constr(Trio &t);
   void add_quartet_constr(Quartet &q);
   /// Initialize the ilp with first constraints.
-  void initialize();
+  void initialize(int lb, int up, bool h);
   /// Run the current ilp.
   /// @return Set of edges that should be deleted.
   std::set<int> run();
