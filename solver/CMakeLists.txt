@@ -11,24 +11,24 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(SHARED_SOURCES utils.cpp node.cpp tree.cpp ilp.cpp)
 
-add_executable(pace_exact main_exact.cpp ${SHARED_SOURCES})
+add_executable(pace main.cpp ${SHARED_SOURCES})
 
-target_compile_features(pace_exact PUBLIC cxx_std_20)
+target_compile_features(pace PUBLIC cxx_std_20)
 
-target_compile_options(pace_exact PUBLIC -O3)
+target_compile_options(pace PUBLIC -O3)
 
-target_include_directories(pace_exact PRIVATE
+target_include_directories(pace PRIVATE
     $ENV{HOME}/.musl/include
 )
 
-target_link_directories(pace_exact PRIVATE
+target_link_directories(pace PRIVATE
     $ENV{HOME}/.musl/lib
     $ENV{HOME}/.musl/zlib
 )
 
-target_link_options(pace_exact PRIVATE -static -march=haswell)
+target_link_options(pace PRIVATE -static -march=haswell)
 
-target_link_libraries(pace_exact PRIVATE
+target_link_libraries(pace PRIVATE
     -Wl,--start-group
     scip
     soplex
