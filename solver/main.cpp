@@ -6,18 +6,42 @@ int main(int argc, char **argv) {
     input.compute_all_lca();
     input.contract_cherries();
 
-    auto ilp = ILP(input, false);
-    ilp.initialize();
+    auto ilp = ILP(input);
+    auto bound = std::max(0, input.get_reduced_leaf_count() - 2);
+    ilp.initialize(0, bound, true);
 
     std::set<int> edges_to_erase;
     std::vector<std::unique_ptr<Tree>> output;
 
     do {
-      ilp.set_priorities();
+      // ilp.set_priorities();
       edges_to_erase = ilp.run();
+      int size = edges_to_erase.size();
+      bound = std::min(bound, size);
       output = input.remove_edges(edges_to_erase);
       ilp.set_components(output);
     } while (ilp.update());
+
+    auto sol_size = 0;
+
+    for (auto &&tree : output) {
+      if (!tree->is_empty()) {
+        ++sol_size;
+      }
+    }
+
+    if (sol_size != bound) {
+      ilp.drop_ilp();
+      ilp.initialize(bound, sol_size, false);
+      ilp.warm_start(edges_to_erase);
+
+      do {
+        // ilp.set_priorities();
+        edges_to_erase = ilp.run();
+        output = input.remove_edges(edges_to_erase);
+        ilp.set_components(output);
+      } while (ilp.update());
+    }
 
     for (auto &&tree : output) {
       if (!tree->is_empty()) {
