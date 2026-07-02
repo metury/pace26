@@ -1,4 +1,5 @@
 #include "ilp.h"
+#include "utils.h"
 
 int main(int argc, char **argv) {
   try {
@@ -13,8 +14,9 @@ int main(int argc, char **argv) {
     std::set<int> edges_to_erase;
     std::vector<std::unique_ptr<Tree>> output;
 
+    std::cout << "# Solving in a " << CYAN << "heuristic" << RESET << " mode."
+              << std::endl;
     do {
-      // ilp.set_priorities();
       edges_to_erase = ilp.run();
       int size = edges_to_erase.size();
       bound = std::min(bound, size);
@@ -22,7 +24,7 @@ int main(int argc, char **argv) {
       ilp.set_components(output);
     } while (ilp.update());
 
-    auto sol_size = 0;
+    auto sol_size = -1;
 
     for (auto &&tree : output) {
       if (!tree->is_empty()) {
@@ -30,13 +32,18 @@ int main(int argc, char **argv) {
       }
     }
 
+    auto heuristic_edges = edges_to_erase;
+
+    std::cout << "# Solving in a " << CYAN << "normal" << RESET << " mode."
+              << std::endl;
     if (sol_size != bound) {
       ilp.drop_ilp();
       ilp.initialize(bound, sol_size, false);
-      ilp.warm_start(edges_to_erase);
+      ilp.warm_start(heuristic_edges, true);
 
       do {
-        // ilp.set_priorities();
+        ilp.set_priorities();
+        ilp.warm_start(heuristic_edges, false);
         edges_to_erase = ilp.run();
         output = input.remove_edges(edges_to_erase);
         ilp.set_components(output);

@@ -36,16 +36,18 @@ void ILP::drop_ilp() {
   }
 }
 
-void ILP::warm_start(std::set<int> &edges_to_erase) {
-  auto forks = std::vector<Fork>();
-  auto extended_forks = std::vector<ExtendedFork>();
-  input_.compute_breakable_forks(forks, extended_forks);
-  for (auto &&[a, b, c] : forks) {
-    if (edges_to_erase.contains(a) &&
-        (edges_to_erase.contains(b) || edges_to_erase.contains(c))) {
-      edges_to_erase.erase(a);
-      edges_to_erase.insert(b);
-      edges_to_erase.insert(c);
+void ILP::warm_start(std::set<int> &edges_to_erase, bool repair) {
+  if (repair) {
+    auto forks = std::vector<Fork>();
+    auto extended_forks = std::vector<ExtendedFork>();
+    input_.compute_breakable_forks(forks, extended_forks);
+    for (auto &&[a, b, c] : forks) {
+      if (edges_to_erase.contains(a) &&
+          (edges_to_erase.contains(b) || edges_to_erase.contains(c))) {
+        edges_to_erase.erase(a);
+        edges_to_erase.insert(b);
+        edges_to_erase.insert(c);
+      }
     }
   }
   SCIP_SOL *sol;
@@ -124,6 +126,20 @@ void ILP::initialize(int lb, int ub, bool h) {
     SCIPaddVar(scip_, vars_[col]);
   }
 
+  auto constr = false;
+  for (auto &&trio : trios_) {
+    if (trio.used) {
+      add_trio_constr(trio);
+      constr = true;
+    }
+  }
+  for (auto &&quartet : quartets_) {
+    if (quartet.used) {
+      add_quartet_constr(quartet);
+      constr = true;
+    }
+  }
+
   if (!heuristics_) {
     auto forks = std::vector<Fork>();
     auto extended_forks = std::vector<ExtendedFork>();
@@ -138,18 +154,7 @@ void ILP::initialize(int lb, int ub, bool h) {
       SCIPaddCons(scip_, cons);
       SCIPreleaseCons(scip_, &cons);
     }
-
-    for (auto &&trio : trios_) {
-      if (trio.used) {
-        add_trio_constr(trio);
-      }
-    }
-    for (auto &&quartet : quartets_) {
-      if (quartet.used) {
-        add_quartet_constr(quartet);
-      }
-    }
-  } else {
+  } else if (!constr) {
     auto number_of_constraints = std::max(2.0, std::log2(trios_.size()));
     std::vector<int> counters(input_.get_leaf_count() + 1,
                               number_of_constraints);
@@ -275,7 +280,8 @@ std::set<int> ILP::run() {
     auto val = SCIPgetSolVal(scip_, solution, vars_[col]);
     if (is_approx_one(val)) {
       edges_to_erase.insert(col + 1);
-      priorities_[col] += 1;
+      if (!heuristics_)
+        priorities_[col] += 1;
     }
   }
 

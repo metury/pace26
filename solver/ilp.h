@@ -19,7 +19,7 @@ public:
   /// Destructor for the SCIP environment.
   ~ILP();
   void drop_ilp();
-  void warm_start(std::set<int> &edges_to_erase);
+  void warm_start(std::set<int> &edges_to_erase, bool repair);
   void add_trio_constr(Trio &t);
   void add_quartet_constr(Quartet &q);
   /// Initialize the ilp with first constraints.
