@@ -4,6 +4,7 @@
 #ifndef utils_h_
 #define utils_h_
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -70,5 +71,19 @@ struct Quartet {
 /// Structure holding Fork.
 struct Fork {
   uint16_t parent, left, right;
+};
+
+struct LcaTable {
+private:
+  std::vector<uint16_t> values_;
+  size_t n_;
+
+public:
+  explicit LcaTable(size_t n) : n_(n), values_(n * n, 0) {}
+
+  inline uint16_t &at(uint16_t i, uint16_t j) { return values_[i * n_ + j]; }
+  inline uint16_t &at(uint16_t i, uint16_t j, uint16_t k) {
+    return at(at(i, j), k);
+  }
 };
 #endif

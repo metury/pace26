@@ -1,4 +1,5 @@
 #include "node.h"
+#include "utils.h"
 #include <cstdint>
 #include <ios>
 #include <iostream>
@@ -94,7 +95,7 @@ void Node::compute_forks(std::vector<Fork> &forks) const {
 }
 
 std::unordered_map<uint16_t, Node *>
-Node::compute_lca_leafs(std::vector<std::vector<uint16_t>> &lca_table) {
+Node::compute_lca_leafs(LcaTable &lca_table) {
   if (type_ == LEAF) {
     std::unordered_map<uint16_t, Node *> descendants;
     descendants.insert_or_assign(value_, this);
@@ -103,10 +104,13 @@ Node::compute_lca_leafs(std::vector<std::vector<uint16_t>> &lca_table) {
   auto left = left_->compute_lca_leafs(lca_table);
   auto right = right_->compute_lca_leafs(lca_table);
   for (auto &&[first, first_node] : left) {
-    lca_table[first][value_] = lca_table[value_][first] = this->get_value();
+    lca_table.at(first, value_) = lca_table.at(value_, first) =
+        this->get_value();
     for (auto &&[second, second_node] : right) {
-      lca_table[first][second] = lca_table[second][first] = this->get_value();
-      lca_table[second][value_] = lca_table[value_][second] = this->get_value();
+      lca_table.at(first, second) = lca_table.at(second, first) =
+          this->get_value();
+      lca_table.at(second, value_) = lca_table.at(value_, second) =
+          this->get_value();
     }
   }
   left.insert_or_assign(this->get_value(), this);

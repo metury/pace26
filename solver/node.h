@@ -69,8 +69,7 @@ public:
   /// Compute both LCA tables and pointers to all leafs.
   /// @param lca_table LCA table for all pairs.
   /// @return A map of pointers to all leafs.
-  std::unordered_map<uint16_t, Node *>
-  compute_lca_leafs(std::vector<std::vector<uint16_t>> &lca_table);
+  std::unordered_map<uint16_t, Node *> compute_lca_leafs(LcaTable &lca_table);
   /// Compute the depth below this node.
   /// @return Number of edges to the lowest leaf below this node.
   uint16_t get_depth() const;

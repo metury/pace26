@@ -15,7 +15,8 @@
 // == Tree                                                             ==
 // ======================================================================
 
-Tree::Tree(std::unique_ptr<Node> root) : root_(std::move(root)) {
+Tree::Tree(std::unique_ptr<Node> root, uint16_t n)
+    : root_(std::move(root)), lca_table_(n) {
   root_->set_parent(nullptr);
 }
 
@@ -48,9 +49,7 @@ void Tree::contract_cherry(uint16_t first, uint16_t second) {
   }
 }
 
-void Tree::compute_lca_leafs(uint16_t number_of_nodes) {
-  lca_table_ = std::vector<std::vector<uint16_t>>(
-      number_of_nodes, std::vector<uint16_t>(number_of_nodes, 1));
+void Tree::compute_lca_leafs() {
   descendants_ = root_->compute_lca_leafs(lca_table_);
 }
 
@@ -70,7 +69,7 @@ std::set<uint16_t> Tree::get_leafs() const {
   return leafs;
 }
 
-std::set<uint16_t> Tree::get_trio_edges(const Trio &trio) const {
+std::set<uint16_t> Tree::get_trio_edges(const Trio &trio) {
   std::set<uint16_t> edges;
   auto [a, b, c, size, used] = trio;
   auto node_a_b = lca_query(a, b);
@@ -85,7 +84,7 @@ std::set<uint16_t> Tree::get_trio_edges(const Trio &trio) const {
   return edges;
 }
 
-std::set<uint16_t> Tree::get_quartet_edges(const Quartet &quartet) const {
+std::set<uint16_t> Tree::get_quartet_edges(const Quartet &quartet) {
   std::set<uint16_t> edges;
   auto [a, b, c, d, size, used] = quartet;
   auto node_a_b = lca_query(a, b);
@@ -101,8 +100,7 @@ std::set<uint16_t> Tree::get_quartet_edges(const Quartet &quartet) const {
   return edges;
 }
 
-bool Tree::has_disjoint_paths(uint16_t a, uint16_t b, uint16_t x,
-                              uint16_t y) const {
+bool Tree::has_disjoint_paths(uint16_t a, uint16_t b, uint16_t x, uint16_t y) {
   bool result = lca_query(a, b) != lca_query(x, y);
   if (!result) {
     return false;
@@ -120,7 +118,7 @@ bool Tree::has_disjoint_paths(uint16_t a, uint16_t b, uint16_t x,
   }
 }
 
-bool Tree::has_disjoint_trio(uint16_t a, uint16_t b, uint16_t x) const {
+bool Tree::has_disjoint_trio(uint16_t a, uint16_t b, uint16_t x) {
   return lca_query(a, b) != lca_query(a, b, x);
 }
 
@@ -131,13 +129,12 @@ bool Tree::is_cherry(uint16_t first, uint16_t second) const {
          *node_a->get_parent() == *node_b->get_parent();
 }
 
-Node *Tree::lca_query(uint16_t first, uint16_t second) const {
-  return descendants_.at(lca_table_[first][second]);
+Node *Tree::lca_query(uint16_t first, uint16_t second) {
+  return descendants_.at(lca_table_.at(first, second));
 }
 
-Node *Tree::lca_query(uint16_t first, uint16_t second, uint16_t third) const {
-  auto first_second = lca_table_[first][second];
-  return descendants_.at(lca_table_[first_second][third]);
+Node *Tree::lca_query(uint16_t first, uint16_t second, uint16_t third) {
+  return descendants_.at(lca_table_.at(first, second, third));
 }
 
 void Tree::write(std::ostream &os,
@@ -167,7 +164,7 @@ Input::Input(std::istream &is) : chosen_tree_(0) {
         // Do not read tree decomposition!
       }
     } else if (!line.empty()) {
-      trees_.push_back(std::make_unique<Tree>());
+      trees_.push_back(std::make_unique<Tree>(get_node_count() + 1));
       std::istringstream iss(line);
       iss >> *(trees_.at(trees_.size() - 1).get());
     }
@@ -198,7 +195,7 @@ void Input::assign_numbers() {
 
 void Input::compute_lca_tables() {
   for (auto &&tree : trees_) {
-    tree->compute_lca_leafs(get_node_count() + 1);
+    tree->compute_lca_leafs();
   }
 }
 
@@ -311,7 +308,7 @@ Input::cut_edges(const std::set<uint16_t> &edges_to_remove) {
   output.push_back(std::make_unique<Node>(tree));
   cut_edges_recursive_(edges_to_remove, output, output.at(0).get());
   for (auto &&tree : output) {
-    trees.push_back(std::make_unique<Tree>(std::move(tree)));
+    trees.push_back(std::make_unique<Tree>(std::move(tree), 0));
   }
   for (auto &&tree : trees) {
     tree->consolidate();

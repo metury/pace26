@@ -7,6 +7,7 @@
 
 #include "node.h"
 #include "utils.h"
+#include <cstddef>
 #include <cstdint>
 #include <iostream>
 #include <memory>
@@ -20,10 +21,11 @@
 class Tree {
 public:
   /// Basic constructor with empty root.
-  inline Tree() : root_(std::make_unique<Node>()) {}
+  inline Tree(uint16_t n) : root_(std::make_unique<Node>()), lca_table_(n) {}
   /// Constructor with given root.
   /// @param root Which node will be the root.
-  Tree(std::unique_ptr<Node> root);
+  /// @param n Number of nodes total.
+  Tree(std::unique_ptr<Node> root, uint16_t n);
   /// Assign numbers to internal nodes.
   /// @param i Number of this tree.
   /// @param n Number of leafs.
@@ -37,8 +39,7 @@ public:
   /// @param second Label of the second leaf.
   void contract_cherry(uint16_t first, uint16_t second);
   /// Compute both leaf pointers and lca values.
-  /// @param number_of_nodes How many nodes does the tree have.
-  void compute_lca_leafs(uint16_t number_of_nodes);
+  void compute_lca_leafs();
   /// Compute the depth of this tree.
   /// @return The number of edges to the lowest leaf.
   inline uint16_t get_depth() const { return root_->get_depth(); }
@@ -60,24 +61,24 @@ public:
   /// Get violated edges for a trio.
   /// @param trio Which trio is violated.
   /// @return Set of edges that has to be in a constraint.
-  std::set<uint16_t> get_trio_edges(const Trio &trio) const;
+  std::set<uint16_t> get_trio_edges(const Trio &trio);
   /// Get violated edges for a quartet.
   /// @param quartet Which quartet is violated.
   /// @return Set of edges that has to be in a constraint.
-  std::set<uint16_t> get_quartet_edges(const Quartet &quartet) const;
+  std::set<uint16_t> get_quartet_edges(const Quartet &quartet);
   /// Check if paths between a-b and x-y intersect or not.
   /// @param a Vertex a.
   /// @param b Vertex b.
   /// @param x Vertex x.
   /// @param y Vertex y.
   /// @return If a-b and x-y paths intersect.
-  bool has_disjoint_paths(uint16_t a, uint16_t b, uint16_t x, uint16_t y) const;
+  bool has_disjoint_paths(uint16_t a, uint16_t b, uint16_t x, uint16_t y);
   /// Check if the provided trio a,b|x is proper or not.
   /// @param a Vertex a.
   /// @param b Vertex b.
   /// @param x Vertex x.
   /// @return True if x is not below a and b.
-  bool has_disjoint_trio(uint16_t a, uint16_t b, uint16_t x) const;
+  bool has_disjoint_trio(uint16_t a, uint16_t b, uint16_t x);
   /// Find if two leafs create a cherry.
   /// @param first Label of the first leaf.
   /// @param second Label of the second leaf.
@@ -90,13 +91,13 @@ public:
   /// @param first Label of the first leaf.
   /// @param second Label of the second leaf.
   /// @return Pointer to their common lca.
-  Node *lca_query(uint16_t first, uint16_t second) const;
+  Node *lca_query(uint16_t first, uint16_t second);
   /// Return a LCA node for three leafs.
   /// @param first Label of the first leaf.
   /// @param second Label of the second leaf.
   /// @param third Label of the third leaf.
   /// @return Pointer to their common lca.
-  Node *lca_query(uint16_t first, uint16_t second, uint16_t third) const;
+  Node *lca_query(uint16_t first, uint16_t second, uint16_t third);
   /// Output the tree to some stream in a Newick notation.
   /// @param os Which output stream to use.
   /// @param subst Which substitutions have to be propagated.
@@ -115,7 +116,7 @@ private:
   /// Rot of the tree.
   std::unique_ptr<Node> root_;
   /// LCA table.
-  std::vector<std::vector<uint16_t>> lca_table_;
+  LcaTable lca_table_;
 };
 
 /// Parse the tree from input stream in Newick format using `>>`.
