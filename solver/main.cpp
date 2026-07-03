@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
       ilp.warm_start(heuristic_edges, true);
 
       do {
-        ilp.set_priorities();
+        // ilp.set_priorities();
         ilp.warm_start(heuristic_edges, false);
         edges_to_erase = ilp.run();
         output = input.remove_edges(edges_to_erase);

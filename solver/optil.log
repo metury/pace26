@@ -1,3 +1,4 @@
+2026-07-03 10:14:59	-- No prioritisation.
 2026-07-02 16:14:49 -- Heuristic warm up.
 2026-07-01 16:30:42 -- Prioritization based on previous solutions. Initial trios and quartets of length at most 2log_2(n). Moreover counters per leafs, log(#constr). Remove used constr. Fork constr included.
 2026-06-30 09:44:05 -- Now adding proper priorities and returned break statements.
