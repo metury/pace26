@@ -6,6 +6,7 @@
 #define node_h_
 
 #include "utils.h"
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <ostream>
@@ -29,11 +30,11 @@ public:
   inline Node(Node *parent) : type_(LEAF), value_(0), parent_(parent) {}
   /// Constructor with known value.
   /// @param value Its initial value.
-  inline Node(int value) : type_(LEAF), value_(value), parent_(nullptr) {}
+  inline Node(uint16_t value) : type_(LEAF), value_(value), parent_(nullptr) {}
   /// Constructor with setting parent and value.
   /// @param parent Pointer to its parent.
   /// @param value Its initial value.
-  inline Node(Node *parent, int value)
+  inline Node(Node *parent, uint16_t value)
       : type_(LEAF), value_(value), parent_(parent) {}
   /// (Deep) Copy constructor.
   /// @param other The other node from which we copy.
@@ -60,7 +61,7 @@ public:
   Node *add_right();
   /// Assign numbers to all nodes including INTERNAL nodes by a predefined way.
   /// @param counter Which counter we are starting with.
-  int assign_numbers(int counter);
+  uint16_t assign_numbers(uint16_t counter);
   /// Force iterative contraction of all 2 degree inner vertices.
   void consolidate();
   /// Compute forks.
@@ -68,11 +69,11 @@ public:
   /// Compute both LCA tables and pointers to all leafs.
   /// @param lca_table LCA table for all pairs.
   /// @return A map of pointers to all leafs.
-  std::unordered_map<int, Node *>
-  compute_lca_leafs(std::vector<std::vector<int>> &lca_table);
+  std::unordered_map<uint16_t, Node *>
+  compute_lca_leafs(std::vector<std::vector<uint16_t>> &lca_table);
   /// Compute the depth below this node.
   /// @return Number of edges to the lowest leaf below this node.
-  int get_depth() const;
+  uint16_t get_depth() const;
   /// Get a pointer to the left descendant.
   /// @return Pointer (monitor) to its left descendant.
   inline Node *get_left() const { return left_.get(); }
@@ -87,10 +88,10 @@ public:
   inline NodeType get_type() const { return type_; }
   /// Get the value stored in this node.
   /// @return Its stored value.
-  inline int get_value() const { return value_; }
+  inline uint16_t get_value() const { return value_; }
   /// Get all leafs underneath this node.
   /// @param taxa Where to store found leafs.
-  void get_leafs(std::set<int> &taxa) const;
+  void get_leafs(std::set<uint16_t> &taxa) const;
   /// Return whether a node is a leaf or not.
   /// @return If the node is leaf or not.
   inline bool is_leaf() const { return type_ == LEAF; }
@@ -114,14 +115,14 @@ public:
   inline void set_type(NodeType type) { type_ = type; }
   /// Set value of current node.
   /// @param value Its new value.
-  inline void set_value(int value) { value_ = value; }
+  inline void set_value(uint16_t value) { value_ = value; }
   /// Write the node and its subtree with possible substitutions. Does not break
   /// on empty subtrees.
   /// @param os Which output stream to use.
   /// @param subst List of substitutions.
   void write_with_substitution(
       std::ostream &os,
-      const std::unordered_map<int, std::string> &subst) const;
+      const std::unordered_map<uint16_t, std::string> &subst) const;
 
 private:
   /// Left child.
@@ -133,7 +134,7 @@ private:
   /// Type of this node.
   NodeType type_;
   /// Value stored in this node.
-  int value_;
+  uint16_t value_;
 };
 
 /// Write current node in Newick format on an output stream by using `<<`.

@@ -7,6 +7,7 @@
 
 #include "node.h"
 #include "utils.h"
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <ostream>
@@ -26,7 +27,7 @@ public:
   /// Assign numbers to internal nodes.
   /// @param i Number of this tree.
   /// @param n Number of leafs.
-  inline void assign_numbers(int i, int n) {
+  inline void assign_numbers(uint8_t i, uint16_t n) {
     root_->assign_numbers(i * (n - 1) + 2);
   }
   /// Force contractions and remove empty branches.
@@ -34,54 +35,54 @@ public:
   /// Contract a cherry consisting of two nodes.
   /// @param first Label of the first leaf.
   /// @param second Label of the second leaf.
-  void contract_cherry(int first, int second);
+  void contract_cherry(uint16_t first, uint16_t second);
   /// Compute both leaf pointers and lca values.
   /// @param number_of_nodes How many nodes does the tree have.
-  void compute_lca_leafs(int number_of_nodes);
+  void compute_lca_leafs(uint16_t number_of_nodes);
   /// Compute the depth of this tree.
   /// @return The number of edges to the lowest leaf.
-  inline int get_depth() const { return root_->get_depth(); }
+  inline uint16_t get_depth() const { return root_->get_depth(); }
   /// Add all edges between the nodes.
   /// @param below Pointer to the node below.
   /// @param above Pointer to the node above.
   /// @param edges Where to store all such edges.
-  void get_edges(Node *below, Node *above, std::set<int> &edges) const;
+  void get_edges(Node *below, Node *above, std::set<uint16_t> &edges) const;
   /// Get pointer to a leaf by its label.
   /// @param value Label of that leaf.
   /// @return Pointer to such leaf.
-  inline Node *get_leaf(int value) const { return descendants_.at(value); }
+  inline Node *get_leaf(uint16_t value) const { return descendants_.at(value); }
   /// Get set of all taxa in this tree.
   /// @return Set of taxa present in this tree.
-  std::set<int> get_leafs() const;
+  std::set<uint16_t> get_leafs() const;
   /// Get pointer to the root node.
   /// @return Pointer to the root node.
   inline Node *get_root() const { return root_.get(); }
   /// Get violated edges for a trio.
   /// @param trio Which trio is violated.
   /// @return Set of edges that has to be in a constraint.
-  std::set<int> get_trio_edges(const Trio &trio) const;
+  std::set<uint16_t> get_trio_edges(const Trio &trio) const;
   /// Get violated edges for a quartet.
   /// @param quartet Which quartet is violated.
   /// @return Set of edges that has to be in a constraint.
-  std::set<int> get_quartet_edges(const Quartet &quartet) const;
+  std::set<uint16_t> get_quartet_edges(const Quartet &quartet) const;
   /// Check if paths between a-b and x-y intersect or not.
   /// @param a Vertex a.
   /// @param b Vertex b.
   /// @param x Vertex x.
   /// @param y Vertex y.
   /// @return If a-b and x-y paths intersect.
-  bool has_disjoint_paths(int a, int b, int x, int y) const;
+  bool has_disjoint_paths(uint16_t a, uint16_t b, uint16_t x, uint16_t y) const;
   /// Check if the provided trio a,b|x is proper or not.
   /// @param a Vertex a.
   /// @param b Vertex b.
   /// @param x Vertex x.
   /// @return True if x is not below a and b.
-  bool has_disjoint_trio(int a, int b, int x) const;
+  bool has_disjoint_trio(uint16_t a, uint16_t b, uint16_t x) const;
   /// Find if two leafs create a cherry.
   /// @param first Label of the first leaf.
   /// @param second Label of the second leaf.
   /// @return True if they are siblings.
-  bool is_cherry(int first, int second) const;
+  bool is_cherry(uint16_t first, uint16_t second) const;
   /// Return whether a tree has (almost) no nodes.
   /// @return True if the root is empty.
   inline bool is_empty() const { return root_ == std::nullptr_t(); }
@@ -89,31 +90,32 @@ public:
   /// @param first Label of the first leaf.
   /// @param second Label of the second leaf.
   /// @return Pointer to their common lca.
-  Node *lca_query(int first, int second) const;
+  Node *lca_query(uint16_t first, uint16_t second) const;
   /// Return a LCA node for three leafs.
   /// @param first Label of the first leaf.
   /// @param second Label of the second leaf.
   /// @param third Label of the third leaf.
   /// @return Pointer to their common lca.
-  Node *lca_query(int first, int second, int third) const;
+  Node *lca_query(uint16_t first, uint16_t second, uint16_t third) const;
   /// Output the tree to some stream in a Newick notation.
   /// @param os Which output stream to use.
   /// @param subst Which substitutions have to be propagated.
   void write(std::ostream &os,
-             const std::unordered_map<int, std::string> &subst) const;
+             const std::unordered_map<uint16_t, std::string> &subst) const;
   /// Output the tree to standard output.
   /// @param subst Which substitutions have to be propagated.
-  inline void write(const std::unordered_map<int, std::string> &subst) const {
+  inline void
+  write(const std::unordered_map<uint16_t, std::string> &subst) const {
     write(std::cout, subst);
   };
 
 private:
   /// Map of descendant. Also can be used as a set of descendants.
-  std::unordered_map<int, Node *> descendants_;
+  std::unordered_map<uint16_t, Node *> descendants_;
   /// Rot of the tree.
   std::unique_ptr<Node> root_;
   /// LCA table.
-  std::vector<std::vector<int>> lca_table_;
+  std::vector<std::vector<uint16_t>> lca_table_;
 };
 
 /// Parse the tree from input stream in Newick format using `>>`.
@@ -152,24 +154,24 @@ public:
   inline Tree *get_chosen_tree() const { return trees_[chosen_tree_].get(); }
   /// Get all contracted parts from the input tree.
   /// @return All contractions.
-  inline std::unordered_map<int, std::string> &get_contractions() {
+  inline std::unordered_map<uint16_t, std::string> &get_contractions() {
     return contracted_;
   }
   /// Get the leaf count, which is same for all trees.
   /// @return Leaf count.
-  inline int get_leaf_count() const { return n_; }
+  inline uint16_t get_leaf_count() const { return n_; }
   /// Get the recuded leaf count, this differs after some cherries were
   /// contracted.
   /// @return Number of leaf which were not excluded.
-  inline int get_reduced_leaf_count() const {
+  inline uint16_t get_reduced_leaf_count() const {
     return n_ - excluded_leafs_.size();
   }
   /// Get the node count.
   /// @return Node count.
-  inline int get_node_count() const { return n_ + n_ - 1; }
+  inline uint16_t get_node_count() const { return n_ + n_ - 1; }
   /// Get the tree count.
   /// @return Tree count.
-  inline int get_tree_count() const { return t_; }
+  inline uint8_t get_tree_count() const { return t_; }
   /// Get reference to all trees.
   /// @return Reference to all trees.
   inline std::vector<std::unique_ptr<Tree>> &get_trees() { return trees_; }
@@ -182,13 +184,13 @@ public:
   /// @param edges_to_remove Which edges have to be removed.
   /// @return List of created trees from such removal and consolidations.
   std::vector<std::unique_ptr<Tree>>
-  cut_edges(const std::set<int> &edges_to_remove);
+  cut_edges(const std::set<uint16_t> &edges_to_remove);
 
 private:
   /// Add contracted cherry.
   /// @param first Label of the first leaf.
   /// @param second Label of the second leaf.
-  void add_contracted_(int first, int second);
+  void add_contracted_(uint16_t first, uint16_t second);
   /// Recursively construct cherries we find.
   /// @param node Which node we are considering now.
   void contract_cherries_recursive_(Node *node);
@@ -196,20 +198,20 @@ private:
   /// @param edges_to_remove Which edges to remove.
   /// @param trees Which trees we are considering.
   /// @param current_tree Where are we right now.
-  void cut_edges_recursive_(const std::set<int> &edges_to_remove,
+  void cut_edges_recursive_(const std::set<uint16_t> &edges_to_remove,
                             std::vector<std::unique_ptr<Node>> &trees,
                             Node *current_tree);
   /// Number of leafs in each tree.
-  int n_;
+  uint16_t n_;
   /// Number of trees.
-  int t_;
+  uint8_t t_;
   /// Array of all trees.
   std::vector<std::unique_ptr<Tree>> trees_;
   /// Hash map of all contracted leafs.
-  std::unordered_map<int, std::string> contracted_;
+  std::unordered_map<uint16_t, std::string> contracted_;
   /// Which leafs are exluded due to their contractions.
-  std::set<int> excluded_leafs_;
+  std::set<uint16_t> excluded_leafs_;
   /// Which tree we have chosen.
-  size_t chosen_tree_;
+  uint8_t chosen_tree_;
 };
 #endif

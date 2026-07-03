@@ -1,5 +1,6 @@
 #include "ilp.h"
 #include "utils.h"
+#include <cstdint>
 
 int main(int argc, char **argv) {
   try {
@@ -13,7 +14,7 @@ int main(int argc, char **argv) {
     auto lower_bound = std::max(0, input.get_reduced_leaf_count() - 2);
     ilp.initialize(0, lower_bound, true);
 
-    std::set<int> cut_edges;
+    std::set<uint16_t> cut_edges;
     std::vector<std::unique_ptr<Tree>> forest;
 
     std::cout << "# Solving in a " << CYAN << "heuristic" << RESET << " mode."

@@ -2,6 +2,7 @@
 #include "utils.h"
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -32,7 +33,7 @@ void Tree::consolidate() {
   }
 }
 
-void Tree::contract_cherry(int first, int second) {
+void Tree::contract_cherry(uint16_t first, uint16_t second) {
   auto node_a = descendants_.at(first);
   auto node_b = descendants_.at(second);
   if (node_a->get_parent() != nullptr &&
@@ -47,13 +48,14 @@ void Tree::contract_cherry(int first, int second) {
   }
 }
 
-void Tree::compute_lca_leafs(int number_of_nodes) {
-  lca_table_ = std::vector<std::vector<int>>(
-      number_of_nodes, std::vector<int>(number_of_nodes, 1));
+void Tree::compute_lca_leafs(uint16_t number_of_nodes) {
+  lca_table_ = std::vector<std::vector<uint16_t>>(
+      number_of_nodes, std::vector<uint16_t>(number_of_nodes, 1));
   descendants_ = root_->compute_lca_leafs(lca_table_);
 }
 
-void Tree::get_edges(Node *below, Node *above, std::set<int> &edges) const {
+void Tree::get_edges(Node *below, Node *above,
+                     std::set<uint16_t> &edges) const {
   auto current = below;
   while (current->get_value() != above->get_value() &&
          current->get_parent() != nullptr) {
@@ -62,14 +64,14 @@ void Tree::get_edges(Node *below, Node *above, std::set<int> &edges) const {
   }
 }
 
-std::set<int> Tree::get_leafs() const {
-  std::set<int> leafs;
+std::set<uint16_t> Tree::get_leafs() const {
+  std::set<uint16_t> leafs;
   root_->get_leafs(leafs);
   return leafs;
 }
 
-std::set<int> Tree::get_trio_edges(const Trio &trio) const {
-  std::set<int> edges;
+std::set<uint16_t> Tree::get_trio_edges(const Trio &trio) const {
+  std::set<uint16_t> edges;
   auto [a, b, c, size, used] = trio;
   auto node_a_b = lca_query(a, b);
   auto node_ab_c = lca_query(a, b, c);
@@ -83,8 +85,8 @@ std::set<int> Tree::get_trio_edges(const Trio &trio) const {
   return edges;
 }
 
-std::set<int> Tree::get_quartet_edges(const Quartet &quartet) const {
-  std::set<int> edges;
+std::set<uint16_t> Tree::get_quartet_edges(const Quartet &quartet) const {
+  std::set<uint16_t> edges;
   auto [a, b, c, d, size, used] = quartet;
   auto node_a_b = lca_query(a, b);
   auto node_c_d = lca_query(c, d);
@@ -99,7 +101,8 @@ std::set<int> Tree::get_quartet_edges(const Quartet &quartet) const {
   return edges;
 }
 
-bool Tree::has_disjoint_paths(int a, int b, int x, int y) const {
+bool Tree::has_disjoint_paths(uint16_t a, uint16_t b, uint16_t x,
+                              uint16_t y) const {
   bool result = lca_query(a, b) != lca_query(x, y);
   if (!result) {
     return false;
@@ -117,28 +120,28 @@ bool Tree::has_disjoint_paths(int a, int b, int x, int y) const {
   }
 }
 
-bool Tree::has_disjoint_trio(int a, int b, int x) const {
+bool Tree::has_disjoint_trio(uint16_t a, uint16_t b, uint16_t x) const {
   return lca_query(a, b) != lca_query(a, b, x);
 }
 
-bool Tree::is_cherry(int first, int second) const {
+bool Tree::is_cherry(uint16_t first, uint16_t second) const {
   auto node_a = descendants_.at(first);
   auto node_b = descendants_.at(second);
   return node_a->get_parent() != nullptr &&
          *node_a->get_parent() == *node_b->get_parent();
 }
 
-Node *Tree::lca_query(int first, int second) const {
+Node *Tree::lca_query(uint16_t first, uint16_t second) const {
   return descendants_.at(lca_table_[first][second]);
 }
 
-Node *Tree::lca_query(int first, int second, int third) const {
+Node *Tree::lca_query(uint16_t first, uint16_t second, uint16_t third) const {
   auto first_second = lca_table_[first][second];
   return descendants_.at(lca_table_[first_second][third]);
 }
 
 void Tree::write(std::ostream &os,
-                 const std::unordered_map<int, std::string> &subst) const {
+                 const std::unordered_map<uint16_t, std::string> &subst) const {
   get_root()->write_with_substitution(os, subst);
   os << ";" << std::endl;
 }
@@ -202,13 +205,13 @@ void Input::compute_lca_tables() {
 void Input::compute_trios_quartets(std::vector<Trio> &trios,
                                    std::vector<Quartet> &quartets) {
   auto tree1 = get_chosen_tree();
-  for (auto a = 1; a <= get_leaf_count(); ++a) {
+  for (uint16_t a = 1; a <= get_leaf_count(); ++a) {
     if (excluded_leafs_.contains(a))
       continue;
-    for (auto b = a + 1; b <= get_leaf_count(); ++b) {
+    for (uint16_t b = a + 1; b <= get_leaf_count(); ++b) {
       if (excluded_leafs_.contains(b))
         continue;
-      for (auto c = 1; c <= get_leaf_count(); ++c) {
+      for (uint16_t c = 1; c <= get_leaf_count(); ++c) {
         if (excluded_leafs_.contains(c) || c == b || c == a)
           continue;
         if (tree1->has_disjoint_trio(a, b, c)) {
@@ -222,7 +225,7 @@ void Input::compute_trios_quartets(std::vector<Trio> &trios,
           }
         }
         if (c >= a + 1) {
-          for (auto d = c + 1; d <= get_leaf_count(); ++d) {
+          for (uint16_t d = c + 1; d <= get_leaf_count(); ++d) {
             if (d == a || d == b || excluded_leafs_.contains(d))
               continue;
             if (tree1->has_disjoint_paths(a, b, c, d)) {
@@ -298,7 +301,7 @@ void Input::contract_cherries_recursive_(Node *n) {
 }
 
 std::vector<std::unique_ptr<Tree>>
-Input::cut_edges(const std::set<int> &edges_to_remove) {
+Input::cut_edges(const std::set<uint16_t> &edges_to_remove) {
   std::vector<std::unique_ptr<Node>> output;
   std::vector<std::unique_ptr<Tree>> trees;
   if (trees_.size() == 0) {
@@ -316,7 +319,7 @@ Input::cut_edges(const std::set<int> &edges_to_remove) {
   return trees;
 }
 
-void Input::cut_edges_recursive_(const std::set<int> &edges_to_remove,
+void Input::cut_edges_recursive_(const std::set<uint16_t> &edges_to_remove,
                                  std::vector<std::unique_ptr<Node>> &trees,
                                  Node *current_tree) {
   if (current_tree->is_leaf()) {
@@ -340,7 +343,7 @@ void Input::cut_edges_recursive_(const std::set<int> &edges_to_remove,
   }
 }
 
-void Input::add_contracted_(int first, int second) {
+void Input::add_contracted_(uint16_t first, uint16_t second) {
   std::ostringstream oss;
   if (contracted_.contains(first) && contracted_.contains(second)) {
     oss << "(" << contracted_.at(first) << "," << contracted_.at(second) << ")";

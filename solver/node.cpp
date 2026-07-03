@@ -1,4 +1,5 @@
 #include "node.h"
+#include <cstdint>
 #include <ios>
 #include <iostream>
 #include <memory>
@@ -38,7 +39,7 @@ Node *Node::add_right() {
   return right_.get();
 }
 
-int Node::assign_numbers(int counter) {
+uint16_t Node::assign_numbers(uint16_t counter) {
   if (type_ != LEAF) {
     value_ = counter;
     auto next = left_->assign_numbers(counter + 1);
@@ -92,10 +93,10 @@ void Node::compute_forks(std::vector<Fork> &forks) const {
   }
 }
 
-std::unordered_map<int, Node *>
-Node::compute_lca_leafs(std::vector<std::vector<int>> &lca_table) {
+std::unordered_map<uint16_t, Node *>
+Node::compute_lca_leafs(std::vector<std::vector<uint16_t>> &lca_table) {
   if (type_ == LEAF) {
-    std::unordered_map<int, Node *> descendants;
+    std::unordered_map<uint16_t, Node *> descendants;
     descendants.insert_or_assign(value_, this);
     return descendants;
   }
@@ -113,14 +114,14 @@ Node::compute_lca_leafs(std::vector<std::vector<int>> &lca_table) {
   return left;
 }
 
-int Node::get_depth() const {
+uint16_t Node::get_depth() const {
   if (type_ == LEAF) {
     return 0;
   }
   return std::max(left_->get_depth(), right_->get_depth()) + 1;
 }
 
-void Node::get_leafs(std::set<int> &taxa) const {
+void Node::get_leafs(std::set<uint16_t> &taxa) const {
   if (is_leaf()) {
     taxa.insert(value_);
     return;
@@ -150,7 +151,8 @@ void Node::set_right(std::unique_ptr<Node> node) {
 }
 
 void Node::write_with_substitution(
-    std::ostream &os, const std::unordered_map<int, std::string> &subst) const {
+    std::ostream &os,
+    const std::unordered_map<uint16_t, std::string> &subst) const {
   if (get_type() == LEAF) {
     if (subst.contains(get_value())) {
       os << subst.at(get_value());
@@ -171,7 +173,7 @@ void Node::write_with_substitution(
 }
 
 std::ostream &operator<<(std::ostream &os, const Node &n) {
-  n.write_with_substitution(os, std::unordered_map<int, std::string>{});
+  n.write_with_substitution(os, std::unordered_map<uint16_t, std::string>{});
   return os;
 }
 

@@ -7,6 +7,7 @@
 
 #include "tree.h"
 #include "utils.h"
+#include <cstdint>
 #include <scip/scip.h>
 #include <scip/scipdefplugins.h>
 
@@ -19,14 +20,14 @@ public:
   /// Destructor for the SCIP environment.
   ~ILP();
   void drop_ilp();
-  void warm_start(std::set<int> &edges_to_erase, bool repair);
+  void warm_start(std::set<uint16_t> &edges_to_erase, bool repair);
   void add_trio_constr(Trio &t);
   void add_quartet_constr(Quartet &q);
   /// Initialize the ilp with first constraints.
-  void initialize(int lb, int up, bool h);
+  void initialize(uint16_t lb, uint16_t up, bool h);
   /// Run the current ilp.
   /// @return Set of edges that should be deleted.
-  std::set<int> run();
+  std::set<uint16_t> run();
   /// Update components based on the last result.
   /// @param output What is the forest created by the last solution.
   void set_components(const std::vector<std::unique_ptr<Tree>> &output);
@@ -44,7 +45,7 @@ private:
   /// Setting limit for constraints.
   int limit_;
   /// Components of connected components.
-  std::vector<int> components_;
+  std::vector<uint16_t> components_;
   /// Upper limit for every constraint.
   int upper_limit_;
   /// List of all incomaptible trios.

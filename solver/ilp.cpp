@@ -2,6 +2,7 @@
 #include "scip/scip_numerics.h"
 #include "scip/type_var.h"
 #include "utils.h"
+#include <cstdint>
 
 ILP::ILP(Input &input)
     : input_(input), limit_(2 * std::log2(input.get_reduced_leaf_count())) {
@@ -32,7 +33,7 @@ void ILP::drop_ilp() {
   }
 }
 
-void ILP::warm_start(std::set<int> &edges_to_erase, bool repair) {
+void ILP::warm_start(std::set<uint16_t> &edges_to_erase, bool repair) {
   if (repair) {
     auto forks = std::vector<Fork>();
     input_.compute_breakable_forks(forks);
@@ -99,14 +100,14 @@ void ILP::add_quartet_constr(Quartet &q) {
   SCIPreleaseCons(scip_, &cons);
 }
 
-void ILP::initialize(int lb, int ub, bool h) {
+void ILP::initialize(uint16_t lb, uint16_t ub, bool h) {
   heuristics_ = h;
   upper_limit_ = ub;
   SCIPcreate(&scip_);
   SCIPincludeDefaultPlugins(scip_);
   SCIPcreateProbBasic(scip_, "PACE2026 - MAF");
   SCIPsetIntParam(scip_, "display/verblevel", 0);
-  components_ = std::vector<int>(input_.get_leaf_count() + 1, 1);
+  components_ = std::vector<uint16_t>(input_.get_leaf_count() + 1, 1);
 
   auto number_of_edges = input_.get_node_count();
   auto tree = input_.get_chosen_tree();
@@ -208,7 +209,7 @@ void ILP::set_components(const std::vector<std::unique_ptr<Tree>> &output) {
   }
 }
 
-std::set<int> ILP::run() {
+std::set<uint16_t> ILP::run() {
   std::cout << "# Solving ILP with " << YELLOW << SCIPgetNConss(scip_) << RESET
             << " constraints and " << YELLOW << SCIPgetNVars(scip_) << RESET
             << " variables." << std::endl;
@@ -225,8 +226,8 @@ std::set<int> ILP::run() {
   std::cout << "# Objective function value: " << YELLOW << obj_val << RESET
             << std::endl;
 
-  std::set<int> edges_to_erase;
-  for (int col = 0; col < vars_.size(); col++) {
+  std::set<uint16_t> edges_to_erase;
+  for (auto col = 0; col < vars_.size(); col++) {
     auto val = SCIPgetSolVal(scip_, solution, vars_[col]);
     if (is_approx_one(val)) {
       edges_to_erase.insert(col + 1);
@@ -239,7 +240,7 @@ std::set<int> ILP::run() {
   SCIPcreateConsBasicLinear(scip_, &new_cons, "post_run_cons", 0, nullptr,
                             nullptr, obj_val, upper_limit_);
 
-  for (int a = 0; a < vars_.size(); ++a) {
+  for (auto a = 0; a < vars_.size(); ++a) {
     SCIPaddCoefLinear(scip_, new_cons, vars_[a], 1.0);
   }
 

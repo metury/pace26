@@ -4,6 +4,7 @@
 #ifndef utils_h_
 #define utils_h_
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -54,20 +55,20 @@ template <typename... Ints> bool has_positive(Ints &...args) {
 
 /// Structure holding incompatible Trio.
 struct Trio {
-  int a, b, c;
-  int size = 0;
+  uint16_t a, b, c;
+  uint16_t size = 0;
   bool used = false;
 };
 
 /// Structure holding incompatible Quartet.
 struct Quartet {
-  int a, b, x, y;
-  int size = 0;
+  uint16_t a, b, x, y;
+  uint16_t size = 0;
   bool used = false;
 };
 
 /// Structure holding Fork.
 struct Fork {
-  int parent, left, right;
+  uint16_t parent, left, right;
 };
 #endif
