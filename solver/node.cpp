@@ -6,10 +6,6 @@
 #include <unordered_map>
 #include <utility>
 
-// ==========
-// == Node ==
-// ==========
-
 Node::Node(const Node &other)
     : type_(other.get_type()), value_(other.get_value()) {
   if (type_ != LEAF) {
@@ -173,10 +169,6 @@ void Node::write_with_substitution(
     os << ")";
   }
 }
-
-// ======================
-// == Node - operators ==
-// ======================
 
 std::ostream &operator<<(std::ostream &os, const Node &n) {
   n.write_with_substitution(os, std::unordered_map<int, std::string>{});

@@ -3,8 +3,6 @@
 #include "scip/type_var.h"
 #include "utils.h"
 
-/// ILP
-
 ILP::ILP(Input &input)
     : input_(input), limit_(2 * std::log2(input.get_reduced_leaf_count())) {
   trios_ = std::vector<Trio>();
