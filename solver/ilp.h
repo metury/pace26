@@ -30,8 +30,6 @@ public:
   /// Update components based on the last result.
   /// @param output What is the forest created by the last solution.
   void set_components(const std::vector<std::unique_ptr<Tree>> &output);
-  /// Change the priorities of all variables based on their appearance.
-  void set_priorities() const;
   /// Update ilp based on unsatisfied constraints.
   /// @return True if ilp has new constraints.
   bool update();
@@ -54,7 +52,6 @@ private:
   /// List of all incomaptible quartets.
   std::vector<Quartet> quartets_;
   bool heuristics_;
-  std::vector<int> priorities_;
 };
 
 #endif

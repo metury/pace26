@@ -6,9 +6,7 @@
 /// ILP
 
 ILP::ILP(Input &input)
-    : input_(input), limit_(2 * std::log2(input.get_reduced_leaf_count())),
-      priorities_(input_.get_node_count(), 0) {
-
+    : input_(input), limit_(2 * std::log2(input.get_reduced_leaf_count())) {
   trios_ = std::vector<Trio>();
   quartets_ = std::vector<Quartet>();
   input_.compute_trios_quartets(trios_, quartets_);
@@ -39,14 +37,13 @@ void ILP::drop_ilp() {
 void ILP::warm_start(std::set<int> &edges_to_erase, bool repair) {
   if (repair) {
     auto forks = std::vector<Fork>();
-    auto extended_forks = std::vector<ExtendedFork>();
-    input_.compute_breakable_forks(forks, extended_forks);
-    for (auto &&[a, b, c] : forks) {
-      if (edges_to_erase.contains(a) &&
-          (edges_to_erase.contains(b) || edges_to_erase.contains(c))) {
-        edges_to_erase.erase(a);
-        edges_to_erase.insert(b);
-        edges_to_erase.insert(c);
+    input_.compute_breakable_forks(forks);
+    for (auto &&[parent, left, right] : forks) {
+      if (edges_to_erase.contains(parent) &&
+          (edges_to_erase.contains(left) || edges_to_erase.contains(right))) {
+        edges_to_erase.erase(parent);
+        edges_to_erase.insert(left);
+        edges_to_erase.insert(right);
       }
     }
   }
@@ -67,7 +64,7 @@ void ILP::warm_start(std::set<int> &edges_to_erase, bool repair) {
 }
 
 void ILP::add_trio_constr(Trio &t) {
-  auto tree = input_.get_trees().at(0).get();
+  auto tree = input_.get_chosen_tree();
   t.used = true;
   auto edges = tree->get_trio_edges(t);
   int edges_size = edges.size() - 1;
@@ -86,7 +83,7 @@ void ILP::add_trio_constr(Trio &t) {
 }
 
 void ILP::add_quartet_constr(Quartet &q) {
-  auto tree = input_.get_trees().at(0).get();
+  auto tree = input_.get_chosen_tree();
   q.used = true;
   auto edges = tree->get_quartet_edges(q);
   int edges_size = edges.size();
@@ -114,7 +111,7 @@ void ILP::initialize(int lb, int ub, bool h) {
   components_ = std::vector<int>(input_.get_leaf_count() + 1, 1);
 
   auto number_of_edges = input_.get_node_count();
-  auto tree = input_.get_trees().at(0).get();
+  auto tree = input_.get_chosen_tree();
 
   SCIPsetObjsense(scip_, SCIP_OBJSENSE_MINIMIZE);
 
@@ -142,8 +139,7 @@ void ILP::initialize(int lb, int ub, bool h) {
 
   if (!heuristics_) {
     auto forks = std::vector<Fork>();
-    auto extended_forks = std::vector<ExtendedFork>();
-    input_.compute_breakable_forks(forks, extended_forks);
+    input_.compute_breakable_forks(forks);
     for (auto &&[a, b, c] : forks) {
       SCIP_CONS *cons;
       SCIPcreateConsBasicLinear(scip_, &cons, "fork_cons", 0, nullptr, nullptr,
@@ -191,22 +187,6 @@ void ILP::initialize(int lb, int ub, bool h) {
     }
   }
 
-  // for (auto &&[a, b, c, d, e, f, g] : extended_forks) {
-  //   SCIP_CONS *cons;
-  //   SCIPcreateConsBasicLinear(scip_, &cons, "extended_fork_cons", 0,
-  //   nullptr,
-  //                             nullptr, 0.0, 4.0);
-  //   SCIPaddCoefLinear(scip_, cons, vars_[a - 1], 2.0);
-  //   SCIPaddCoefLinear(scip_, cons, vars_[b - 1], 2.0);
-  //   SCIPaddCoefLinear(scip_, cons, vars_[c - 1], 2.0);
-  //   SCIPaddCoefLinear(scip_, cons, vars_[d - 1], 1.0);
-  //   SCIPaddCoefLinear(scip_, cons, vars_[e - 1], 1.0);
-  //   SCIPaddCoefLinear(scip_, cons, vars_[f - 1], 1.0);
-  //   SCIPaddCoefLinear(scip_, cons, vars_[g - 1], 1.0);
-  //   SCIPaddCons(scip_, cons);
-  //   SCIPreleaseCons(scip_, &cons);
-  // }
-
   SCIP_CONS *cons_all;
   SCIPcreateConsBasicLinear(scip_, &cons_all, "all_edges", 0, nullptr, nullptr,
                             lb, upper_limit_);
@@ -227,34 +207,6 @@ void ILP::set_components(const std::vector<std::unique_ptr<Tree>> &output) {
         components_[taxa] = tree_count;
       }
     }
-  }
-}
-
-void ILP::set_priorities() const {
-  // auto counters = std::vector<unsigned>(input_.get_node_count(), 0);
-  // auto tree = input_.get_trees().at(0).get();
-  // for (auto &&trio : trios_) {
-  //   if (trio.used) {
-  //     auto edges = tree->get_trio_edges(trio);
-  //     for (auto &&edge : edges) {
-  //       ++counters[edge];
-  //     }
-  //   }
-  // }
-  // for (auto &&quartet : quartets_) {
-  //   if (quartet.used) {
-  //     auto edges = tree->get_quartet_edges(quartet);
-  //     for (auto &&edge : edges) {
-  //       ++counters[edge];
-  //     }
-  //   }
-  // }
-  for (int i = 0; i < vars_.size(); ++i) {
-    SCIP_VAR *var = vars_[i];
-
-    int total_occurrences = priorities_[i];
-
-    SCIPchgVarBranchPriority(scip_, var, std::min(1, total_occurrences));
   }
 }
 
@@ -280,8 +232,6 @@ std::set<int> ILP::run() {
     auto val = SCIPgetSolVal(scip_, solution, vars_[col]);
     if (is_approx_one(val)) {
       edges_to_erase.insert(col + 1);
-      if (!heuristics_)
-        priorities_[col] += 1;
     }
   }
 
@@ -316,7 +266,7 @@ std::set<int> ILP::run() {
 }
 
 bool ILP::update() {
-  auto tree = input_.get_trees().at(0).get();
+  auto tree = input_.get_chosen_tree();
 
   SCIPfreeTransform(scip_);
 

@@ -10,11 +10,12 @@
 #include <iostream>
 #include <memory>
 #include <ostream>
+#include <ranges>
 #include <set>
 #include <unordered_map>
 #include <vector>
 
-/// Tree class with rooted node, leafs and lca tables.
+/// Tree class with rooted node, leafs and lca table.
 class Tree {
 public:
   /// Basic constructor with empty root.
@@ -37,12 +38,9 @@ public:
   /// Compute both leaf pointers and lca values.
   /// @param number_of_nodes How many nodes does the tree have.
   void compute_lca_leafs(int number_of_nodes);
-  inline void
-  compute_fake_cherries(std::vector<std::pair<int, int>> &cherries) const {
-    root_->compute_fake_cherries(cherries);
-  }
-  /// Delete LCA table to reduce memory consumption.
-  inline void delete_lca_table() { lca_table_ = {}; }
+  /// Compute the depth of this tree.
+  /// @return The number of edges to the lowest leaf.
+  inline int get_depth() const { return root_->get_depth(); }
   /// Add all edges between the nodes.
   /// @param below Pointer to the node below.
   /// @param above Pointer to the node above.
@@ -66,7 +64,6 @@ public:
   /// @param quartet Which quartet is violated.
   /// @return Set of edges that has to be in a constraint.
   std::set<int> get_quartet_edges(const Quartet &quartet) const;
-  Fork get_cherry_edges(int a, int b) const;
   /// Check if paths between a-b and x-y intersect or not.
   /// @param a Vertex a.
   /// @param b Vertex b.
@@ -125,32 +122,11 @@ private:
 /// @return Changed input stream.
 std::istream &operator>>(std::istream &is, Tree &t);
 
-/// Tree decomposition of the display graph.
-class TreeDecomposition {
-public:
-  /// Default constructor.
-  TreeDecomposition() = default;
-  /// Constructor from its string representation.
-  /// @param str String representation in semi JSON format.
-  TreeDecomposition(const std::string &str);
-  /// Write the tree decomposition to ouptut. Debugging mainly.
-  /// @param os Which output stream to use.
-  void write(std::ostream &os);
-
-private:
-  /// Set of bags. IDs are for node ids in the trees.
-  std::vector<std::vector<int>> bags_;
-  /// Set of edges between bags. IDs are for bags in their ordering.
-  std::vector<std::tuple<int, int>> edges_;
-  /// Treewidth of the tree decomposition.
-  int treewidth_;
-};
-
 /// All the input provided. Including trees and tree decomposition.
 class Input {
 public:
   /// Default constructor.
-  inline Input() : t_(0), n_(0) {}
+  inline Input() : t_(0), n_(0), chosen_tree_(0) {}
   /// Constructor for parsing input from a file also assign numbers and compute
   /// LCA.
   /// @param is On which stream the input will be provided.
@@ -162,20 +138,18 @@ public:
   /// Contract all cherries.
   void contract_cherries();
   /// Compute all LCA values for all trees.
-  void compute_all_lca();
+  void compute_lca_tables();
   /// Compute all incompatible trios and quartets
   /// @param trios List of all incompatible trios.
   /// @param quartets List of all incompatible quartets.
   void compute_trios_quartets(std::vector<Trio> &trios,
                               std::vector<Quartet> &quartets);
-  void compute_trios_quartets_h(std::vector<Trio> &trios,
-                                std::vector<Quartet> &quartets,
-                                std::vector<int> &components);
-  void compute_breakable_forks(std::vector<Fork> &forks,
-                               std::vector<ExtendedFork> &extended_forks) const;
-  void compute_fake_cherries(std::vector<Fork> &cherries) const;
-  /// Delete lca tables for every tree.
-  void delete_lca_tables();
+  /// Comput all forks the break symmetries.
+  /// @param forks Where to put found forks.
+  void compute_breakable_forks(std::vector<Fork> &forks) const;
+  /// Return the chosen representative tree.
+  /// @return Pointer to the chosen tree.
+  inline Tree *get_chosen_tree() const { return trees_[chosen_tree_].get(); }
   /// Get all contracted parts from the input tree.
   /// @return All contractions.
   inline std::unordered_map<int, std::string> &get_contractions() {
@@ -196,38 +170,35 @@ public:
   /// Get the tree count.
   /// @return Tree count.
   inline int get_tree_count() const { return t_; }
-  /// Get reference to the tree decomposition.
-  /// @return Tree decomposition.
-  inline TreeDecomposition &get_tree_decomposition() { return decomp_; }
   /// Get reference to all trees.
   /// @return Reference to all trees.
   inline std::vector<std::unique_ptr<Tree>> &get_trees() { return trees_; }
+  inline auto get_other_trees() const {
+    return trees_ | std::views::filter([this](const std::unique_ptr<Tree> &t) {
+             return t.get() != trees_[chosen_tree_].get();
+           });
+  }
   /// Take the first tree and remove all edges, consolidate and output.
   /// @param edges_to_remove Which edges have to be removed.
   /// @return List of created trees from such removal and consolidations.
   std::vector<std::unique_ptr<Tree>>
-  remove_edges(const std::set<int> &edges_to_remove);
-  /// Set the tree decomposition by parsing its string representation.
-  /// @param str Its string representation.
-  void set_tree_decomposition(const std::string &str);
+  cut_edges(const std::set<int> &edges_to_remove);
 
 private:
-  /// Add contracted cherry or chain.
+  /// Add contracted cherry.
   /// @param first Label of the first leaf.
   /// @param second Label of the second leaf.
   void add_contracted_(int first, int second);
   /// Recursively construct cherries we find.
   /// @param node Which node we are considering now.
-  void contract_cherries_(Node *node);
+  void contract_cherries_recursive_(Node *node);
   /// Recursively remove all edges.
   /// @param edges_to_remove Which edges to remove.
   /// @param trees Which trees we are considering.
   /// @param current_tree Where are we right now.
-  void remove_edges_(const std::set<int> &edges_to_remove,
-                     std::vector<std::unique_ptr<Node>> &trees,
-                     Node *current_tree);
-  /// The tree decomposition.
-  TreeDecomposition decomp_;
+  void cut_edges_recursive_(const std::set<int> &edges_to_remove,
+                            std::vector<std::unique_ptr<Node>> &trees,
+                            Node *current_tree);
   /// Number of leafs in each tree.
   int n_;
   /// Number of trees.
@@ -238,5 +209,7 @@ private:
   std::unordered_map<int, std::string> contracted_;
   /// Which leafs are exluded due to their contractions.
   std::set<int> excluded_leafs_;
+  /// Which tree we have chosen.
+  size_t chosen_tree_;
 };
 #endif

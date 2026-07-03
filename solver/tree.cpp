@@ -6,7 +6,6 @@
 #include <memory>
 #include <sstream>
 #include <string>
-#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -100,28 +99,6 @@ std::set<int> Tree::get_quartet_edges(const Quartet &quartet) const {
   return edges;
 }
 
-Fork Tree::get_cherry_edges(int a, int b) const {
-  auto node_a = get_leaf(a);
-  auto node_b = get_leaf(b);
-  auto lca = lca_query(a, b);
-  auto parent = node_a->get_parent();
-  auto third = parent->get_left();
-  if (third == node_a) {
-    third = parent->get_right();
-  }
-  if (parent == lca) {
-    parent = node_b->get_parent();
-    third = parent->get_left();
-    if (third == node_b) {
-      third = parent->get_right();
-    }
-  }
-  if (third == node_a) {
-    third = node_a->get_parent();
-  }
-  return {a, b, third->get_value()};
-}
-
 bool Tree::has_disjoint_paths(int a, int b, int x, int y) const {
   bool result = lca_query(a, b) != lca_query(x, y);
   if (!result) {
@@ -171,61 +148,11 @@ std::istream &operator>>(std::istream &is, Tree &t) {
   return is;
 }
 
-// =======================
-// == TreeDecomposition ==
-// =======================
-
-TreeDecomposition::TreeDecomposition(const std::string &str) {
-  auto parts = split(str.substr(1, str.size() - 2), ',');
-  treewidth_ = std::stoi(parts[0]);
-  std::vector<int> bag;
-  bool edges = false;
-  for (int i = 1; i < parts.size(); ++i) {
-    if (edges) {
-      auto const pos = parts[i].find_last_of('[');
-      const auto first = parts[i].substr(pos + 1);
-      edges_.push_back(
-          std::make_tuple(std::stoi(first), std::stoi(parts[++i])));
-    } else {
-      if (parts[i][0] == '[') {
-        if (bag.size() > 0) {
-          bags_.push_back(bag);
-          bag.erase(bag.begin(), bag.end());
-        }
-      }
-      auto const pos = parts[i].find_last_of('[');
-      const auto first = parts[i].substr(pos + 1);
-      bag.push_back(std::stoi(first));
-      auto len = parts[i].length();
-      if (parts[i].size() > 2 && parts[i][len - 2] == ']') {
-        edges = true;
-        bags_.push_back(bag);
-      }
-    }
-  }
-}
-
-void TreeDecomposition::write(std::ostream &os) {
-  os << "TreeWidth: " << treewidth_ << std::endl;
-  os << "Bags:" << std::endl;
-  for (auto &&bag : bags_) {
-    os << "\t";
-    for (auto &&val : bag)
-      os << val << ";";
-    os << std::endl;
-  }
-  os << "Edges:" << std::endl;
-  for (auto &&edge : edges_) {
-    std::cout << "\t[" << std::get<0>(edge) << "," << std::get<1>(edge) << "]"
-              << std::endl;
-  }
-}
-
 // ===========
 // == Input ==
 // ===========
 
-Input::Input(std::istream &is) {
+Input::Input(std::istream &is) : chosen_tree_(0) {
   std::string line;
   while (getline(is, line)) {
     if (line.size() > 0 && line[0] == '#') {
@@ -235,10 +162,6 @@ Input::Input(std::istream &is) {
         n_ = std::stoi(tokens[2]);
       } else if (line.size() > 1 && line[1] == 'x') {
         // Do not read tree decomposition!
-        // auto tokens = split(line);
-        // if (tokens[1] == "treedecomp") {
-        //   set_tree_decomposition(tokens[2]);
-        // }
       }
     } else if (!line.empty()) {
       trees_.push_back(std::make_unique<Tree>());
@@ -251,6 +174,17 @@ Input::Input(std::istream &is) {
   std::cout << "Instance contains " << GREEN << get_tree_count() << RESET
             << " trees with " << GREEN << get_leaf_count() << RESET
             << " leafs each." << std::endl;
+
+  auto lowest_depth = n_;
+  for (auto i = 0; i < trees_.size(); ++i) {
+    auto current_depth = trees_[i]->get_depth();
+    if (lowest_depth > current_depth) {
+      lowest_depth = current_depth;
+      chosen_tree_ = i;
+    }
+  }
+  std::cout << "# Chosen tree with number: " << GREEN << chosen_tree_ + 1
+            << RESET << std::endl;
 }
 
 void Input::assign_numbers() {
@@ -259,7 +193,7 @@ void Input::assign_numbers() {
   }
 }
 
-void Input::compute_all_lca() {
+void Input::compute_lca_tables() {
   for (auto &&tree : trees_) {
     tree->compute_lca_leafs(get_node_count() + 1);
   }
@@ -267,7 +201,7 @@ void Input::compute_all_lca() {
 
 void Input::compute_trios_quartets(std::vector<Trio> &trios,
                                    std::vector<Quartet> &quartets) {
-  auto tree1 = trees_[0].get();
+  auto tree1 = get_chosen_tree();
   for (auto a = 1; a <= get_leaf_count(); ++a) {
     if (excluded_leafs_.contains(a))
       continue;
@@ -278,7 +212,7 @@ void Input::compute_trios_quartets(std::vector<Trio> &trios,
         if (excluded_leafs_.contains(c) || c == b || c == a)
           continue;
         if (tree1->has_disjoint_trio(a, b, c)) {
-          for (auto &&tree2 : get_trees()) {
+          for (auto &&tree2 : get_other_trees()) {
             if (!tree2->has_disjoint_trio(a, b, c)) {
               Trio trio = {a, b, c, 0};
               trio.size = tree1->get_trio_edges(trio).size();
@@ -292,7 +226,7 @@ void Input::compute_trios_quartets(std::vector<Trio> &trios,
             if (d == a || d == b || excluded_leafs_.contains(d))
               continue;
             if (tree1->has_disjoint_paths(a, b, c, d)) {
-              for (auto &&tree2 : get_trees()) {
+              for (auto &&tree2 : get_other_trees()) {
                 if (!tree2->has_disjoint_paths(a, b, c, d)) {
                   Quartet quartet = {a, b, c, d, 0};
                   quartet.size = tree1->get_quartet_edges(quartet).size();
@@ -308,88 +242,42 @@ void Input::compute_trios_quartets(std::vector<Trio> &trios,
   }
 }
 
-void Input::compute_trios_quartets_h(std::vector<Trio> &trios,
-                                     std::vector<Quartet> &quartets,
-                                     std::vector<int> &components) {
-  auto tree1 = trees_[0].get();
-  auto tree2 = trees_[1].get();
-  for (auto a = 1; a <= get_leaf_count(); ++a) {
-    if (excluded_leafs_.contains(a))
-      continue;
-    for (auto b = a + 1; b <= get_leaf_count(); ++b) {
-      if (excluded_leafs_.contains(b) || b <= a)
-        continue;
-      for (auto c = 1; c <= get_leaf_count(); ++c) {
-        bool satisfied =
-            components[a] != components[b] || components[b] != components[c];
-        if (excluded_leafs_.contains(c) || c == b || c == a) {
-          continue;
-        }
-        if (tree1->has_disjoint_trio(a, b, c)) {
-          if (!tree2->has_disjoint_trio(a, b, c) && !satisfied) {
-            Trio trio = {a, b, c};
-            trios.push_back(trio);
-            break;
-          }
-        }
-        if (c >= a + 1) {
-          for (auto d = c + 1; d <= get_leaf_count(); ++d) {
-            bool satisfied = components[a] != components[b] ||
-                             components[d] != components[c];
-            if (d == a || d == b || excluded_leafs_.contains(d) || satisfied) {
-              continue;
-            }
-            if (tree1->has_disjoint_paths(a, b, c, d)) {
-              if (!tree2->has_disjoint_paths(a, b, c, d)) {
-                Quartet quartet = {a, b, c, d};
-                quartets.push_back(quartet);
-                break;
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-void Input::compute_breakable_forks(
-    std::vector<Fork> &forks, std::vector<ExtendedFork> &extended_forks) const {
-  trees_[0]->get_root()->compute_forks(forks, extended_forks);
-}
-
-void Input::compute_fake_cherries(std::vector<Fork> &edges) const {
-  auto tree = trees_[0].get();
-  for (int i = 1; i < trees_.size(); ++i) {
-    std::vector<std::pair<int, int>> cherries;
-    trees_[i]->compute_fake_cherries(cherries);
-    for (auto &&[a, b] : cherries) {
-      edges.push_back(tree->get_cherry_edges(a, b));
-    }
-  }
+void Input::compute_breakable_forks(std::vector<Fork> &forks) const {
+  get_chosen_tree()->get_root()->compute_forks(forks);
 }
 
 void Input::contract_cherries() {
-  contract_cherries_(trees_[0]->get_root());
-  compute_all_lca();
+  contract_cherries_recursive_(get_chosen_tree()->get_root());
+  compute_lca_tables();
   for (auto &&[key, val] : contracted_) {
     std::cout << "# Replacing cherry: " << RED << key << RESET << " <- " << RED
               << val << RESET << std::endl;
   }
   if (contracted_.empty()) {
-    std::cout << "# No " << RED << "cherry" << RESET << " found." << std::endl;
+    std::cout << "# No " << RED << "cherry" << RESET << " was found."
+              << std::endl;
   }
   std::cout << "# Number of leafs reduced by " << RED << excluded_leafs_.size()
             << RESET << std::endl;
+  auto lowest_depth = n_;
+  for (auto i = 0; i < trees_.size(); ++i) {
+    auto current_depth = trees_[i]->get_depth();
+    if (lowest_depth > current_depth) {
+      lowest_depth = current_depth;
+      chosen_tree_ = i;
+    }
+  }
+  std::cout << "# Chosen tree with number: " << GREEN << chosen_tree_ + 1
+            << RESET << std::endl;
 }
 
-void Input::contract_cherries_(Node *n) {
+void Input::contract_cherries_recursive_(Node *n) {
   if (n->is_leaf()) {
     return;
   }
   // First contract all possbile descendants.
-  contract_cherries_(n->get_left());
-  contract_cherries_(n->get_right());
+  contract_cherries_recursive_(n->get_left());
+  contract_cherries_recursive_(n->get_right());
   // Now also this one if it is a cherry.
   auto left = n->get_left();
   auto right = n->get_right();
@@ -409,26 +297,16 @@ void Input::contract_cherries_(Node *n) {
   }
 }
 
-void Input::delete_lca_tables() {
-  for (auto &&tree : trees_) {
-    tree->delete_lca_table();
-  }
-}
-
-void Input::set_tree_decomposition(const std::string &str) {
-  decomp_ = TreeDecomposition(str);
-}
-
 std::vector<std::unique_ptr<Tree>>
-Input::remove_edges(const std::set<int> &edges_to_remove) {
+Input::cut_edges(const std::set<int> &edges_to_remove) {
   std::vector<std::unique_ptr<Node>> output;
   std::vector<std::unique_ptr<Tree>> trees;
   if (trees_.size() == 0) {
     return trees;
   }
-  Node tree(*trees_[0]->get_root());
+  Node tree(*get_chosen_tree()->get_root());
   output.push_back(std::make_unique<Node>(tree));
-  remove_edges_(edges_to_remove, output, output.at(0).get());
+  cut_edges_recursive_(edges_to_remove, output, output.at(0).get());
   for (auto &&tree : output) {
     trees.push_back(std::make_unique<Tree>(std::move(tree)));
   }
@@ -438,25 +316,27 @@ Input::remove_edges(const std::set<int> &edges_to_remove) {
   return trees;
 }
 
-void Input::remove_edges_(const std::set<int> &edges_to_remove,
-                          std::vector<std::unique_ptr<Node>> &trees,
-                          Node *current_tree) {
+void Input::cut_edges_recursive_(const std::set<int> &edges_to_remove,
+                                 std::vector<std::unique_ptr<Node>> &trees,
+                                 Node *current_tree) {
   if (current_tree->is_leaf()) {
     return;
   }
   auto left_val = current_tree->get_left()->get_value();
   if (edges_to_remove.contains(left_val)) {
     trees.push_back(std::move(current_tree->remove_left()));
-    remove_edges_(edges_to_remove, trees, trees.at(trees.size() - 1).get());
+    cut_edges_recursive_(edges_to_remove, trees,
+                         trees.at(trees.size() - 1).get());
   } else {
-    remove_edges_(edges_to_remove, trees, current_tree->get_left());
+    cut_edges_recursive_(edges_to_remove, trees, current_tree->get_left());
   }
   auto right_val = current_tree->get_right()->get_value();
   if (edges_to_remove.contains(right_val)) {
     trees.push_back(current_tree->remove_right());
-    remove_edges_(edges_to_remove, trees, trees.at(trees.size() - 1).get());
+    cut_edges_recursive_(edges_to_remove, trees,
+                         trees.at(trees.size() - 1).get());
   } else {
-    remove_edges_(edges_to_remove, trees, current_tree->get_right());
+    cut_edges_recursive_(edges_to_remove, trees, current_tree->get_right());
   }
 }
 

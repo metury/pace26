@@ -39,31 +39,35 @@ std::vector<std::string> split(const std::string &str);
 /// @return Vector of all substrings.
 std::vector<std::string> split(const std::string &str, char delimiter);
 
+/// Decrement all values by one but not below 0.
+/// @param args Values.
 template <typename... Ints> void decrement_to_zero(Ints &...args) {
   ((args = std::max(0, args - 1)), ...);
 }
 
+/// Check if at least one value is positive.
+/// @param args Values.
+/// @return True if at least one value is positive.
 template <typename... Ints> bool has_positive(Ints &...args) {
   return (... || (args > 0));
 }
 
+/// Structure holding incompatible Trio.
 struct Trio {
   int a, b, c;
   int size = 0;
   bool used = false;
 };
 
+/// Structure holding incompatible Quartet.
 struct Quartet {
   int a, b, x, y;
   int size = 0;
   bool used = false;
 };
 
+/// Structure holding Fork.
 struct Fork {
-  int a, b, c;
-};
-
-struct ExtendedFork {
-  int a, b, c, d, e, f, g;
+  int parent, left, right;
 };
 #endif

@@ -63,15 +63,16 @@ public:
   int assign_numbers(int counter);
   /// Force iterative contraction of all 2 degree inner vertices.
   void consolidate();
-  std::array<int, 3>
-  compute_forks(std::vector<Fork> &forks,
-                std::vector<ExtendedFork> &extended_forks) const;
-  void compute_fake_cherries(std::vector<std::pair<int, int>> &cherries) const;
+  /// Compute forks.
+  void compute_forks(std::vector<Fork> &forks) const;
   /// Compute both LCA tables and pointers to all leafs.
   /// @param lca_table LCA table for all pairs.
   /// @return A map of pointers to all leafs.
   std::unordered_map<int, Node *>
   compute_lca_leafs(std::vector<std::vector<int>> &lca_table);
+  /// Compute the depth below this node.
+  /// @return Number of edges to the lowest leaf below this node.
+  int get_depth() const;
   /// Get a pointer to the left descendant.
   /// @return Pointer (monitor) to its left descendant.
   inline Node *get_left() const { return left_.get(); }

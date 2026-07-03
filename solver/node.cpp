@@ -88,33 +88,11 @@ void Node::consolidate() {
   }
 }
 
-std::array<int, 3>
-Node::compute_forks(std::vector<Fork> &forks,
-                    std::vector<ExtendedFork> &extended_forks) const {
+void Node::compute_forks(std::vector<Fork> &forks) const {
   if (type_ == INTERNAL) {
     forks.push_back({value_, left_->get_value(), right_->get_value()});
-    auto left_fork = left_->compute_forks(forks, extended_forks);
-    auto right_fork = right_->compute_forks(forks, extended_forks);
-    if (left_fork[0] != 0 && right_fork[0] != 0) {
-      extended_forks.push_back({value_, left_fork[0], right_fork[0],
-                                left_fork[1], left_fork[2], right_fork[1],
-                                right_fork[2]});
-    }
-    return {value_, left_->get_value(), right_->get_value()};
-  }
-  return {0, 0, 0};
-}
-
-void Node::compute_fake_cherries(
-    std::vector<std::pair<int, int>> &cherries) const {
-  if (type_ == INTERNAL) {
-    if (left_->is_leaf() && right_->is_leaf()) {
-      cherries.push_back(
-          std::make_pair(left_->get_value(), right_->get_value()));
-    } else {
-      left_->compute_fake_cherries(cherries);
-      right_->compute_fake_cherries(cherries);
-    }
+    left_->compute_forks(forks);
+    right_->compute_forks(forks);
   }
 }
 
@@ -137,6 +115,13 @@ Node::compute_lca_leafs(std::vector<std::vector<int>> &lca_table) {
   left.insert_or_assign(this->get_value(), this);
   left.merge(right);
   return left;
+}
+
+int Node::get_depth() const {
+  if (type_ == LEAF) {
+    return 0;
+  }
+  return std::max(left_->get_depth(), right_->get_depth()) + 1;
 }
 
 void Node::get_leafs(std::set<int> &taxa) const {
