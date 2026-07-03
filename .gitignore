@@ -36,18 +36,8 @@
 *.exe
 *.out
 *.app
-pace
 
+# Build directories
 build/
 docs/
-
-# debug information files
-*.dwo
-
-# Input files
-input/
-
 .cache/
-
-## LaTeX
-OUT/
