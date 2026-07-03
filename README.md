@@ -8,7 +8,7 @@ This is a `C++` project that has CMake build system. Therefore in order to compi
 
 ## Dependencies
 
-There is only one dependency, if we are not counting `C++` default libraries, and that is [SCIP optimization suite](www.scipopt.org). So if this is installed and the libraries are known then the compilation is a piece of cake.
+There is only one dependency, if we are not counting `C++` default libraries, and that is [SCIP optimization suite](https://scipopt.org). So if this is installed and the libraries are known then the compilation is a piece of cake.
 
 ## Compilation
 
