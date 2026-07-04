@@ -42,12 +42,10 @@ private:
   std::vector<SCIP_VAR *> vars_;
   /// What input we are solving.
   Input &input_;
-  /// Setting limit for constraints.
-  int limit_;
   /// Components of connected components.
   std::vector<uint16_t> components_;
-  /// Upper limit for every constraint.
-  int upper_limit_;
+  /// Upper bound for every constraint.
+  int upper_bound_;
   /// List of all incomaptible trios.
   std::vector<Trio> trios_;
   /// List of all incomaptible quartets.

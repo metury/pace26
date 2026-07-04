@@ -172,7 +172,7 @@ public:
   inline uint16_t get_node_count() const { return n_ + n_ - 1; }
   /// Get the tree count.
   /// @return Tree count.
-  inline uint8_t get_tree_count() const { return t_; }
+  inline uint16_t get_tree_count() const { return t_; }
   /// Get reference to all trees.
   /// @return Reference to all trees.
   inline std::vector<std::unique_ptr<Tree>> &get_trees() { return trees_; }
@@ -205,7 +205,7 @@ private:
   /// Number of leafs in each tree.
   uint16_t n_;
   /// Number of trees.
-  uint8_t t_;
+  uint16_t t_;
   /// Array of all trees.
   std::vector<std::unique_ptr<Tree>> trees_;
   /// Hash map of all contracted leafs.

@@ -2,11 +2,10 @@
 #include "scip/scip_numerics.h"
 #include "scip/type_var.h"
 #include "utils.h"
-#include <cstdint>
 #include <algorithm>
+#include <cstdint>
 
-ILP::ILP(Input &input)
-    : input_(input), limit_(2 * std::log2(input.get_reduced_leaf_count())) {
+ILP::ILP(Input &input) : input_(input) {
   trios_ = std::vector<Trio>();
   quartets_ = std::vector<Quartet>();
   input_.compute_trios_quartets(trios_, quartets_);
@@ -68,9 +67,9 @@ void ILP::add_trio_constr(Trio &t) {
   t.used = true;
   auto edges = tree->get_trio_edges(t);
   int edges_size = edges.size() - 1;
-  auto local_bound = std::min(edges_size, upper_limit_);
+  auto local_bound = std::min(edges_size, upper_bound_);
   if (heuristics_) {
-    local_bound = upper_limit_;
+    local_bound = upper_bound_;
   }
   SCIP_CONS *cons;
   SCIPcreateConsBasicLinear(scip_, &cons, "trio_cons", 0, nullptr, nullptr, 1.0,
@@ -87,9 +86,9 @@ void ILP::add_quartet_constr(Quartet &q) {
   q.used = true;
   auto edges = tree->get_quartet_edges(q);
   int edges_size = edges.size();
-  auto local_bound = std::min(edges_size, upper_limit_);
+  auto local_bound = std::min(edges_size, upper_bound_);
   if (heuristics_) {
-    local_bound = upper_limit_;
+    local_bound = upper_bound_;
   }
   SCIP_CONS *cons;
   SCIPcreateConsBasicLinear(scip_, &cons, "quartet_cons", 0, nullptr, nullptr,
@@ -103,7 +102,7 @@ void ILP::add_quartet_constr(Quartet &q) {
 
 void ILP::initialize(uint16_t lb, uint16_t ub, bool h) {
   heuristics_ = h;
-  upper_limit_ = ub;
+  upper_bound_ = ub;
   SCIPcreate(&scip_);
   SCIPincludeDefaultPlugins(scip_);
   SCIPcreateProbBasic(scip_, "PACE2026 - MAF");
@@ -156,10 +155,6 @@ void ILP::initialize(uint16_t lb, uint16_t ub, bool h) {
                               number_of_constraints);
 
     for (int i = 0; i < trios_.size(); ++i) {
-      if (trios_[i].size > limit_) {
-        break; // Take at least N of them. Take all constraints of length at
-        //  most limit_.
-      }
       if (has_positive(counters[trios_[i].a], counters[trios_[i].b],
                        counters[trios_[i].c])) {
         add_trio_constr(trios_[i]);
@@ -173,10 +168,6 @@ void ILP::initialize(uint16_t lb, uint16_t ub, bool h) {
     std::fill(counters.begin(), counters.end(), number_of_constraints);
 
     for (int i = 0; i < quartets_.size(); ++i) {
-      if (quartets_[i].size > limit_) {
-        break; // Take at least N of them. Take all constraints of length at
-        // most limit_.
-      }
       if (has_positive(counters[quartets_[i].a], counters[quartets_[i].b],
                        counters[quartets_[i].x], counters[quartets_[i].y])) {
         add_quartet_constr(quartets_[i]);
@@ -189,7 +180,7 @@ void ILP::initialize(uint16_t lb, uint16_t ub, bool h) {
 
   SCIP_CONS *cons_all;
   SCIPcreateConsBasicLinear(scip_, &cons_all, "all_edges", 0, nullptr, nullptr,
-                            lb, upper_limit_);
+                            lb, upper_bound_);
   for (int a = 0; a < vars_.size(); ++a) {
     SCIPaddCoefLinear(scip_, cons_all, vars_[a], 1.0);
   }
@@ -239,7 +230,7 @@ std::set<uint16_t> ILP::run() {
 
   SCIP_CONS *new_cons;
   SCIPcreateConsBasicLinear(scip_, &new_cons, "post_run_cons", 0, nullptr,
-                            nullptr, obj_val, upper_limit_);
+                            nullptr, obj_val, upper_bound_);
 
   for (auto a = 0; a < vars_.size(); ++a) {
     SCIPaddCoefLinear(scip_, new_cons, vars_[a], 1.0);
