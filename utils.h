@@ -73,15 +73,29 @@ struct Fork {
   uint16_t parent, left, right;
 };
 
+/// Struct for one dimensional flattend LCA table.
 struct LcaTable {
 private:
+  /// The values of LCA querries.
   std::vector<uint16_t> values_;
+  /// Number of elements creating the values.
   size_t n_;
 
 public:
+  /// Constructor for the LCA table.
+  /// @param n Number of elements.
   explicit LcaTable(size_t n) : n_(n), values_(n * n, 0) {}
 
+  /// Get value for two indices.
+  /// @param i First index.
+  /// @param j Second index.
+  /// @return Reference to their LCA.
   inline uint16_t &at(uint16_t i, uint16_t j) { return values_[i * n_ + j]; }
+  /// Agregate LCA for three indices.
+  /// @param i First index.
+  /// @param j Second index.
+  /// @param k Third index.
+  /// @return Reference to their LCA value.
   inline uint16_t &at(uint16_t i, uint16_t j, uint16_t k) {
     return at(at(i, j), k);
   }

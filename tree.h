@@ -176,6 +176,8 @@ public:
   /// Get reference to all trees.
   /// @return Reference to all trees.
   inline std::vector<std::unique_ptr<Tree>> &get_trees() { return trees_; }
+  /// Get all trees except for the chosen representative.
+  /// @return Range view of all such trees.
   inline auto get_other_trees() const {
     return trees_ | std::views::filter([this](const std::unique_ptr<Tree> &t) {
              return t.get() != trees_[chosen_tree_].get();
