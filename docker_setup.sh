@@ -4,13 +4,15 @@ set -ueo pipefail
 
 sudo apt update
 
-wget https://scipopt.org/download/release/scipoptsuite_10.0.2-1+trixie_amd64.deb
+SCIP="scipoptsuite_10.0.2-1+trixie_amd64.deb"
 
-sudo apt install -y ./scipoptsuite_*
+wget https://scipopt.org/download/release/"$SCIP"
+
+sudo apt install -y ./"$SCIP"
 
 sudo apt install -y build-essential cmake
 
-rm -rf scipoptsuite_10*
+rm -rf "$SCIP"
 
 mkdir -p build/
 cmake -B build/
