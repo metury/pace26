@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 3.31)
 
 # In Order to compile it for optil.
 # set(CMAKE_CXX_COMPILER "x86_64-linux-musl-g++")

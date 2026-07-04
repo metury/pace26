@@ -3,6 +3,7 @@
 #include "scip/type_var.h"
 #include "utils.h"
 #include <cstdint>
+#include <algorithm>
 
 ILP::ILP(Input &input)
     : input_(input), limit_(2 * std::log2(input.get_reduced_leaf_count())) {
