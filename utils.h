@@ -56,20 +56,27 @@ template <typename... Ints> bool has_positive(Ints &...args) {
 
 /// Structure holding incompatible Trio.
 struct Trio {
+  /// The same notation as in the description.
   uint16_t a, b, c;
+  /// Number of edges in the constraint created by this trio.
   uint16_t size = 0;
+  /// Whether this trio was used in the ILP already.
   bool used = false;
 };
 
 /// Structure holding incompatible Quartet.
 struct Quartet {
+  /// There is a-b path and x-y path.
   uint16_t a, b, x, y;
+  /// Number of edges in the constraint created by this quartet.
   uint16_t size = 0;
+  /// Whether this quartet was used in the ILP already.
   bool used = false;
 };
 
 /// Structure holding Fork.
 struct Fork {
+  /// Self explanatory naming.
   uint16_t parent, left, right;
 };
 
