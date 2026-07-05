@@ -20,6 +20,10 @@ cmake -B build/
 cmake --build build/
 ```
 
+## Description
+
+The description is saved as [description.pdf](description.pdf) and we are maintaining this on overleaf, so there is only PDF.
+
 ### Some Additional Notes
 
 To keep consistency of the code you could use the following.
@@ -55,7 +59,3 @@ cd latex
 make
 xdg-open refman.pdf
 ```
-
-# Submitting and compiling the code
-
-In order to compile this one must have compiled highs library (ideally in musl for optil) and libz to static libraries. Then one can link the compilation to these libraries and set it to static as well.
